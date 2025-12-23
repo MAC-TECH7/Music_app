@@ -1,0 +1,1278 @@
+// Admin Dashboard JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin dashboard loaded');
+    
+    // Initialize everything
+    initializeDataTables();
+    initializeCharts();
+    loadSampleData();
+    setupEventListeners();
+    setupNavigation();
+    animateStats();
+    
+    // Add refresh button functionality
+    addRefreshButton();
+});
+
+function initializeDataTables() {
+    console.log('Initializing DataTables...');
+    
+    // Destroy existing tables if they exist
+    const tables = ['#usersTable', '#allUsersTable', '#artistsTable', '#songsTable', 
+                   '#subscriptionPlansTable', '#recentSubscriptionsTable', '#topSongsTable', 
+                   '#topArtistsTable', '#recentSongsTable'];
+    
+    tables.forEach(tableId => {
+        if ($.fn.DataTable.isDataTable(tableId)) {
+            $(tableId).DataTable().destroy();
+        }
+    });
+    
+    // Initialize tables with consistent options
+    const tableOptions = {
+        "pageLength": 10,
+        "lengthChange": true,
+        "searching": true,
+        "info": true,
+        "paging": true,
+        "ordering": true,
+        "language": {
+            "emptyTable": "No data available in table",
+            "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty": "Showing 0 to 0 of 0 entries",
+            "infoFiltered": "(filtered from _MAX_ total entries)",
+            "lengthMenu": "Show _MENU_ entries",
+            "search": "Search:",
+            "zeroRecords": "No matching records found"
+        }
+    };
+    
+    // Apply to all tables
+    $('table').each(function() {
+        if (!$.fn.DataTable.isDataTable(this)) {
+            $(this).DataTable(tableOptions);
+        }
+    });
+}
+
+function initializeCharts() {
+    console.log('Initializing charts...');
+    
+    // User Growth Chart
+    const userGrowthCanvas = document.getElementById('userGrowthChart');
+    if (userGrowthCanvas) {
+        const userGrowthCtx = userGrowthCanvas.getContext('2d');
+        window.userGrowthChart = new Chart(userGrowthCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Total Users',
+                    data: [8500, 9200, 9800, 10500, 11200, 11800, 12456, 13000, 13500, 14000, 14500, 15000],
+                    borderColor: '#4A6CF7',
+                    backgroundColor: 'rgba(74, 108, 247, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            drawBorder: false,
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#b3b3b3'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#b3b3b3'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Artist Distribution Chart
+    const artistDistCanvas = document.getElementById('artistDistributionChart');
+    if (artistDistCanvas) {
+        const artistDistCtx = artistDistCanvas.getContext('2d');
+        window.artistDistributionChart = new Chart(artistDistCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Makossa', 'Bikutsi', 'Afrobeat', 'Assiko', 'Others'],
+                datasets: [{
+                    data: [35, 25, 20, 10, 10],
+                    backgroundColor: [
+                        '#4A6CF7',
+                        '#2E8B57',
+                        '#FF6B35',
+                        '#FFA726',
+                        '#6C757D'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#1a1a1a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#b3b3b3',
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Analytics Chart
+    const analyticsCanvas = document.getElementById('analyticsChart');
+    if (analyticsCanvas) {
+        const analyticsCtx = analyticsCanvas.getContext('2d');
+        window.analyticsChart = new Chart(analyticsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Streams', 'Downloads', 'Shares', 'Likes', 'Comments'],
+                datasets: [{
+                    label: 'This Month',
+                    data: [2100000, 45000, 12000, 85000, 15000],
+                    backgroundColor: '#4A6CF7',
+                    borderWidth: 0,
+                    borderRadius: 4
+                }, {
+                    label: 'Last Month',
+                    data: [1800000, 38000, 10000, 72000, 13000],
+                    backgroundColor: '#6C757D',
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#b3b3b3'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false,
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#b3b3b3',
+                            callback: function(value) {
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return (value / 1000).toFixed(0) + 'K';
+                                }
+                                return value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#b3b3b3'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Genre Chart
+    const genreCanvas = document.getElementById('genreChart');
+    if (genreCanvas) {
+        const genreCtx = genreCanvas.getContext('2d');
+        window.genreChart = new Chart(genreCtx, {
+            type: 'polarArea',
+            data: {
+                labels: ['Makossa', 'Bikutsi', 'Afrobeat', 'Assiko', 'Bend Skin', 'Gospel', 'Traditional'],
+                datasets: [{
+                    data: [1200, 850, 750, 400, 350, 600, 300],
+                    backgroundColor: [
+                        '#4A6CF7',
+                        '#2E8B57',
+                        '#FF6B35',
+                        '#FFA726',
+                        '#8B4513',
+                        '#DC3545',
+                        '#17A2B8'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#1a1a1a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#b3b3b3',
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Revenue Chart
+    const revenueCanvas = document.getElementById('revenueChart');
+    if (revenueCanvas) {
+        const revenueCtx = revenueCanvas.getContext('2d');
+        window.revenueChart = new Chart(revenueCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Artist Subscriptions', 'Ad Revenue', 'Fan Donations', 'Premium Features', 'Merchandise'],
+                datasets: [{
+                    data: [45, 30, 15, 8, 2],
+                    backgroundColor: [
+                        '#4A6CF7',
+                        '#2E8B57',
+                        '#FF6B35',
+                        '#FFA726',
+                        '#8B4513'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#1a1a1a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#b3b3b3',
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Artist Verification Chart
+    const artistVerificationCanvas = document.getElementById('artistVerificationChart');
+    if (artistVerificationCanvas) {
+        const artistVerificationCtx = artistVerificationCanvas.getContext('2d');
+        window.artistVerificationChart = new Chart(artistVerificationCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Verified', 'Pending', 'Rejected'],
+                datasets: [{
+                    data: [65, 25, 10],
+                    backgroundColor: [
+                        '#16a34a',
+                        '#ca8a04',
+                        '#dc2626'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#1a1a1a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#b3b3b3',
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function loadSampleData() {
+    console.log('Loading sample data...');
+    
+    // Sample users data
+    const users = [
+        {
+            id: 1001,
+            name: "John Mbarga",
+            email: "john.mbarga@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "fan",
+            status: "active",
+            joined: "2023-08-15",
+            avatar: "JM"
+        },
+        {
+            id: 1002,
+            name: "Marie Ndongo",
+            email: "marie.ndongo@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "artist",
+            status: "active",
+            joined: "2023-07-22",
+            avatar: "MN"
+        },
+        {
+            id: 1003,
+            name: "Pierre Essomba",
+            email: "pierre.e@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "artist",
+            status: "pending",
+            joined: "2023-09-10",
+            avatar: "PE"
+        },
+        {
+            id: 1004,
+            name: "Sarah Ewane",
+            email: "sarah.ewane@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "fan",
+            status: "active",
+            joined: "2023-06-05",
+            avatar: "SE"
+        },
+        {
+            id: 1005,
+            name: "Thomas Nkono",
+            email: "thomas.n@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "moderator",
+            status: "active",
+            joined: "2023-05-18",
+            avatar: "TN"
+        },
+        {
+            id: 1006,
+            name: "Alice Bikoko",
+            email: "alice.b@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "fan",
+            status: "active",
+            joined: "2023-10-12",
+            avatar: "AB"
+        },
+        {
+            id: 1007,
+            name: "David Essomba",
+            email: "david.e@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "artist",
+            status: "pending",
+            joined: "2023-11-05",
+            avatar: "DE"
+        },
+        {
+            id: 1008,
+            name: "Grace Ngo",
+            email: "grace.n@email.com",
+            phone: "+237 6XX XXX XXX",
+            type: "fan",
+            status: "blocked",
+            joined: "2023-04-22",
+            avatar: "GN"
+        }
+    ];
+    
+    // Sample artists data
+    const artists = [
+        {
+            id: 2001,
+            name: "Manu Dibango Legacy",
+            genre: "Makossa",
+            followers: "150K",
+            songs: 45,
+            status: "verified",
+            verification: "approved"
+        },
+        {
+            id: 2002,
+            name: "Bikutsi Queens",
+            genre: "Bikutsi",
+            followers: "85K",
+            songs: 28,
+            status: "verified",
+            verification: "approved"
+        },
+        {
+            id: 2003,
+            name: "Yaoundé Vibes",
+            genre: "Afrobeat",
+            followers: "210K",
+            songs: 62,
+            status: "verified",
+            verification: "approved"
+        },
+        {
+            id: 2004,
+            name: "Bamenda Roots",
+            genre: "Traditional",
+            followers: "95K",
+            songs: 37,
+            status: "pending",
+            verification: "pending"
+        },
+        {
+            id: 2005,
+            name: "Douala Beats",
+            genre: "Assiko",
+            followers: "120K",
+            songs: 41,
+            status: "verified",
+            verification: "approved"
+        },
+        {
+            id: 2006,
+            name: "Afrobeat Collective",
+            genre: "Afrobeat",
+            followers: "180K",
+            songs: 52,
+            status: "verified",
+            verification: "approved"
+        },
+        {
+            id: 2007,
+            name: "Makossa Masters",
+            genre: "Makossa",
+            followers: "75K",
+            songs: 33,
+            status: "pending",
+            verification: "pending"
+        },
+        {
+            id: 2008,
+            name: "Gospel Harmony",
+            genre: "Gospel",
+            followers: "110K",
+            songs: 48,
+            status: "verified",
+            verification: "approved"
+        }
+    ];
+    
+    // Sample songs data
+    const songs = [
+        {
+            id: 3001,
+            title: "Soul Makossa",
+            artist: "Manu Dibango Legacy",
+            genre: "Makossa",
+            plays: "2.5M",
+            duration: "4:32",
+            date: "2023-08-10",
+            status: "published"
+        },
+        {
+            id: 3002,
+            title: "Bikutsi Rhythm",
+            artist: "Bikutsi Queens",
+            genre: "Bikutsi",
+            plays: "1.8M",
+            duration: "3:45",
+            date: "2023-09-05",
+            status: "published"
+        },
+        {
+            id: 3003,
+            title: "City Lights",
+            artist: "Yaoundé Vibes",
+            genre: "Afrobeat",
+            plays: "3.2M",
+            duration: "3:58",
+            date: "2023-07-22",
+            status: "published"
+        },
+        {
+            id: 3004,
+            title: "Mountain Song",
+            artist: "Bamenda Roots",
+            genre: "Traditional",
+            plays: "950K",
+            duration: "5:12",
+            date: "2023-09-15",
+            status: "pending"
+        },
+        {
+            id: 3005,
+            title: "Coastal Vibes",
+            artist: "Douala Beats",
+            genre: "Assiko",
+            plays: "1.5M",
+            duration: "4:15",
+            date: "2023-08-28",
+            status: "published"
+        },
+        {
+            id: 3006,
+            title: "African Dreams",
+            artist: "Afrobeat Collective",
+            genre: "Afrobeat",
+            plays: "2.1M",
+            duration: "3:52",
+            date: "2023-10-12",
+            status: "published"
+        },
+        {
+            id: 3007,
+            title: "Makossa Nights",
+            artist: "Makossa Masters",
+            genre: "Makossa",
+            plays: "850K",
+            duration: "4:05",
+            date: "2023-11-08",
+            status: "pending"
+        },
+        {
+            id: 3008,
+            title: "Heaven's Voice",
+            artist: "Gospel Harmony",
+            genre: "Gospel",
+            plays: "1.2M",
+            duration: "5:30",
+            date: "2023-10-30",
+            status: "published"
+        }
+    ];
+    
+    // Populate all tables
+    populateUsersTable(users);
+    populateAllUsersTable(users);
+    populateArtistsTable(artists);
+    populateSongsTable(songs);
+    populateTopArtistsList(artists);
+    populateRecentSongsTable(songs.slice(0, 5));
+    
+    // Store data globally
+    window.sampleData = { users, artists, songs };
+    
+    console.log('Sample data loaded successfully');
+}
+
+function populateUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    users.slice(0, 5).forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="user-info">
+                    <div class="user-avatar">${user.avatar}</div>
+                    <div>
+                        <strong>${user.name}</strong><br>
+                        <small class="text-muted">ID: ${user.id}</small>
+                    </div>
+                </div>
+            </td>
+            <td>${user.email}</td>
+            <td><span class="badge bg-${getTypeColor(user.type)}">${user.type}</span></td>
+            <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+            <td>${user.joined}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action view" data-id="${user.id}" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action edit" data-id="${user.id}" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateAllUsersTable(users) {
+    const tbody = document.getElementById('allUsersTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${user.id}</td>
+            <td>
+                <div class="user-info">
+                    <div class="user-avatar">${user.avatar}</div>
+                    <div>
+                        <strong>${user.name}</strong>
+                    </div>
+                </div>
+            </td>
+            <td>${user.email}</td>
+            <td>${user.phone}</td>
+            <td><span class="badge bg-${getTypeColor(user.type)}">${user.type}</span></td>
+            <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+            <td>${user.joined}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action view" data-id="${user.id}" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action edit" data-id="${user.id}" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-action delete" data-id="${user.id}" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateArtistsTable(artists) {
+    const tbody = document.getElementById('artistsTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    artists.forEach(artist => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${artist.id}</td>
+            <td>
+                <div class="user-info">
+                    <div class="user-avatar">${artist.name.charAt(0)}</div>
+                    <div>
+                        <strong>${artist.name}</strong>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge" style="background-color: #${getGenreColor(artist.genre)}">${artist.genre}</span></td>
+            <td>${artist.followers}</td>
+            <td>${artist.songs}</td>
+            <td><span class="status-badge status-${artist.status}">${artist.status}</span></td>
+            <td>
+                <span class="badge bg-${getVerificationColor(artist.verification)}">
+                    ${artist.verification}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action view" data-id="${artist.id}" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action edit" data-id="${artist.id}" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-action delete" data-id="${artist.id}" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateSongsTable(songs) {
+    const tbody = document.getElementById('songsTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    songs.forEach(song => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${song.id}</td>
+            <td><strong>${song.title}</strong></td>
+            <td>${song.artist}</td>
+            <td><span class="badge" style="background-color: #${getGenreColor(song.genre)}">${song.genre}</span></td>
+            <td>${song.plays}</td>
+            <td>${song.duration}</td>
+            <td>${song.date}</td>
+            <td><span class="status-badge status-${song.status}">${song.status}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action view" data-id="${song.id}" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action edit" data-id="${song.id}" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-action delete" data-id="${song.id}" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateRecentSongsTable(songs) {
+    const tbody = document.getElementById('recentSongsTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    songs.forEach(song => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${song.title}</strong></td>
+            <td>${song.artist}</td>
+            <td><span class="badge" style="background-color: #${getGenreColor(song.genre)}">${song.genre}</span></td>
+            <td>${song.plays}</td>
+            <td><span class="status-badge status-${song.status}">${song.status}</span></td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-action view" data-id="${song.id}" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action edit" data-id="${song.id}" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateTopArtistsList(artists) {
+    const container = document.getElementById('topArtistsList');
+    if (!container) return;
+    
+    // Sort by followers (convert "150K" to number for sorting)
+    const sortedArtists = [...artists].sort((a, b) => {
+        const aFollowers = parseFloat(a.followers) * (a.followers.includes('K') ? 1000 : 1);
+        const bFollowers = parseFloat(b.followers) * (b.followers.includes('K') ? 1000 : 1);
+        return bFollowers - aFollowers;
+    }).slice(0, 5);
+    
+    container.innerHTML = '';
+    
+    sortedArtists.forEach((artist, index) => {
+        const artistDiv = document.createElement('div');
+        artistDiv.className = 'top-artist-item';
+        artistDiv.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #333;
+        `;
+        
+        artistDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="color: #b3b3b3; font-weight: bold;">${index + 1}</span>
+                <div class="user-avatar" style="width: 32px; height: 32px; font-size: 14px;">${artist.name.charAt(0)}</div>
+                <div>
+                    <div style="font-weight: 600;">${artist.name}</div>
+                    <div style="color: #b3b3b3; font-size: 12px;">${artist.genre}</div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; color: #1db954;">${artist.followers}</div>
+                <div style="color: #b3b3b3; font-size: 12px;">followers</div>
+            </div>
+        `;
+        
+        container.appendChild(artistDiv);
+    });
+}
+
+function getTypeColor(type) {
+    const colors = {
+        'fan': 'secondary',
+        'artist': 'info',
+        'moderator': 'warning',
+        'admin': 'danger'
+    };
+    return colors[type] || 'secondary';
+}
+
+function getGenreColor(genre) {
+    const colors = {
+        'Makossa': '4A6CF7',
+        'Bikutsi': '2E8B57',
+        'Afrobeat': 'FF6B35',
+        'Assiko': 'FFA726',
+        'Traditional': '8B4513',
+        'Bend Skin': '6C757D',
+        'Gospel': 'DC3545'
+    };
+    return colors[genre] || '6C757D';
+}
+
+function getVerificationColor(status) {
+    const colors = {
+        'approved': 'success',
+        'pending': 'warning',
+        'rejected': 'danger'
+    };
+    return colors[status] || 'secondary';
+}
+
+function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
+    // Global search
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            console.log('Searching for:', searchTerm);
+            // Implement search across all tables
+            $('table').DataTable().search(searchTerm).draw();
+        });
+    }
+    
+    // Add user button
+    document.getElementById('addUserBtn')?.addEventListener('click', function() {
+        alert('Add User: This would open a modal to add new user');
+    });
+    
+    // Add artist button
+    document.getElementById('addArtistBtn')?.addEventListener('click', function() {
+        alert('Add Artist: This would open a modal to add new artist');
+    });
+    
+    // Add song button
+    document.getElementById('addSongBtn')?.addEventListener('click', function() {
+        alert('Add Song: This would open a modal to add new song');
+    });
+    
+    // Add subscription plan button
+    document.getElementById('addSubscriptionPlanBtn')?.addEventListener('click', function() {
+        alert('Add Subscription Plan: This would open a modal to add new subscription plan');
+    });
+    
+    // Export buttons
+    document.getElementById('exportUsersBtn')?.addEventListener('click', function() {
+        alert('Exporting users data...');
+    });
+    
+    document.getElementById('exportAllUsersBtn')?.addEventListener('click', function() {
+        alert('Exporting all users data...');
+    });
+    
+    document.getElementById('exportArtistsBtn')?.addEventListener('click', function() {
+        alert('Exporting artists data...');
+    });
+    
+    document.getElementById('exportSongsBtn')?.addEventListener('click', function() {
+        alert('Exporting songs data...');
+    });
+    
+    document.getElementById('exportReportBtn')?.addEventListener('click', function() {
+        alert('Exporting report data...');
+    });
+    
+    // Generate report button
+    document.getElementById('generateReportBtn')?.addEventListener('click', function() {
+        alert('Generating report... This would create a comprehensive report');
+    });
+    
+    // Save settings button
+    document.getElementById('saveSettingsBtn')?.addEventListener('click', function() {
+        alert('Settings saved successfully!');
+    });
+    
+    // Refresh buttons
+    document.getElementById('refreshSongsBtn')?.addEventListener('click', function() {
+        refreshDashboardData();
+    });
+    
+    document.getElementById('refreshSubscriptionsBtn')?.addEventListener('click', function() {
+        alert('Refreshing subscriptions data...');
+    });
+    
+    // Notifications button
+    document.getElementById('notificationsBtn')?.addEventListener('click', function() {
+        alert('Notifications: You have 3 new notifications');
+    });
+    
+    // Action buttons delegation
+    document.addEventListener('click', function(e) {
+        // View buttons
+        if (e.target.closest('.btn-action.view')) {
+            const button = e.target.closest('.btn-action.view');
+            const id = button.dataset.id;
+            const type = button.closest('tr').querySelector('td:nth-child(2)')?.textContent.includes('@') ? 'user' : 
+                        button.closest('tr').querySelector('td:nth-child(3)')?.textContent.includes('K') ? 'artist' : 'song';
+            alert(`View ${type} details for ID: ${id}`);
+        }
+        
+        // Edit buttons
+        if (e.target.closest('.btn-action.edit')) {
+            const button = e.target.closest('.btn-action.edit');
+            const id = button.dataset.id;
+            alert(`Edit item with ID: ${id}`);
+        }
+        
+        // Delete buttons
+        if (e.target.closest('.btn-action.delete')) {
+            const button = e.target.closest('.btn-action.delete');
+            const id = button.dataset.id;
+            const row = button.closest('tr');
+            const itemName = row.querySelector('td:nth-child(2) strong')?.textContent || 
+                           row.querySelector('td:nth-child(2)')?.textContent;
+            
+            if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+                row.style.opacity = '0.5';
+                setTimeout(() => {
+                    row.remove();
+                    showNotification(`"${itemName}" has been deleted`, 'success');
+                }, 300);
+            }
+        }
+    });
+    
+    // Search inputs for specific sections
+    document.getElementById('userSearch')?.addEventListener('input', function(e) {
+        $('#allUsersTable').DataTable().search(e.target.value).draw();
+    });
+    
+    document.getElementById('artistSearch')?.addEventListener('input', function(e) {
+        $('#artistsTable').DataTable().search(e.target.value).draw();
+    });
+    
+    document.getElementById('songSearch')?.addEventListener('input', function(e) {
+        $('#songsTable').DataTable().search(e.target.value).draw();
+    });
+}
+
+function setupNavigation() {
+    console.log('Setting up navigation...');
+    
+    const navLinks = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.dashboard-view');
+    
+    // Hide all sections except dashboard initially
+    sections.forEach(section => {
+        if (!section.classList.contains('active')) {
+            section.style.display = 'none';
+        }
+    });
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const view = this.dataset.view;
+            console.log('Navigating to:', view);
+            
+            // Remove active class from all links
+            navLinks.forEach(l => l.classList.remove('active'));
+            
+            // Add active class to clicked link
+            this.classList.add('active');
+            
+            // Hide all sections
+            sections.forEach(section => {
+                section.style.display = 'none';
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            const sectionId = view + 'Section';
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                targetSection.classList.add('active');
+                
+                // Update page title
+                updatePageTitle(view);
+                
+                // Refresh DataTables when switching to a section
+                setTimeout(() => {
+                    $('table').DataTable().draw();
+                }, 100);
+            }
+        });
+    });
+}
+
+function updatePageTitle(view) {
+    const titleElement = document.querySelector('.top-bar-left h1');
+    const titles = {
+        'dashboard': 'Admin Dashboard Overview',
+        'users': 'User Management',
+        'artists': 'Artist Management',
+        'songs': 'Song Management',
+        'subscriptions': 'Subscription Management',
+        'reports': 'Reports & Analytics',
+        'settings': 'Settings'
+    };
+    
+    if (titleElement && titles[view]) {
+        titleElement.textContent = titles[view];
+    }
+}
+
+function animateStats() {
+    console.log('Animating stats...');
+    
+    const stats = [
+        { id: 'totalUsers', target: 15200, duration: 2000 },
+        { id: 'totalArtists', target: 850, duration: 1500 },
+        { id: 'totalSongs', target: 4200, duration: 2500 },
+        { id: 'totalRevenue', target: 12500, duration: 2000 },
+        { id: 'activeUsers', target: 12456, duration: 1800 },
+        { id: 'artistUsers', target: 843, duration: 1600 },
+        { id: 'pendingUsers', target: 42, duration: 1200 },
+        { id: 'blockedUsers', target: 18, duration: 1000 },
+        { id: 'totalPlays', target: 152800000, duration: 2500, isLargeNumber: true },
+        { id: 'publishedSongs', target: 4156, duration: 2000 },
+        { id: 'pendingSongs', target: 44, duration: 1500 },
+        { id: 'rejectedSongs', target: 12, duration: 1000 }
+    ];
+    
+    stats.forEach(stat => {
+        const element = document.getElementById(stat.id);
+        if (!element) return;
+        
+        const start = 0;
+        const end = stat.target;
+        const duration = stat.duration;
+        const startTime = Date.now();
+        
+        const updateCounter = () => {
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            let currentValue = Math.floor(progress * end);
+            
+            if (stat.isLargeNumber) {
+                if (currentValue >= 1000000) {
+                    element.textContent = (currentValue / 1000000).toFixed(1) + 'M';
+                } else if (currentValue >= 1000) {
+                    element.textContent = (currentValue / 1000).toFixed(0) + 'K';
+                } else {
+                    element.textContent = formatNumber(currentValue);
+                }
+            } else if (stat.id === 'totalRevenue') {
+                element.textContent = '$' + formatNumber(currentValue);
+            } else {
+                element.textContent = formatNumber(currentValue);
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            }
+        };
+        
+        requestAnimationFrame(updateCounter);
+    });
+}
+
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function refreshDashboardData() {
+    console.log('Refreshing dashboard data...');
+    
+    // Show loading state
+    showNotification('Refreshing dashboard data...', 'info');
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        // Update random stats
+        const newUserCount = Math.floor(Math.random() * 200) + 15200;
+        const newArtistCount = Math.floor(Math.random() * 50) + 850;
+        const newSongCount = Math.floor(Math.random() * 100) + 4200;
+        const newRevenue = Math.floor(Math.random() * 1000) + 12500;
+        
+        document.getElementById('totalUsers').textContent = formatNumber(newUserCount);
+        document.getElementById('totalArtists').textContent = formatNumber(newArtistCount);
+        document.getElementById('totalSongs').textContent = formatNumber(newSongCount);
+        document.getElementById('totalRevenue').textContent = '$' + formatNumber(newRevenue);
+        
+        // Update charts
+        if (window.userGrowthChart) {
+            const chart = window.userGrowthChart;
+            const newDataPoint = newUserCount;
+            chart.data.datasets[0].data.push(newDataPoint);
+            chart.data.labels.push('Now');
+            
+            // Keep only last 12 points
+            if (chart.data.datasets[0].data.length > 12) {
+                chart.data.datasets[0].data.shift();
+                chart.data.labels.shift();
+            }
+            
+            chart.update();
+        }
+        
+        // Refresh all DataTables
+        $('table').DataTable().ajax.reload();
+        
+        showNotification('Dashboard data refreshed successfully!', 'success');
+    }, 1500);
+}
+
+function addRefreshButton() {
+    // Add a refresh button to the top bar
+    const topBarRight = document.querySelector('.top-bar-right');
+    if (topBarRight && !document.getElementById('refreshDashboardBtn')) {
+        const refreshBtn = document.createElement('button');
+        refreshBtn.id = 'refreshDashboardBtn';
+        refreshBtn.className = 'icon-btn';
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        refreshBtn.title = 'Refresh Dashboard';
+        refreshBtn.style.marginRight = '10px';
+        
+        refreshBtn.addEventListener('click', function() {
+            this.classList.add('rotating');
+            refreshDashboardData();
+            setTimeout(() => {
+                this.classList.remove('rotating');
+            }, 2000);
+        });
+        
+        topBarRight.insertBefore(refreshBtn, topBarRight.firstChild);
+        
+        // Add CSS for rotation animation
+        const style = document.createElement('style');
+        style.textContent = `
+            .rotating {
+                animation: rotate 1s linear infinite;
+            }
+            @keyframes rotate {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.custom-notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `custom-notification alert-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    // Set background color based on type
+    switch(type) {
+        case 'success':
+            notification.style.backgroundColor = '#16a34a';
+            break;
+        case 'error':
+            notification.style.backgroundColor = '#dc2626';
+            break;
+        case 'warning':
+            notification.style.backgroundColor = '#ca8a04';
+            break;
+        default:
+            notification.style.backgroundColor = '#2563eb';
+    }
+    
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, 3000);
+    
+    // Add CSS for animations
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Make functions available globally
+window.refreshDashboardData = refreshDashboardData;
+window.showNotification = showNotification;
+
+// Auto-refresh dashboard every 5 minutes (optional)
+// setInterval(refreshDashboardData, 300000);

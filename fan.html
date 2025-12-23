@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AfroRhythm - Music Streaming Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- AOS Animation Library -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+    <style>
+        :root {
+            /* Colors */
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --text-muted: #808080;
+            --accent-primary: #1db954;
+            --accent-secondary: #ffd700;
+            --accent-hover: #1ed760;
+            --border-color: #333333;
+            --shadow: rgba(0, 0, 0, 0.3);
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 48px;
+
+            /* Border radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h1 {
+            color: var(--accent-primary);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: var(--spacing-md) 0;
+        }
+
+        .nav-item {
+            padding: var(--spacing-md) var(--spacing-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .nav-item.active {
+            background-color: var(--bg-tertiary);
+            border-left-color: var(--accent-primary);
+        }
+
+        .nav-item i {
+            margin-right: var(--spacing-md);
+            width: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 64px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .search-input {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--text-primary);
+            width: 300px;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-xl);
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Dashboard Views */
+        .dashboard-view {
+            display: none;
+        }
+
+        .dashboard-view.active {
+            display: block;
+        }
+
+        /* Featured Artists */
+        .featured-artists {
+            display: flex;
+            gap: var(--spacing-lg);
+            overflow-x: auto;
+            padding-bottom: var(--spacing-md);
+        }
+
+        .featured-artists::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .featured-artists::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        .featured-artists::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: var(--radius-sm);
+        }
+
+        .artist-circle {
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .artist-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 0 auto var(--spacing-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .artist-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .artist-circle p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Songs Grid */
+        .songs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .song-card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .song-card:hover {
+            background-color: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+
+        .song-cover {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: var(--text-primary);
+        }
+
+        .song-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .song-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Recently Played */
+        .recently-played {
+            display: flex;
+            gap: var(--spacing-lg);
+            overflow-x: auto;
+            padding-bottom: var(--spacing-md);
+        }
+
+        .recently-played::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .recently-played::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        .recently-played::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: var(--radius-sm);
+        }
+
+        .recent-song {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            min-width: 300px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .recent-song:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .recent-cover {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-secondary), #ffed4e);
+            border-radius: var(--radius-md);
+            margin-right: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .recent-info h5 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .recent-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Music Player */
+        .music-player {
+            position: fixed;
+            bottom: 0;
+            left: 240px;
+            right: 0;
+            height: 80px;
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 var(--spacing-lg);
+            z-index: 1000;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .player-thumbnail {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-md);
+            background-color: var(--bg-tertiary);
+            margin-right: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-details h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .player-details p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .player-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .player-btn:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .player-btn.play {
+            background-color: var(--accent-primary);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-btn.play:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .progress-container {
+            flex: 1;
+            margin: 0 var(--spacing-lg);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent-primary);
+            border-radius: var(--radius-sm);
+            width: 30%;
+        }
+
+        /* Section Headers */
+        .content-area h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .content-area section {
+            margin-bottom: var(--spacing-xxl);
+        }
+
+        .content-area section:last-child {
+            margin-bottom: 120px; /* Account for fixed music player */
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .music-player {
+                left: 200px;
+            }
+
+            .songs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-input {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>AfroRhythm</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-view="fan">
+                    <i class="fas fa-home"></i>
+                    Home
+                </div>
+                <div class="nav-item" data-view="browse">
+                    <i class="fas fa-search"></i>
+                    Browse
+                </div>
+                <div class="nav-item" data-view="genres">
+                    <i class="fas fa-tags"></i>
+                    Genres
+                </div>
+                <div class="nav-item" data-view="favorites">
+                    <i class="fas fa-heart"></i>
+                    Favorites
+                </div>
+                <div class="nav-item" data-view="playlists">
+                    <i class="fas fa-list"></i>
+                    Playlists
+                </div>
+                <div class="nav-item" data-view="profile">
+                    <i class="fas fa-user"></i>
+                    Profile
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1>Discover Cameroonian Music</h1>
+                </div>
+                <div class="top-bar-right">
+                    <input type="text" class="search-input" placeholder="Search songs, artists, albums...">
+                    <button class="icon-btn">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="avatar">JD</div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Fan Dashboard -->
+                <div id="fan-dashboard" class="dashboard-view active">
+                    <!-- Featured Artists -->
+                    <section>
+                        <h2>Featured Artists</h2>
+                        <div class="featured-artists">
+                            <div class="artist-circle">
+                                <div class="artist-avatar">MA</div>
+                                <p>Manu Dibango Legacy</p>
+                            </div>
+                            <div class="artist-circle">
+                                <div class="artist-avatar">BQ</div>
+                                <p>Bikutsi Queens</p>
+                            </div>
+                            <div class="artist-circle">
+                                <div class="artist-avatar">YV</div>
+                                <p>Yaoundé Vibes</p>
+                            </div>
+                            <div class="artist-circle">
+                                <div class="artist-avatar">BR</div>
+                                <p>Bamenda Roots</p>
+                            </div>
+                            <div class="artist-circle">
+                                <div class="artist-avatar">DB</div>
+                                <p>Douala Beats</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Trending Songs -->
+                    <section>
+                        <h2>Trending Songs</h2>
+                        <div class="songs-grid">
+                            <div class="song-card">
+                                <div class="song-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <h4>Soul Makossa</h4>
+                                <p>Manu Dibango Legacy</p>
+                            </div>
+                            <div class="song-card">
+                                <div class="song-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <h4>Bikutsi Rhythm</h4>
+                                <p>Bikutsi Queens</p>
+                            </div>
+                            <div class="song-card">
+                                <div class="song-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <h4>City Lights</h4>
+                                <p>Yaoundé Vibes</p>
+                            </div>
+                            <div class="song-card">
+                                <div class="song-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <h4>Mountain Song</h4>
+                                <p>Bamenda Roots</p>
+                            </div>
+                            <div class="song-card">
+                                <div class="song-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <h4>Coastal Vibes</h4>
+                                <p>Douala Beats</p>
+                            </div>
+                            <div class="song-card">
+                                <div class="song-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <h4>African Sunrise</h4>
+                                <p>New Gen Collective</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recently Played -->
+                    <section>
+                        <h2>Recently Played</h2>
+                        <div class="recently-played">
+                            <div class="recent-song">
+                                <div class="recent-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="recent-info">
+                                    <h5>Soul Makossa</h5>
+                                    <p>Manu Dibango Legacy</p>
+                                </div>
+                            </div>
+                            <div class="recent-song">
+                                <div class="recent-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="recent-info">
+                                    <h5>Bikutsi Rhythm</h5>
+                                    <p>Bikutsi Queens</p>
+                                </div>
+                            </div>
+                            <div class="recent-song">
+                                <div class="recent-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="recent-info">
+                                    <h5>City Lights</h5>
+                                    <p>Yaoundé Vibes</p>
+                                </div>
+                            </div>
+                            <div class="recent-song">
+                                <div class="recent-cover">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="recent-info">
+                                    <h5>Mountain Song</h5>
+                                    <p>Bamenda Roots</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Browse View -->
+                <div id="browse-dashboard" class="dashboard-view">
+                    <h2>Browse Music</h2>
+                    <div class="songs-grid">
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>New Release</h4>
+                            <p>Latest Cameroonian hits</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>Popular</h4>
+                            <p>Most played this week</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>Discover</h4>
+                            <p>New artists to explore</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>Live Sessions</h4>
+                            <p>Live performances</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Genres View -->
+                <div id="genres-dashboard" class="dashboard-view">
+                    <h2>Music Genres</h2>
+                    <div class="songs-grid">
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-drum"></i>
+                            </div>
+                            <h4>Makossa</h4>
+                            <p>Traditional Cameroonian rhythm</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-guitar"></i>
+                            </div>
+                            <h4>Bikutsi</h4>
+                            <p>Upbeat traditional music</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-headphones"></i>
+                            </div>
+                            <h4>Afrobeat</h4>
+                            <p>Modern fusion beats</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <h4>Hip Hop</h4>
+                            <p>Urban Cameroonian rap</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>Assiko</h4>
+                            <p>Coastal rhythms</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-violin"></i>
+                            </div>
+                            <h4>Traditional</h4>
+                            <p>Indigenous folk music</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites View -->
+                <div id="favorites-dashboard" class="dashboard-view">
+                    <h2>Your Favorites</h2>
+                    <div class="songs-grid">
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>Soul Makossa</h4>
+                            <p>Manu Dibango Legacy</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>Bikutsi Rhythm</h4>
+                            <p>Bikutsi Queens</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <h4>City Lights</h4>
+                            <p>Yaoundé Vibes</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playlists View -->
+                <div id="playlists-dashboard" class="dashboard-view">
+                    <h2>Your Playlists</h2>
+                    <div class="songs-grid">
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <h4>My Makossa Mix</h4>
+                            <p>12 songs • 45 min</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <h4>Cameroon Classics</h4>
+                            <p>25 songs • 1h 32min</p>
+                        </div>
+                        <div class="song-card">
+                            <div class="song-cover">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <h4>Discover Weekly</h4>
+                            <p>30 songs • 2h 15min</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile View -->
+                <div id="profile-dashboard" class="dashboard-view">
+                    <h2>Your Profile</h2>
+                    <div class="profile-section">
+                        <div class="profile-header">
+                            <div class="avatar" style="width: 100px; height: 100px; font-size: 36px;">JD</div>
+                            <div style="margin-left: 24px;">
+                                <h3>John Doe</h3>
+                                <p>john@example.com</p>
+                                <p>Fan since 2023</p>
+                            </div>
+                        </div>
+                        <div style="margin-top: 32px;">
+                            <h4>Listening Stats</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 16px;">
+                                <div class="stat-card">
+                                    <div class="stat-value">247</div>
+                                    <div class="stat-label">Songs Played</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">45</div>
+                                    <div class="stat-label">Artists Followed</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">12</div>
+                                    <div class="stat-label">Playlists Created</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Music Player -->
+        <div class="music-player">
+            <div class="player-info">
+                <div class="player-thumbnail">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="player-details">
+                    <h4>Soul Makossa</h4>
+                    <p>Manu Dibango Legacy</p>
+                </div>
+            </div>
+            <div class="player-controls">
+                <button class="player-btn">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button class="player-btn play" id="playBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="player-btn">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navigation items
+            const navItems = document.querySelectorAll('.nav-item');
+            const dashboardViews = document.querySelectorAll('.dashboard-view');
+
+            // Music player controls
+            const playBtn = document.getElementById('playBtn');
+            let isPlaying = false;
+
+            // Switch dashboard views
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const viewId = this.getAttribute('data-view');
+
+                    // Remove active class from all nav items
+                    navItems.forEach(nav => nav.classList.remove('active'));
+
+                    // Add active class to clicked item
+                    this.classList.add('active');
+
+                    // Hide all views
+                    dashboardViews.forEach(view => view.classList.remove('active'));
+
+                    // Show selected view
+                    const targetView = document.getElementById(viewId + '-dashboard');
+                    if (targetView) {
+                        targetView.classList.add('active');
+                    }
+
+                    // Update top bar title
+                    updateTopBarTitle(viewId);
+                });
+            });
+
+            // Music player play/pause
+            playBtn.addEventListener('click', function() {
+                isPlaying = !isPlaying;
+                const icon = this.querySelector('i');
+
+                if (isPlaying) {
+                    icon.className = 'fas fa-pause';
+                } else {
+                    icon.className = 'fas fa-play';
+                }
+            });
+
+            // Update top bar title based on view
+            function updateTopBarTitle(view) {
+                const titleElement = document.querySelector('.top-bar-left h1');
+                const titles = {
+                    fan: 'Discover Cameroonian Music',
+                    browse: 'Browse Music',
+                    genres: 'Music Genres',
+                    favorites: 'Your Favorites',
+                    playlists: 'Your Playlists',
+                    profile: 'Your Profile'
+                };
+
+                titleElement.textContent = titles[view] || 'AfroRhythm';
+            }
+
+            // Initialize with fan dashboard
+            updateTopBarTitle('fan');
+        });
+    </script>
+    <!-- AOS Animation Library -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="Js/fan.js"></script>
+</body>
+</html>

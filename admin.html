@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AfroRhythm - Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Bootstrap CSS for DataTables -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <style>
+        :root {
+            /* Colors */
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --text-muted: #808080;
+            --accent-primary: #1db954;
+            --accent-secondary: #ffd700;
+            --accent-hover: #1ed760;
+            --border-color: #333333;
+            --shadow: rgba(0, 0, 0, 0.3);
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 48px;
+
+            /* Border radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h1 {
+            color: var(--accent-primary);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: var(--spacing-md) 0;
+        }
+
+        .nav-item {
+            padding: var(--spacing-md) var(--spacing-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--bg-tertiary);
+            border-left-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .nav-item i {
+            margin-right: var(--spacing-md);
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 64px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .search-input {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--text-primary);
+            width: 300px;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-xl);
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Dashboard Views */
+        .dashboard-view {
+            display: none;
+        }
+
+        .dashboard-view.active {
+            display: block;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xxl);
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            background-color: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: var(--spacing-md);
+            font-size: 20px;
+        }
+
+        .stat-icon.users { background-color: #1e40af; }
+        .stat-icon.artists { background-color: #dc2626; }
+        .stat-icon.songs { background-color: #16a34a; }
+        .stat-icon.revenue { background-color: #ca8a04; }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Tables */
+        .data-table {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            margin-bottom: var(--spacing-xxl);
+        }
+
+        .table-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .table-content {
+            padding: var(--spacing-lg);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .table-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .table-content::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .table-content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        .status-badge {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-active {
+            background-color: #16a34a;
+            color: white;
+        }
+
+        .status-blocked {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .status-approved {
+            background-color: #16a34a;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #ca8a04;
+            color: #1a1a1a;
+        }
+
+        .status-rejected {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .status-expired {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .status-verified {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .status-published {
+            background-color: #16a34a;
+            color: white;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-xxl);
+            margin-bottom: var(--spacing-xxl);
+        }
+
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-input {
+                width: 200px;
+            }
+            
+            .table-header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+                align-items: flex-start;
+            }
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-action {
+            background: none;
+            border: 1px solid #444;
+            color: #b3b3b3;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-action:hover {
+            background-color: #2a2a2a;
+            color: white;
+        }
+        
+        .btn-action.view:hover {
+            border-color: #16a34a;
+            color: #16a34a;
+        }
+        
+        .btn-action.edit:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+        
+        .btn-action.delete:hover {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .bg-success { background-color: #16a34a !important; }
+        .bg-warning { background-color: #ca8a04 !important; }
+        .bg-danger { background-color: #dc2626 !important; }
+        .bg-info { background-color: #2563eb !important; }
+        .bg-secondary { background-color: #6b7280 !important; }
+
+        /* User Info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #4A6CF7;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>AfroRhythm</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="nav-item" data-view="artists">
+                    <i class="fas fa-microphone"></i>
+                    <span>Artists</span>
+                </a>
+                <a href="#" class="nav-item" data-view="songs">
+                    <i class="fas fa-music"></i>
+                    <span>Songs</span>
+                </a>
+                <a href="#" class="nav-item" data-view="subscriptions">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Subscriptions</span>
+                </a>
+                <a href="#" class="nav-item" data-view="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1>Admin Dashboard Overview</h1>
+                </div>
+                <div class="top-bar-right">
+                    <input type="text" class="search-input" id="globalSearch" placeholder="Search users, artists, songs...">
+                    <button class="icon-btn" id="notificationsBtn">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="avatar" id="adminAvatar">AD</div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard View -->
+                <div id="dashboardSection" class="dashboard-view active">
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon users">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="totalUsers">15,200</div>
+                                    <div class="stat-label">Total Users</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon artists">
+                                    <i class="fas fa-microphone-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="totalArtists">850</div>
+                                    <div class="stat-label">Artists</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon songs">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="totalSongs">4,200</div>
+                                    <div class="stat-label">Songs</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="totalRevenue">$12,500</div>
+                                    <div class="stat-label">Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-grid">
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>User Growth</h3>
+                            </div>
+                            <div class="table-content">
+                                <canvas id="userGrowthChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Artist Distribution</h3>
+                            </div>
+                            <div class="table-content">
+                                <canvas id="artistDistributionChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Users Table -->
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>Recent Users</h3>
+                            <button class="btn-secondary" id="exportUsersBtn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Songs Table -->
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>Recent Song Uploads</h3>
+                            <button class="btn-secondary" id="refreshSongsBtn">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="recentSongsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Artist</th>
+                                        <th>Genre</th>
+                                        <th>Plays</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentSongsTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users View -->
+                <div id="usersSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>User Management</h2>
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary" id="exportAllUsersBtn">
+                                <i class="fas fa-download"></i> Export All
+                            </button>
+                            <button class="btn-primary" id="addUserBtn">
+                                <i class="fas fa-plus"></i> Add New User
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>All Users</h3>
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="userSearch" placeholder="Search users...">
+                            </div>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="allUsersTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allUsersTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- User Statistics -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon users">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="activeUsers">12,456</div>
+                                    <div class="stat-label">Active Users</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon artists">
+                                    <i class="fas fa-microphone"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="artistUsers">843</div>
+                                    <div class="stat-label">Artist Accounts</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon songs">
+                                    <i class="fas fa-user-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="pendingUsers">42</div>
+                                    <div class="stat-label">Pending Users</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-user-slash"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="blockedUsers">18</div>
+                                    <div class="stat-label">Blocked Users</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Artists View -->
+                <div id="artistsSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Artist Management</h2>
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary" id="exportArtistsBtn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn-primary" id="addArtistBtn">
+                                <i class="fas fa-plus"></i> Add New Artist
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>All Artists</h3>
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="artistSearch" placeholder="Search artists...">
+                            </div>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="artistsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Genre</th>
+                                        <th>Followers</th>
+                                        <th>Songs</th>
+                                        <th>Status</th>
+                                        <th>Verification</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="artistsTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Artist Statistics -->
+                    <div class="charts-grid">
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Top Artists by Followers</h3>
+                            </div>
+                            <div class="table-content">
+                                <div id="topArtistsList">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Artist Verification Status</h3>
+                            </div>
+                            <div class="table-content">
+                                <canvas id="artistVerificationChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Songs View -->
+                <div id="songsSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Song Management</h2>
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary" id="exportSongsBtn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn-primary" id="addSongBtn">
+                                <i class="fas fa-plus"></i> Add New Song
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>All Songs</h3>
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="songSearch" placeholder="Search songs...">
+                            </div>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="songsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Artist</th>
+                                        <th>Genre</th>
+                                        <th>Plays</th>
+                                        <th>Duration</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="songsTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Song Statistics -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon songs">
+                                    <i class="fas fa-play-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="totalPlays">152.8M</div>
+                                    <div class="stat-label">Total Plays</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon users">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="publishedSongs">4,156</div>
+                                    <div class="stat-label">Published Songs</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon artists">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="pendingSongs">44</div>
+                                    <div class="stat-label">Pending Songs</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-ban"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="rejectedSongs">12</div>
+                                    <div class="stat-label">Rejected Songs</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subscriptions View -->
+                <div id="subscriptionsSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Subscription Management</h2>
+                        <button class="btn-primary" id="addSubscriptionPlanBtn">
+                            <i class="fas fa-plus"></i> Add New Plan
+                        </button>
+                    </div>
+
+                    <!-- Subscription Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">$8,450</div>
+                                    <div class="stat-label">Monthly Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon users">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">1,250</div>
+                                    <div class="stat-label">Active Subscribers</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon artists">
+                                    <i class="fas fa-microphone-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">320</div>
+                                    <div class="stat-label">Artist Subscriptions</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon songs">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">15.2%</div>
+                                    <div class="stat-label">Conversion Rate</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Plans -->
+                    <div class="data-table" style="margin-bottom: var(--spacing-xxl);">
+                        <div class="table-header">
+                            <h3>Subscription Plans</h3>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="subscriptionPlansTable">
+                                <thead>
+                                    <tr>
+                                        <th>Plan Name</th>
+                                        <th>Price</th>
+                                        <th>Duration</th>
+                                        <th>Features</th>
+                                        <th>Subscribers</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Fan Basic</td>
+                                        <td>$4.99/month</td>
+                                        <td>Monthly</td>
+                                        <td>Ad-free listening, Offline downloads</td>
+                                        <td>850</td>
+                                        <td><span class="status-badge status-active">Active</span></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                                <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fan Premium</td>
+                                        <td>$9.99/month</td>
+                                        <td>Monthly</td>
+                                        <td>All Basic + HD audio, Unlimited skips</td>
+                                        <td>400</td>
+                                        <td><span class="status-badge status-active">Active</span></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                                <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Artist Pro</td>
+                                        <td>$19.99/month</td>
+                                        <td>Monthly</td>
+                                        <td>Upload unlimited songs, Analytics dashboard</td>
+                                        <td>320</td>
+                                        <td><span class="status-badge status-active">Active</span></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                                <button class="btn-action delete"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Subscriptions -->
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>Recent Subscriptions</h3>
+                            <button class="btn-secondary" id="refreshSubscriptionsBtn">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="recentSubscriptionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Plan</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>John Smith</td>
+                                        <td>Fan Premium</td>
+                                        <td>$9.99</td>
+                                        <td>2024-01-15</td>
+                                        <td><span class="status-badge status-active">Active</span></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action view"><i class="fas fa-eye"></i></button>
+                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sarah Johnson</td>
+                                        <td>Artist Pro</td>
+                                        <td>$19.99</td>
+                                        <td>2024-01-14</td>
+                                        <td><span class="status-badge status-active">Active</span></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action view"><i class="fas fa-eye"></i></button>
+                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mike Wilson</td>
+                                        <td>Fan Basic</td>
+                                        <td>$4.99</td>
+                                        <td>2024-01-13</td>
+                                        <td><span class="status-badge status-expired">Expired</span></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action view"><i class="fas fa-eye"></i></button>
+                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports View -->
+                <div id="reportsSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Reports & Analytics</h2>
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary" id="exportReportBtn">
+                                <i class="fas fa-download"></i> Export Report
+                            </button>
+                            <button class="btn-primary" id="generateReportBtn">
+                                <i class="fas fa-chart-bar"></i> Generate Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon songs">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">2.1M</div>
+                                    <div class="stat-label">Total Streams</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon users">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">45,000</div>
+                                    <div class="stat-label">Hours Streamed</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon artists">
+                                    <i class="fas fa-download"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">12,000</div>
+                                    <div class="stat-label">Downloads</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-share"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">8,500</div>
+                                    <div class="stat-label">Shares</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="charts-grid">
+                        <!-- Analytics Chart -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Engagement Analytics</h3>
+                            </div>
+                            <div class="table-content">
+                                <canvas id="analyticsChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Genre Distribution -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Genre Popularity</h3>
+                            </div>
+                            <div class="table-content">
+                                <canvas id="genreChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Chart -->
+                    <div class="data-table" style="margin-bottom: var(--spacing-xxl);">
+                        <div class="table-header">
+                            <h3>Revenue Breakdown</h3>
+                        </div>
+                        <div class="table-content">
+                            <canvas id="revenueChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Performing Content -->
+                    <div class="charts-grid">
+                        <!-- Top Songs -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Top Performing Songs</h3>
+                            </div>
+                            <div class="table-content">
+                                <table class="table table-dark table-striped" id="topSongsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Song</th>
+                                            <th>Artist</th>
+                                            <th>Streams</th>
+                                            <th>Growth</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Soul Makossa</td>
+                                            <td>Manu Dibango</td>
+                                            <td>125,000</td>
+                                            <td><span style="color: #1db954;">+15%</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Bikutsi Nights</td>
+                                            <td>Traditional</td>
+                                            <td>98,000</td>
+                                            <td><span style="color: #1db954;">+8%</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Afrobeat Dreams</td>
+                                            <td>Modern Masters</td>
+                                            <td>87,000</td>
+                                            <td><span style="color: #1db954;">+12%</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Top Artists -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Top Artists</h3>
+                            </div>
+                            <div class="table-content">
+                                <table class="table table-dark table-striped" id="topArtistsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Artist</th>
+                                            <th>Genre</th>
+                                            <th>Followers</th>
+                                            <th>Streams</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Manu Dibango Legacy</td>
+                                            <td>Makossa</td>
+                                            <td>45,000</td>
+                                            <td>500,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Bikutsi Queens</td>
+                                            <td>Bikutsi</td>
+                                            <td>32,000</td>
+                                            <td>380,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Afrobeat Collective</td>
+                                            <td>Afrobeat</td>
+                                            <td>28,000</td>
+                                            <td>320,000</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="settingsSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Settings</h2>
+                        <button class="btn-primary" id="saveSettingsBtn">
+                            <i class="fas fa-save"></i> Save All Settings
+                        </button>
+                    </div>
+
+                    <!-- Settings Grid -->
+                    <div class="charts-grid">
+                        <!-- General Settings -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>General Settings</h3>
+                            </div>
+                            <div class="table-content">
+                                <div class="form-group">
+                                    <label class="form-label">Platform Name</label>
+                                    <input type="text" class="form-control" value="AfroRhythm">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Default Language</label>
+                                    <select class="form-control">
+                                        <option value="en">English</option>
+                                        <option value="fr" selected>French</option>
+                                        <option value="es">Spanish</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Timezone</label>
+                                    <select class="form-control">
+                                        <option value="utc">UTC</option>
+                                        <option value="wat" selected>West Africa Time (WAT)</option>
+                                        <option value="cat">Central Africa Time (CAT)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" checked> Enable Registration
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content Moderation -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Content Moderation</h3>
+                            </div>
+                            <div class="table-content">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" checked> Auto-approve Artist Applications
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" checked> Enable Content Filtering
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Max File Size (MB)</label>
+                                    <input type="number" class="form-control" value="50" min="1" max="500">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Allowed File Types</label>
+                                    <input type="text" class="form-control" value="mp3, wav, flac, m4a">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Settings -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Payment Settings</h3>
+                            </div>
+                            <div class="table-content">
+                                <div class="form-group">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-control">
+                                        <option value="usd">USD ($)</option>
+                                        <option value="eur">EUR (€)</option>
+                                        <option value="xaf" selected>XAF (FCFA)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Platform Fee (%)</label>
+                                    <input type="number" class="form-control" value="15" min="0" max="50" step="0.5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" checked> Enable Stripe Payments
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox"> Enable PayPal
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Settings -->
+                        <div class="data-table">
+                            <div class="table-header">
+                                <h3>Email Configuration</h3>
+                            </div>
+                            <div class="table-content">
+                                <div class="form-group">
+                                    <label class="form-label">SMTP Server</label>
+                                    <input type="text" class="form-control" value="smtp.gmail.com">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" value="587">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" checked> Enable Email Notifications
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <button class="btn-secondary w-100">
+                                        <i class="fas fa-envelope"></i> Test Email Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables and Chart.js -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="Js/admin.js"></script>
+</body>
+</html>

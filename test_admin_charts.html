@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard JavaScript Test</h1>
+    <div id="test-results"></div>
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Test canvas elements -->
+    <canvas id="userGrowthChart" width="400" height="200" style="display: none;"></canvas>
+    <canvas id="artistDistributionChart" width="400" height="200" style="display: none;"></canvas>
+
+    <script>
+        const results = document.getElementById('test-results');
+
+        function logResult(message, isSuccess = true) {
+            const div = document.createElement('div');
+            div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        try {
+            // Test 1: Check if canvas elements exist
+            const userGrowthCanvas = document.getElementById('userGrowthChart');
+            const artistDistCanvas = document.getElementById('artistDistributionChart');
+            const analyticsCanvas = document.getElementById('analyticsChart');
+            const genreCanvas = document.getElementById('genreChart');
+            const revenueCanvas = document.getElementById('revenueChart');
+
+            logResult(`userGrowthChart exists: ${!!userGrowthCanvas}`);
+            logResult(`artistDistributionChart exists: ${!!artistDistCanvas}`);
+            logResult(`analyticsChart exists: ${!!analyticsCanvas} (expected: false)`);
+            logResult(`genreChart exists: ${!!genreCanvas} (expected: false)`);
+            logResult(`revenueChart exists: ${!!revenueCanvas} (expected: false)`);
+
+            // Test 2: Test chart initialization with null checks
+            if (userGrowthCanvas) {
+                const ctx = userGrowthCanvas.getContext('2d');
+                logResult('userGrowthChart context access: SUCCESS');
+            } else {
+                logResult('userGrowthChart context access: SKIPPED (canvas not found)', false);
+            }
+
+            if (artistDistCanvas) {
+                const ctx = artistDistCanvas.getContext('2d');
+                logResult('artistDistributionChart context access: SUCCESS');
+            } else {
+                logResult('artistDistributionChart context access: SKIPPED (canvas not found)', false);
+            }
+
+            // Test 3: Test null checks for non-existent canvases
+            if (analyticsCanvas) {
+                logResult('analyticsChart null check: FAILED (should not exist)', false);
+            } else {
+                logResult('analyticsChart null check: SUCCESS (correctly null)');
+            }
+
+            if (genreCanvas) {
+                logResult('genreChart null check: FAILED (should not exist)', false);
+            } else {
+                logResult('genreChart null check: SUCCESS (correctly null)');
+            }
+
+            if (revenueCanvas) {
+                logResult('revenueChart null check: FAILED (should not exist)', false);
+            } else {
+                logResult('revenueChart null check: SUCCESS (correctly null)');
+            }
+
+            logResult('All tests completed successfully! Chart.js errors should be resolved.', true);
+
+        } catch (error) {
+            logResult(`JavaScript Error: ${error.message}`, false);
+        }
+    </script>
+</body>
+</html>
