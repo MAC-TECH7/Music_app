@@ -472,19 +472,523 @@
             width: 30%;
         }
 
-        /* Section Headers */
-        .content-area h2 {
-            font-size: 28px;
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xxl);
+            margin-bottom: var(--spacing-xxl);
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: var(--spacing-md);
+            z-index: 1;
+            position: relative;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: var(--spacing-xl);
+            opacity: 0.9;
+            z-index: 1;
+            position: relative;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: var(--spacing-xl);
+            z-index: 1;
+            position: relative;
+        }
+
+        .hero-stats .stat {
+            text-align: center;
+        }
+
+        .hero-stats .stat-number {
+            display: block;
+            font-size: 2rem;
             font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .hero-stats .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: var(--spacing-lg);
         }
 
-        .content-area section {
-            margin-bottom: var(--spacing-xxl);
+        .section-header h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
         }
 
-        .content-area section:last-child {
-            margin-bottom: 120px; /* Account for fixed music player */
+        .section-header h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .see-all-link {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .see-all-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        /* Enhanced Song Cards */
+        .song-card {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .song-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .song-info {
+            padding: var(--spacing-md) 0;
+        }
+
+        .song-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .song-info p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .song-actions {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            display: flex;
+            gap: var(--spacing-xs);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .song-card:hover .song-actions {
+            opacity: 1;
+        }
+
+        .song-actions button {
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            color: var(--text-primary);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .song-actions button:hover {
+            background: var(--accent-primary);
+            transform: scale(1.1);
+        }
+
+        .favorite-btn.favorited {
+            color: var(--accent-primary);
+        }
+
+        .favorite-btn.favorited i::before {
+            content: '\f004'; /* solid heart */
+        }
+
+        /* Playlist Cards */
+        .playlists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .playlist-card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .playlist-card:hover {
+            background-color: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+
+        .playlist-cover {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: var(--text-primary);
+        }
+
+        .playlist-info h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .playlist-info p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .play-playlist-btn {
+            position: absolute;
+            bottom: var(--spacing-md);
+            right: var(--spacing-md);
+            background: var(--accent-primary);
+            border: none;
+            color: var(--text-primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0;
+        }
+
+        .playlist-card:hover .play-playlist-btn {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .create-new-card {
+            border: 2px dashed var(--border-color);
+            background: transparent;
+        }
+
+        .create-new-card:hover {
+            border-color: var(--accent-primary);
+            background: rgba(29, 185, 84, 0.1);
+        }
+
+        .create-icon {
+            background: var(--bg-tertiary) !important;
+            color: var(--accent-primary);
+        }
+
+        /* Tabs */
+        .my-music-tabs, .following-tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: var(--spacing-md) 0;
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            min-height: 400px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Lists */
+        .songs-list, .artists-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .song-item, .artist-item {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .song-item:hover, .artist-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .song-item-cover, .artist-item-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            margin-right: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--text-primary);
+        }
+
+        .song-item-info h5, .artist-item-info h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .song-item-info p, .artist-item-info p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Follow Button */
+        .follow-btn {
+            background: var(--accent-primary);
+            border: none;
+            color: var(--text-primary);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: var(--spacing-sm);
+        }
+
+        .follow-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .follow-btn.following {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xxl);
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-lg);
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.4rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Activity Feed */
+        .activity-feed {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .activity-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-right: var(--spacing-md);
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-content p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: var(--spacing-xs);
+        }
+
+        /* Playlists Header */
+        .playlists-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .playlists-header h2 {
+            margin: 0;
+        }
+
+        .create-playlist-btn {
+            background: var(--accent-primary);
+            border: none;
+            color: var(--text-primary);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            transition: all 0.2s ease;
+        }
+
+        .create-playlist-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Followed Artists Grid */
+        .followed-artists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .followed-artist-card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .followed-artist-card:hover {
+            background-color: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+
+        .followed-artist-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 24px;
+            color: var(--text-primary);
+            margin: 0 auto var(--spacing-md);
+        }
+
+        .followed-artist-card h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .followed-artist-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .unfollow-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .unfollow-btn:hover {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+            color: var(--text-primary);
         }
 
         /* Responsive */
@@ -519,9 +1023,9 @@
                 <h1>AfroRhythm</h1>
             </div>
             <nav class="sidebar-nav">
-                <div class="nav-item active" data-view="fan">
+                <div class="nav-item active" data-view="discover">
                     <i class="fas fa-home"></i>
-                    Home
+                    Discover
                 </div>
                 <div class="nav-item" data-view="browse">
                     <i class="fas fa-search"></i>
@@ -531,13 +1035,17 @@
                     <i class="fas fa-tags"></i>
                     Genres
                 </div>
-                <div class="nav-item" data-view="favorites">
-                    <i class="fas fa-heart"></i>
-                    Favorites
+                <div class="nav-item" data-view="mymusic">
+                    <i class="fas fa-music"></i>
+                    My Music
                 </div>
                 <div class="nav-item" data-view="playlists">
                     <i class="fas fa-list"></i>
                     Playlists
+                </div>
+                <div class="nav-item" data-view="following">
+                    <i class="fas fa-user-friends"></i>
+                    Following
                 </div>
                 <div class="nav-item" data-view="profile">
                     <i class="fas fa-user"></i>
@@ -564,208 +1072,353 @@
 
             <!-- Content Area -->
             <div class="content-area">
-                <!-- Fan Dashboard -->
-                <div id="fan-dashboard" class="dashboard-view active">
+                <!-- Discover View -->
+                <div id="discover-dashboard" class="dashboard-view active">
+                    <!-- Hero Section -->
+                    <section class="hero-section">
+                        <div class="hero-content">
+                            <h1>Discover Cameroonian Music</h1>
+                            <p>Explore the rich sounds of Cameroon - from traditional rhythms to modern beats</p>
+                            <div class="hero-stats">
+                                <div class="stat">
+                                    <span class="stat-number">10K+</span>
+                                    <span class="stat-label">Songs</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-number">500+</span>
+                                    <span class="stat-label">Artists</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-number">50+</span>
+                                    <span class="stat-label">Genres</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- Featured Artists -->
                     <section>
-                        <h2>Featured Artists</h2>
+                        <div class="section-header">
+                            <h2>Featured Artists</h2>
+                            <a href="#" class="see-all-link" data-view="browse">See All</a>
+                        </div>
                         <div class="featured-artists">
-                            <div class="artist-circle">
+                            <div class="artist-circle" data-artist-id="1">
                                 <div class="artist-avatar">MA</div>
                                 <p>Manu Dibango Legacy</p>
+                                <button class="follow-btn" data-artist-id="1">Follow</button>
                             </div>
-                            <div class="artist-circle">
+                            <div class="artist-circle" data-artist-id="2">
                                 <div class="artist-avatar">BQ</div>
                                 <p>Bikutsi Queens</p>
+                                <button class="follow-btn" data-artist-id="2">Follow</button>
                             </div>
-                            <div class="artist-circle">
+                            <div class="artist-circle" data-artist-id="3">
                                 <div class="artist-avatar">YV</div>
                                 <p>Yaoundé Vibes</p>
+                                <button class="follow-btn" data-artist-id="3">Follow</button>
                             </div>
-                            <div class="artist-circle">
+                            <div class="artist-circle" data-artist-id="4">
                                 <div class="artist-avatar">BR</div>
                                 <p>Bamenda Roots</p>
+                                <button class="follow-btn" data-artist-id="4">Follow</button>
                             </div>
-                            <div class="artist-circle">
+                            <div class="artist-circle" data-artist-id="5">
                                 <div class="artist-avatar">DB</div>
                                 <p>Douala Beats</p>
+                                <button class="follow-btn" data-artist-id="5">Follow</button>
                             </div>
                         </div>
                     </section>
 
                     <!-- Trending Songs -->
                     <section>
-                        <h2>Trending Songs</h2>
+                        <div class="section-header">
+                            <h2>Trending This Week</h2>
+                            <a href="#" class="see-all-link" data-view="browse">See All</a>
+                        </div>
                         <div class="songs-grid">
-                            <div class="song-card">
+                            <div class="song-card" data-song-id="1">
                                 <div class="song-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <h4>Soul Makossa</h4>
-                                <p>Manu Dibango Legacy</p>
+                                <div class="song-info">
+                                    <h4>Soul Makossa</h4>
+                                    <p>Manu Dibango Legacy</p>
+                                </div>
+                                <div class="song-actions">
+                                    <button class="play-btn" data-song-id="1">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="favorite-btn" data-song-id="1">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                    <button class="add-to-playlist-btn" data-song-id="1">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="song-card">
+                            <div class="song-card" data-song-id="2">
                                 <div class="song-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <h4>Bikutsi Rhythm</h4>
-                                <p>Bikutsi Queens</p>
+                                <div class="song-info">
+                                    <h4>Bikutsi Rhythm</h4>
+                                    <p>Bikutsi Queens</p>
+                                </div>
+                                <div class="song-actions">
+                                    <button class="play-btn" data-song-id="2">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="favorite-btn" data-song-id="2">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                    <button class="add-to-playlist-btn" data-song-id="2">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="song-card">
+                            <div class="song-card" data-song-id="3">
                                 <div class="song-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <h4>City Lights</h4>
-                                <p>Yaoundé Vibes</p>
+                                <div class="song-info">
+                                    <h4>City Lights</h4>
+                                    <p>Yaoundé Vibes</p>
+                                </div>
+                                <div class="song-actions">
+                                    <button class="play-btn" data-song-id="3">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="favorite-btn" data-song-id="3">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                    <button class="add-to-playlist-btn" data-song-id="3">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="song-card">
+                            <div class="song-card" data-song-id="4">
                                 <div class="song-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <h4>Mountain Song</h4>
-                                <p>Bamenda Roots</p>
+                                <div class="song-info">
+                                    <h4>Mountain Song</h4>
+                                    <p>Bamenda Roots</p>
+                                </div>
+                                <div class="song-actions">
+                                    <button class="play-btn" data-song-id="4">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="favorite-btn" data-song-id="4">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                    <button class="add-to-playlist-btn" data-song-id="4">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="song-card">
+                            <div class="song-card" data-song-id="5">
                                 <div class="song-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <h4>Coastal Vibes</h4>
-                                <p>Douala Beats</p>
+                                <div class="song-info">
+                                    <h4>Coastal Vibes</h4>
+                                    <p>Douala Beats</p>
+                                </div>
+                                <div class="song-actions">
+                                    <button class="play-btn" data-song-id="5">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="favorite-btn" data-song-id="5">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                    <button class="add-to-playlist-btn" data-song-id="5">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="song-card">
+                            <div class="song-card" data-song-id="6">
                                 <div class="song-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <h4>African Sunrise</h4>
-                                <p>New Gen Collective</p>
+                                <div class="song-info">
+                                    <h4>African Sunrise</h4>
+                                    <p>New Gen Collective</p>
+                                </div>
+                                <div class="song-actions">
+                                    <button class="play-btn" data-song-id="6">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="favorite-btn" data-song-id="6">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                    <button class="add-to-playlist-btn" data-song-id="6">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </section>
 
-                    <!-- Recently Played -->
+                    <!-- Recommended Playlists -->
                     <section>
-                        <h2>Recently Played</h2>
-                        <div class="recently-played">
-                            <div class="recent-song">
-                                <div class="recent-cover">
+                        <div class="section-header">
+                            <h2>Recommended For You</h2>
+                            <a href="#" class="see-all-link" data-view="playlists">See All</a>
+                        </div>
+                        <div class="playlists-grid">
+                            <div class="playlist-card" data-playlist-id="1">
+                                <div class="playlist-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <div class="recent-info">
-                                    <h5>Soul Makossa</h5>
-                                    <p>Manu Dibango Legacy</p>
+                                <div class="playlist-info">
+                                    <h4>Cameroon Classics</h4>
+                                    <p>25 songs • By AfroRhythm</p>
                                 </div>
+                                <button class="play-playlist-btn" data-playlist-id="1">
+                                    <i class="fas fa-play"></i>
+                                </button>
                             </div>
-                            <div class="recent-song">
-                                <div class="recent-cover">
+                            <div class="playlist-card" data-playlist-id="2">
+                                <div class="playlist-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <div class="recent-info">
-                                    <h5>Bikutsi Rhythm</h5>
-                                    <p>Bikutsi Queens</p>
+                                <div class="playlist-info">
+                                    <h4>Makossa Masters</h4>
+                                    <p>18 songs • By AfroRhythm</p>
                                 </div>
+                                <button class="play-playlist-btn" data-playlist-id="2">
+                                    <i class="fas fa-play"></i>
+                                </button>
                             </div>
-                            <div class="recent-song">
-                                <div class="recent-cover">
+                            <div class="playlist-card" data-playlist-id="3">
+                                <div class="playlist-cover">
                                     <i class="fas fa-music"></i>
                                 </div>
-                                <div class="recent-info">
-                                    <h5>City Lights</h5>
-                                    <p>Yaoundé Vibes</p>
+                                <div class="playlist-info">
+                                    <h4>Bikutsi Beats</h4>
+                                    <p>22 songs • By AfroRhythm</p>
                                 </div>
-                            </div>
-                            <div class="recent-song">
-                                <div class="recent-cover">
-                                    <i class="fas fa-music"></i>
-                                </div>
-                                <div class="recent-info">
-                                    <h5>Mountain Song</h5>
-                                    <p>Bamenda Roots</p>
-                                </div>
+                                <button class="play-playlist-btn" data-playlist-id="3">
+                                    <i class="fas fa-play"></i>
+                                </button>
                             </div>
                         </div>
                     </section>
                 </div>
 
-                <!-- Browse View -->
-                <div id="browse-dashboard" class="dashboard-view">
-                    <h2>Browse Music</h2>
-                    <div class="songs-grid">
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-music"></i>
-                            </div>
-                            <h4>New Release</h4>
-                            <p>Latest Cameroonian hits</p>
+                <!-- My Music View -->
+                <div id="mymusic-dashboard" class="dashboard-view">
+                    <div class="my-music-tabs">
+                        <button class="tab-btn active" data-tab="favorites">Favorites</button>
+                        <button class="tab-btn" data-tab="history">History</button>
+                        <button class="tab-btn" data-tab="downloads">Downloads</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Favorites Tab -->
+                        <div id="favorites-tab" class="tab-pane active">
+                            <section>
+                                <div class="section-header">
+                                    <h2>Favorite Songs</h2>
+                                </div>
+                                <div class="songs-list" id="favorite-songs-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-heart"></i>
+                                        <h3>No favorite songs yet</h3>
+                                        <p>Start exploring and save songs you love!</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <div class="section-header">
+                                    <h2>Favorite Artists</h2>
+                                </div>
+                                <div class="artists-list" id="favorite-artists-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-user"></i>
+                                        <h3>No favorite artists yet</h3>
+                                        <p>Follow artists to see their latest releases!</p>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-music"></i>
-                            </div>
-                            <h4>Popular</h4>
-                            <p>Most played this week</p>
+
+                        <!-- History Tab -->
+                        <div id="history-tab" class="tab-pane">
+                            <section>
+                                <div class="section-header">
+                                    <h2>Recently Played</h2>
+                                    <button class="clear-history-btn">Clear History</button>
+                                </div>
+                                <div class="songs-list" id="history-songs-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-history"></i>
+                                        <h3>No listening history yet</h3>
+                                        <p>Start listening to build your history!</p>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-music"></i>
-                            </div>
-                            <h4>Discover</h4>
-                            <p>New artists to explore</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-music"></i>
-                            </div>
-                            <h4>Live Sessions</h4>
-                            <p>Live performances</p>
+
+                        <!-- Downloads Tab -->
+                        <div id="downloads-tab" class="tab-pane">
+                            <section>
+                                <div class="section-header">
+                                    <h2>Downloaded Songs</h2>
+                                </div>
+                                <div class="songs-list" id="downloads-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-download"></i>
+                                        <h3>No downloads yet</h3>
+                                        <p>Download songs to listen offline!</p>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     </div>
                 </div>
 
-                <!-- Genres View -->
-                <div id="genres-dashboard" class="dashboard-view">
-                    <h2>Music Genres</h2>
-                    <div class="songs-grid">
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-drum"></i>
-                            </div>
-                            <h4>Makossa</h4>
-                            <p>Traditional Cameroonian rhythm</p>
+                <!-- Following View -->
+                <div id="following-dashboard" class="dashboard-view">
+                    <div class="following-tabs">
+                        <button class="tab-btn active" data-tab="artists">Artists</button>
+                        <button class="tab-btn" data-tab="activity">Activity Feed</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Artists Tab -->
+                        <div id="artists-tab" class="tab-pane active">
+                            <section>
+                                <div class="section-header">
+                                    <h2>Artists You Follow</h2>
+                                </div>
+                                <div class="followed-artists-grid" id="followed-artists-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-user-friends"></i>
+                                        <h3>Not following any artists yet</h3>
+                                        <p>Follow artists to stay updated with their latest music!</p>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-guitar"></i>
-                            </div>
-                            <h4>Bikutsi</h4>
-                            <p>Upbeat traditional music</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-headphones"></i>
-                            </div>
-                            <h4>Afrobeat</h4>
-                            <p>Modern fusion beats</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-microphone"></i>
-                            </div>
-                            <h4>Hip Hop</h4>
-                            <p>Urban Cameroonian rap</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-music"></i>
-                            </div>
-                            <h4>Assiko</h4>
-                            <p>Coastal rhythms</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-violin"></i>
-                            </div>
-                            <h4>Traditional</h4>
-                            <p>Indigenous folk music</p>
+
+                        <!-- Activity Feed Tab -->
+                        <div id="activity-tab" class="tab-pane">
+                            <section>
+                                <div class="section-header">
+                                    <h2>Recent Activity</h2>
+                                </div>
+                                <div class="activity-feed" id="activity-feed-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-bell"></i>
+                                        <h3>No recent activity</h3>
+                                        <p>Follow artists to see their updates here!</p>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     </div>
                 </div>
@@ -800,29 +1453,73 @@
 
                 <!-- Playlists View -->
                 <div id="playlists-dashboard" class="dashboard-view">
-                    <h2>Your Playlists</h2>
-                    <div class="songs-grid">
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-list"></i>
+                    <div class="playlists-header">
+                        <h2>Your Playlists</h2>
+                        <button class="create-playlist-btn" id="createPlaylistBtn">
+                            <i class="fas fa-plus"></i> Create Playlist
+                        </button>
+                    </div>
+
+                    <div class="playlists-content">
+                        <!-- User's Playlists -->
+                        <section class="user-playlists">
+                            <div class="playlists-grid" id="user-playlists-list">
+                                <div class="playlist-card create-new-card" id="createNewPlaylistCard">
+                                    <div class="playlist-cover create-icon">
+                                        <i class="fas fa-plus"></i>
+                                    </div>
+                                    <div class="playlist-info">
+                                        <h4>Create New Playlist</h4>
+                                        <p>Start building your collection</p>
+                                    </div>
+                                </div>
                             </div>
-                            <h4>My Makossa Mix</h4>
-                            <p>12 songs • 45 min</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-list"></i>
+                        </section>
+
+                        <!-- Recommended Playlists -->
+                        <section class="recommended-playlists">
+                            <div class="section-header">
+                                <h3>Made For You</h3>
                             </div>
-                            <h4>Cameroon Classics</h4>
-                            <p>25 songs • 1h 32min</p>
-                        </div>
-                        <div class="song-card">
-                            <div class="song-cover">
-                                <i class="fas fa-list"></i>
+                            <div class="playlists-grid">
+                                <div class="playlist-card" data-playlist-id="rec1">
+                                    <div class="playlist-cover">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="playlist-info">
+                                        <h4>Discover Weekly</h4>
+                                        <p>30 songs • Updated weekly</p>
+                                    </div>
+                                    <button class="play-playlist-btn" data-playlist-id="rec1">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                <div class="playlist-card" data-playlist-id="rec2">
+                                    <div class="playlist-cover">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="playlist-info">
+                                        <h4>Release Radar</h4>
+                                        <p>25 songs • New releases</p>
+                                    </div>
+                                    <button class="play-playlist-btn" data-playlist-id="rec2">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                <div class="playlist-card" data-playlist-id="rec3">
+                                    <div class="playlist-cover">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="playlist-info">
+                                        <h4>Daily Mix 1</h4>
+                                        <p>50 songs • Your taste</p>
+                                    </div>
+                                    <button class="play-playlist-btn" data-playlist-id="rec3">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <h4>Discover Weekly</h4>
-                            <p>30 songs • 2h 15min</p>
-                        </div>
+                        </section>
                     </div>
                 </div>
 
@@ -924,6 +1621,35 @@
                     // Update top bar title
                     updateTopBarTitle(viewId);
                 });
+            // Update top bar title
+                    updateTopBarTitle(viewId);
+                });
+            });
+
+            // Initialize views
+            initializeViews();
+
+            // Tab switching functionality
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('tab-btn')) {
+                    const tabContainer = e.target.closest('.my-music-tabs, .following-tabs');
+                    if (tabContainer) {
+                        const tabBtns = tabContainer.querySelectorAll('.tab-btn');
+                        const tabPanes = tabContainer.nextElementSibling.querySelectorAll('.tab-pane');
+                        const targetTab = e.target.getAttribute('data-tab');
+
+                        // Remove active class from all tabs
+                        tabBtns.forEach(btn => btn.classList.remove('active'));
+                        tabPanes.forEach(pane => pane.classList.remove('active'));
+
+                        // Add active class to clicked tab
+                        e.target.classList.add('active');
+                        const targetPane = tabContainer.nextElementSibling.querySelector(`#${targetTab}-tab`);
+                        if (targetPane) {
+                            targetPane.classList.add('active');
+                        }
+                    }
+                }
             });
 
             // Music player play/pause
@@ -938,24 +1664,29 @@
                 }
             });
 
+            // Initialize views when they become active
+            function initializeViews() {
+                // This will be called when switching to views that need initialization
+            }
+
             // Update top bar title based on view
             function updateTopBarTitle(view) {
                 const titleElement = document.querySelector('.top-bar-left h1');
                 const titles = {
-                    fan: 'Discover Cameroonian Music',
+                    discover: 'Discover Cameroonian Music',
                     browse: 'Browse Music',
                     genres: 'Music Genres',
-                    favorites: 'Your Favorites',
-                    playlists: 'Your Playlists',
-                    profile: 'Your Profile'
+                    mymusic: 'My Music',
+                    playlists: 'My Playlists',
+                    following: 'Following',
+                    profile: 'My Profile'
                 };
 
                 titleElement.textContent = titles[view] || 'AfroRhythm';
             }
 
-            // Initialize with fan dashboard
-            updateTopBarTitle('fan');
-        });
+            // Initialize with discover dashboard
+            updateTopBarTitle('discover');
     </script>
     <!-- AOS Animation Library -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>

@@ -21,14 +21,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize genre filtering
     initializeGenreFiltering();
     
-    // Animate stats counters
-    animateStats();
-    
     // Setup navigation
     setupNavigation();
     
+    // Setup user interactions
+    setupUserInteractions();
+    
     // Setup logout
     setupLogout();
+    
+    // Load user data
+    loadUserData();
+    
+    // Initialize current view
+    initializeCurrentView();
+    
+    // Load user data
+    loadUserData();
 });
 
 // Global variables
@@ -36,6 +45,29 @@ let globalAudioPlayer = null;
 let isPlaying = false;
 let currentSongIndex = 0;
 let currentVolume = 0.7;
+let currentUser = null;
+let userFavorites = { songs: [], artists: [] };
+let userFollowing = [];
+let userPlaylists = [];
+let listeningHistory = [];
+
+// Sample data
+const sampleSongs = [
+    { id: 1, title: 'Soul Makossa', artist: 'Manu Dibango Legacy', genre: 'Makossa', duration: '4:32', plays: 245000 },
+    { id: 2, title: 'Bikutsi Rhythm', artist: 'Bikutsi Queens', genre: 'Bikutsi', duration: '3:45', plays: 189000 },
+    { id: 3, title: 'City Lights', artist: 'Yaoundé Vibes', genre: 'Afrobeat', duration: '5:12', plays: 156000 },
+    { id: 4, title: 'Mountain Song', artist: 'Bamenda Roots', genre: 'Traditional', duration: '4:08', plays: 134000 },
+    { id: 5, title: 'Coastal Vibes', artist: 'Douala Beats', genre: 'Assiko', duration: '3:58', plays: 112000 },
+    { id: 6, title: 'African Sunrise', artist: 'New Gen Collective', genre: 'Afrobeat', duration: '4:45', plays: 98000 }
+];
+
+const sampleArtists = [
+    { id: 1, name: 'Manu Dibango Legacy', followers: 45000, monthlyListeners: 245000 },
+    { id: 2, name: 'Bikutsi Queens', followers: 32000, monthlyListeners: 189000 },
+    { id: 3, name: 'Yaoundé Vibes', followers: 28000, monthlyListeners: 156000 },
+    { id: 4, name: 'Bamenda Roots', followers: 25000, monthlyListeners: 134000 },
+    { id: 5, name: 'Douala Beats', followers: 22000, monthlyListeners: 112000 }
+];
 
 // Check if user is logged in
 function checkAuth() {
@@ -79,24 +111,612 @@ function checkAuth() {
     return true;
 }
 
-// Setup logout functionality
-function setupLogout() {
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
+// Setup user interactions (favorites, following, playlists)
+function setupUserInteractions() {
+    // Favorite song buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.favorite-btn')) {
             e.preventDefault();
-            if (confirm('Are you sure you want to logout?')) {
-                // Clear user session
-                localStorage.removeItem('afroUser');
-                // Stop music if playing
-                if (globalAudioPlayer) {
-                    globalAudioPlayer.pause();
-                }
-                // Redirect to login page
-                window.location.href = 'auth/login.html';
+            const btn = e.target.closest('.favorite-btn');
+            const songId = parseInt(btn.getAttribute('data-song-id'));
+            toggleFavoriteSong(songId, btn);
+        }
+        
+        // Follow artist buttons
+        if (e.target.closest('.follow-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.follow-btn');
+            const artistId = parseInt(btn.getAttribute('data-artist-id'));
+            toggleFollowArtist(artistId, btn);
+        }
+        
+        // Play buttons
+        if (e.target.closest('.play-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.play-btn');
+            const songId = parseInt(btn.getAttribute('data-song-id'));
+            playSong(songId);
+        }
+        
+        // Add to playlist buttons
+        if (e.target.closest('.add-to-playlist-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.add-to-playlist-btn');
+            const songId = parseInt(btn.getAttribute('data-song-id'));
+            showAddToPlaylistModal(songId);
+        }
+        
+        // Create playlist button
+        if (e.target.closest('#createPlaylistBtn, #createNewPlaylistCard')) {
+            e.preventDefault();
+            showCreatePlaylistModal();
+        }
+        
+        // Clear history button
+        if (e.target.closest('.clear-history-btn')) {
+            e.preventDefault();
+            clearListeningHistory();
+        }
+    });
+}
+
+// Toggle favorite song
+function toggleFavoriteSong(songId, btn) {
+    const songIndex = userFavorites.songs.indexOf(songId);
+    
+    if (songIndex === -1) {
+        // Add to favorites
+        userFavorites.songs.push(songId);
+        btn.classList.add('favorited');
+        showNotification('Added to favorites!', 'success');
+    } else {
+        // Remove from favorites
+        userFavorites.songs.splice(songIndex, 1);
+        btn.classList.remove('favorited');
+        showNotification('Removed from favorites', 'info');
+    }
+    
+    // Save to localStorage
+    saveUserData();
+    
+    // Update favorites view if currently visible
+    if (document.getElementById('favorites-tab').classList.contains('active')) {
+        updateFavoritesView();
+    }
+}
+
+// Toggle follow artist
+function toggleFollowArtist(artistId, btn) {
+    const artistIndex = userFollowing.indexOf(artistId);
+    
+    if (artistIndex === -1) {
+        // Follow artist
+        userFollowing.push(artistId);
+        btn.classList.add('following');
+        btn.textContent = 'Following';
+        showNotification('Artist followed!', 'success');
+    } else {
+        // Unfollow artist
+        userFollowing.splice(artistIndex, 1);
+        btn.classList.remove('following');
+        btn.textContent = 'Follow';
+        showNotification('Unfollowed artist', 'info');
+    }
+    
+    // Save to localStorage
+    saveUserData();
+    
+    // Update following view if currently visible
+    if (document.getElementById('following-dashboard').classList.contains('active')) {
+        updateFollowingView();
+    }
+}
+
+// Play song
+function playSong(songId) {
+    const song = sampleSongs.find(s => s.id === songId);
+    if (song) {
+        // Add to listening history
+        addToHistory(songId);
+        
+        // Update player UI
+        updatePlayerUI(song);
+        
+        // Show notification
+        showNotification(`Now playing: ${song.title}`, 'info');
+    }
+}
+
+// Add song to listening history
+function addToHistory(songId) {
+    const existingIndex = listeningHistory.findIndex(item => item.songId === songId);
+    
+    if (existingIndex !== -1) {
+        // Move to top
+        listeningHistory.splice(existingIndex, 1);
+    }
+    
+    listeningHistory.unshift({
+        songId: songId,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Keep only last 50 items
+    if (listeningHistory.length > 50) {
+        listeningHistory = listeningHistory.slice(0, 50);
+    }
+    
+    saveUserData();
+}
+
+// Show add to playlist modal
+function showAddToPlaylistModal(songId) {
+    const song = sampleSongs.find(s => s.id === songId);
+    if (!song) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add to Playlist</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Add "${song.title}" to a playlist:</p>
+                    <div class="playlists-list">
+                        ${userPlaylists.map(playlist => `
+                            <div class="playlist-option" data-playlist-id="${playlist.id}">
+                                <div class="playlist-option-info">
+                                    <h6>${playlist.name}</h6>
+                                    <small>${playlist.songs.length} songs</small>
+                                </div>
+                                <button class="add-to-playlist-confirm" data-playlist-id="${playlist.id}" data-song-id="${songId}">
+                                    Add
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="create-new-playlist-link" data-song-id="${songId}">
+                        <i class="fas fa-plus"></i> Create New Playlist
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Handle add to playlist
+    modal.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-to-playlist-confirm')) {
+            const playlistId = parseInt(e.target.getAttribute('data-playlist-id'));
+            const songId = parseInt(e.target.getAttribute('data-song-id'));
+            addSongToPlaylist(playlistId, songId);
+            bsModal.hide();
+        }
+        
+        if (e.target.classList.contains('create-new-playlist-link')) {
+            const songId = parseInt(e.target.getAttribute('data-song-id'));
+            bsModal.hide();
+            setTimeout(() => showCreatePlaylistModal(songId), 300);
+        }
+    });
+    
+    modal.addEventListener('hidden.bs.modal', function() {
+        modal.remove();
+    });
+}
+
+// Show create playlist modal
+function showCreatePlaylistModal(songId = null) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Playlist</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createPlaylistForm">
+                        <div class="mb-3">
+                            <label class="form-label">Playlist Name</label>
+                            <input type="text" class="form-control" id="playlistName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description (optional)</label>
+                            <textarea class="form-control" id="playlistDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="makePublic">
+                            <label class="form-check-label">Make playlist public</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="createPlaylistConfirm">Create Playlist</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Handle create playlist
+    document.getElementById('createPlaylistConfirm').addEventListener('click', function() {
+        const name = document.getElementById('playlistName').value.trim();
+        const description = document.getElementById('playlistDescription').value.trim();
+        const isPublic = document.getElementById('makePublic').checked;
+        
+        if (name) {
+            createPlaylist(name, description, isPublic, songId);
+            bsModal.hide();
+        } else {
+            showNotification('Please enter a playlist name', 'warning');
+        }
+    });
+    
+    modal.addEventListener('hidden.bs.modal', function() {
+        modal.remove();
+    });
+}
+
+// Create new playlist
+function createPlaylist(name, description, isPublic, songId = null) {
+    const playlist = {
+        id: Date.now(),
+        name: name,
+        description: description,
+        isPublic: isPublic,
+        songs: songId ? [songId] : [],
+        createdAt: new Date().toISOString(),
+        cover: null
+    };
+    
+    userPlaylists.push(playlist);
+    saveUserData();
+    
+    showNotification(`Playlist "${name}" created!`, 'success');
+    
+    // Update playlists view if currently visible
+    if (document.getElementById('playlists-dashboard').classList.contains('active')) {
+        updatePlaylistsView();
+    }
+}
+
+// Add song to playlist
+function addSongToPlaylist(playlistId, songId) {
+    const playlist = userPlaylists.find(p => p.id === playlistId);
+    if (playlist && !playlist.songs.includes(songId)) {
+        playlist.songs.push(songId);
+        saveUserData();
+        showNotification('Song added to playlist!', 'success');
+    }
+}
+
+// Clear listening history
+function clearListeningHistory() {
+    if (confirm('Are you sure you want to clear your listening history?')) {
+        listeningHistory = [];
+        saveUserData();
+        updateHistoryView();
+        showNotification('Listening history cleared', 'info');
+    }
+}
+
+// Update player UI
+function updatePlayerUI(song) {
+    const playerThumbnail = document.querySelector('.player-thumbnail');
+    const playerTitle = document.querySelector('.player-details h4');
+    const playerArtist = document.querySelector('.player-details p');
+    
+    if (playerThumbnail) playerThumbnail.innerHTML = '<i class="fas fa-music"></i>';
+    if (playerTitle) playerTitle.textContent = song.title;
+    if (playerArtist) playerArtist.textContent = song.artist;
+}
+
+// Update views when data changes
+function updateFavoritesView() {
+    const favoritesList = document.getElementById('favorite-songs-list');
+    if (!favoritesList) return;
+    
+    if (userFavorites.songs.length === 0) {
+        favoritesList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-heart"></i>
+                <h3>No favorite songs yet</h3>
+                <p>Start exploring and save songs you love!</p>
+            </div>
+        `;
+    } else {
+        favoritesList.innerHTML = userFavorites.songs.map(songId => {
+            const song = sampleSongs.find(s => s.id === songId);
+            if (!song) return '';
+            
+            return `
+                <div class="song-item">
+                    <div class="song-item-cover">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="song-item-info">
+                        <h5>${song.title}</h5>
+                        <p>${song.artist}</p>
+                    </div>
+                    <div class="song-item-actions">
+                        <button class="play-btn" data-song-id="${song.id}">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="favorite-btn favorited" data-song-id="${song.id}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Update favorite artists
+    const artistsList = document.getElementById('favorite-artists-list');
+    if (artistsList) {
+        if (userFavorites.artists.length === 0) {
+            artistsList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-user"></i>
+                    <h3>No favorite artists yet</h3>
+                    <p>Follow artists to see their latest releases!</p>
+                </div>
+            `;
+        } else {
+            artistsList.innerHTML = userFavorites.artists.map(artistId => {
+                const artist = sampleArtists.find(a => a.id === artistId);
+                if (!artist) return '';
+                
+                return `
+                    <div class="artist-item">
+                        <div class="artist-item-avatar">${artist.name.charAt(0)}</div>
+                        <div class="artist-item-info">
+                            <h5>${artist.name}</h5>
+                            <p>${artist.followers.toLocaleString()} followers</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+}
+
+function updateHistoryView() {
+    const historyList = document.getElementById('history-songs-list');
+    if (!historyList) return;
+    
+    if (listeningHistory.length === 0) {
+        historyList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <h3>No listening history yet</h3>
+                <p>Start listening to build your history!</p>
+            </div>
+        `;
+    } else {
+        historyList.innerHTML = listeningHistory.slice(0, 20).map(item => {
+            const song = sampleSongs.find(s => s.id === item.songId);
+            if (!song) return '';
+            
+            const timeAgo = getTimeAgo(new Date(item.timestamp));
+            
+            return `
+                <div class="song-item">
+                    <div class="song-item-cover">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="song-item-info">
+                        <h5>${song.title}</h5>
+                        <p>${song.artist} • ${timeAgo}</p>
+                    </div>
+                    <button class="play-btn" data-song-id="${song.id}">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function updateFollowingView() {
+    const artistsList = document.getElementById('followed-artists-list');
+    if (!artistsList) return;
+    
+    if (userFollowing.length === 0) {
+        artistsList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-user-friends"></i>
+                <h3>Not following any artists yet</h3>
+                <p>Follow artists to stay updated with their latest music!</p>
+            </div>
+        `;
+    } else {
+        artistsList.innerHTML = userFollowing.map(artistId => {
+            const artist = sampleArtists.find(a => a.id === artistId);
+            if (!artist) return '';
+            
+            return `
+                <div class="followed-artist-card">
+                    <div class="followed-artist-avatar">${artist.name.charAt(0)}</div>
+                    <h4>${artist.name}</h4>
+                    <p>${artist.followers.toLocaleString()} followers</p>
+                    <button class="unfollow-btn" data-artist-id="${artist.id}">Unfollow</button>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Update activity feed
+    const activityList = document.getElementById('activity-feed-list');
+    if (activityList && userFollowing.length > 0) {
+        // Generate sample activity based on followed artists
+        const activities = [];
+        userFollowing.forEach(artistId => {
+            const artist = sampleArtists.find(a => a.id === artistId);
+            if (artist) {
+                activities.push({
+                    artist: artist.name,
+                    action: 'released a new song',
+                    item: 'Latest Track',
+                    time: '2 hours ago'
+                });
             }
         });
+        
+        if (activities.length > 0) {
+            activityList.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-avatar">${activity.artist.charAt(0)}</div>
+                    <div class="activity-content">
+                        <p><strong>${activity.artist}</strong> ${activity.action} <strong>"${activity.item}"</strong></p>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
     }
+}
+
+function updatePlaylistsView() {
+    const playlistsList = document.getElementById('user-playlists-list');
+    if (!playlistsList) return;
+    
+    const createCard = `
+        <div class="playlist-card create-new-card" id="createNewPlaylistCard">
+            <div class="playlist-cover create-icon">
+                <i class="fas fa-plus"></i>
+            </div>
+            <div class="playlist-info">
+                <h4>Create New Playlist</h4>
+                <p>Start building your collection</p>
+            </div>
+        </div>
+    `;
+    
+    const playlistCards = userPlaylists.map(playlist => {
+        const songCount = playlist.songs.length;
+        return `
+            <div class="playlist-card" data-playlist-id="${playlist.id}">
+                <div class="playlist-cover">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="playlist-info">
+                    <h4>${playlist.name}</h4>
+                    <p>${songCount} song${songCount !== 1 ? 's' : ''}</p>
+                </div>
+                <button class="play-playlist-btn" data-playlist-id="${playlist.id}">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    playlistsList.innerHTML = createCard + playlistCards;
+}
+
+// Utility functions
+function getTimeAgo(date) {
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+}
+
+function showNotification(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Show toast
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove after hide
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+// Load user data from localStorage
+function loadUserData() {
+    const savedData = localStorage.getItem('afroUserData');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        userFavorites = data.favorites || { songs: [], artists: [] };
+        userFollowing = data.following || [];
+        userPlaylists = data.playlists || [];
+        listeningHistory = data.history || [];
+    }
+    
+    // Initialize with sample data if empty
+    if (userPlaylists.length === 0) {
+        userPlaylists = [
+            {
+                id: 1,
+                name: 'My Makossa Mix',
+                description: 'Classic makossa tracks',
+                isPublic: true,
+                songs: [1, 2],
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 2,
+                name: 'Cameroon Classics',
+                description: 'Timeless Cameroonian music',
+                isPublic: false,
+                songs: [1, 3, 4],
+                createdAt: new Date().toISOString()
+            }
+        ];
+        saveUserData();
+    }
+}
+
+// Save user data to localStorage
+function saveUserData() {
+    const data = {
+        favorites: userFavorites,
+        following: userFollowing,
+        playlists: userPlaylists,
+        history: listeningHistory
+    };
+    localStorage.setItem('afroUserData', JSON.stringify(data));
 }
 
 // Sample data for the dashboard
@@ -1557,3 +2177,12 @@ END:VCALENDAR`;
 
 // Make functions available globally
 window.downloadCalendarFile = downloadCalendarFile;
+
+// Initialize current view
+function initializeCurrentView() {
+    // Initialize discover view by default
+    updateFavoritesView();
+    updateHistoryView();
+    updateFollowingView();
+    updatePlaylistsView();
+}

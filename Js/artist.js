@@ -1,87 +1,209 @@
-// Artist Dashboard JavaScript with Navigation
-
-document.addEventListener('DOMContentLoaded', function() {
-    // State management
-    let currentView = 'dashboard';
-    let uploadModal = null;
-    
-    // Sidebar toggle
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const wrapper = document.getElementById('wrapper');
-            wrapper.classList.toggle('toggled');
-        });
+// Global functions
+function showNotification(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
     }
     
-    // Navigation items
-    const navItems = document.querySelectorAll('.list-group-item:not(.list-group-item-action[href*="#"]):not([href*="index.html"])');
-    navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all items
-            navItems.forEach(nav => nav.classList.remove('active'));
-            
-            // Add active class to clicked item
-            this.classList.add('active');
-            
-            // Get view from text
-            let view = this.textContent.toLowerCase().trim().replace(/\s+/g, '-');
-            
-            // Handle special cases
-            if (view.includes('dashboard')) view = 'dashboard';
-            if (view.includes('my-songs')) view = 'songs';
-            if (view.includes('upload-music')) view = 'upload';
-            if (view.includes('analytics')) view = 'analytics';
-            if (view.includes('earnings')) view = 'earnings';
-            if (view.includes('followers')) view = 'followers';
-            if (view.includes('profile')) view = 'profile';
-            
-            // Load the view
-            loadView(view);
-        });
+    // Create toast
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Show toast
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove after hide
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
     });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Artist Dashboard JavaScript loaded successfully!');
+    
+    // State management
+    let currentView = 'dashboard';
+    let currentPlan = 'Pro'; // Current subscription plan
+    let uploadedSongs = []; // Store uploaded songs data
+    
+    // Mock Data
+    const mockData = {
+        songs: [
+            { id: 1, title: 'Midnight Pulse', genre: 'Electronic', date: '2024-01-15', plays: '245,820', likes: '12,450', downloads: '8,240', status: 'active', audioFile: null },
+            { id: 2, title: 'Dreamscape', genre: 'Ambient', date: '2024-01-10', plays: '182,340', likes: '9,820', downloads: '6,150', status: 'active', audioFile: null },
+            { id: 3, title: 'Solar Flare', genre: 'Electronic', date: '2024-01-05', plays: '158,920', likes: '8,450', downloads: '5,280', status: 'active', audioFile: null },
+            { id: 4, title: 'Neon Nights', genre: 'Synthwave', date: '2023-12-28', plays: '124,580', likes: '6,920', downloads: '4,180', status: 'active', audioFile: null },
+            { id: 5, title: 'Cosmic Drift', genre: 'Ambient', date: '2023-12-15', plays: '97,450', likes: '5,120', downloads: '3,270', status: 'pending', audioFile: null }
+        ],
+        notifications: [
+            { id: 1, title: 'New Follower', message: '@musiclover123 started following you', time: '2 hours ago', read: false },
+            { id: 2, title: 'Stream Milestone', message: 'Your song "Midnight Pulse" reached 100K plays', time: '1 day ago', read: false },
+            { id: 3, title: 'Comment', message: 'New comment on "Dreamscape"', time: '2 days ago', read: true },
+            { id: 4, title: 'Revenue Update', message: 'Monthly payout processed: $8,450', time: '3 days ago', read: true },
+            { id: 5, title: 'Playlist Feature', message: 'Added to "Electronic Essentials" playlist', time: '1 week ago', read: true }
+        ],
+        stats: {
+            totalPlays: '24.5M',
+            totalLikes: '1.2M',
+            totalDownloads: '450K',
+            totalRevenue: '$245,820',
+            monthlyRevenue: '$18,240',
+            pendingPayouts: '$8,450',
+            availableForWithdrawal: '$12,540'
+        },
+        profile: {
+            name: 'Nova Rhythm',
+            bio: 'Electronic music producer from Los Angeles. Creating atmospheric beats and melodic soundscapes since 2018. Influenced by ambient, synthwave, and deep house.',
+            avatar: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+        }
+    };
+
+    // Initialize uploaded songs
+    uploadedSongs = [...mockData.songs];
+    
+    // Initialize the dashboard
+    initializeDashboard();
+    
+    function initializeDashboard() {
+        console.log('Initializing dashboard...');
+        
+        // Initialize sidebar toggle
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const wrapper = document.getElementById('wrapper');
+                wrapper.classList.toggle('toggled');
+            });
+        }
+        
+        // Initialize logout buttons
+        const logoutButtons = document.querySelectorAll('#logoutBtn, #topLogoutBtn');
+        logoutButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    // Show loading
+                    document.getElementById('main-content').innerHTML = `
+                        <div class="text-center py-5">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="mt-3 text-fix">Logging out...</p>
+                        </div>
+                    `;
+                    
+                    // Simulate logout
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                }
+            });
+        });
+        
+        // Initialize navigation
+        const navItems = document.querySelectorAll('.list-group-item[data-view]');
+        navItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all items
+                navItems.forEach(nav => nav.classList.remove('active'));
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Get view from data attribute
+                const view = this.getAttribute('data-view');
+                console.log('Loading view:', view);
+                
+                // Load the view
+                loadView(view);
+            });
+        });
+        
+        // Initialize notification dropdown
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        if (notificationDropdown) {
+            notificationDropdown.addEventListener('click', function() {
+                updateNotificationDropdown();
+            });
+        }
+        
+        // Load initial view
+        loadView('dashboard');
+    }
     
     // Function to load different views
     function loadView(view) {
-        const mainContent = document.querySelector('#page-content-wrapper .container-fluid');
+        console.log('Loading view:', view);
+        const mainContent = document.getElementById('main-content');
+        if (!mainContent) {
+            console.error('main-content element not found');
+            return;
+        }
         currentView = view;
         
         // Update page title
-        document.title = getViewTitle(view) + ' - Artist Dashboard - Melodify';
+        document.title = getViewTitle(view) + ' - Artist Dashboard - Beats';
         
         // Show loading indicator
         mainContent.innerHTML = `
             <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-3">Loading ${getViewTitle(view)}...</p>
+                <div class="loading-spinner mx-auto"></div>
+                <p class="mt-3 text-fix">Loading ${getViewTitle(view)}...</p>
             </div>
         `;
         
         // Simulate loading delay
         setTimeout(() => {
-            // Load the actual content
-            mainContent.innerHTML = getViewContent(view);
-            
-            // Re-attach event listeners for the new content
-            reattachEventListeners();
-        }, 500);
+            try {
+                console.log('Setting content for view:', view);
+                // Load the actual content
+                mainContent.innerHTML = getViewContent(view);
+                
+                // Re-attach event listeners for the new content
+                reattachEventListeners(view);
+                
+                // Initialize any required components
+                initializeViewComponents(view);
+                console.log('View loaded successfully:', view);
+            } catch (error) {
+                console.error('Error loading view:', error);
+                mainContent.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="text-danger">Error loading ${getViewTitle(view)}</div>
+                        <p class="text-muted">Please try refreshing the page</p>
+                        <small class="text-muted">${error.message}</small>
+                    </div>
+                `;
+            }
+        }, 0);
     }
     
     // Function to get view title
     function getViewTitle(view) {
         const titles = {
-            'dashboard': 'Dashboard',
-            'songs': 'My Songs',
-            'upload': 'Upload Music',
-            'analytics': 'Analytics',
-            'earnings': 'Earnings',
-            'followers': 'Followers',
-            'profile': 'Profile'
+            'dashboard': 'Dashboard Overview',
+            'profile': 'Profile Management',
+            'music': 'Music Uploads',
+            'analytics': 'Performance & Analytics',
+            'revenue': 'Revenue & Royalties',
+            'subscription': 'Subscription Plan',
+            'notifications': 'Notifications'
         };
         return titles[view] || 'Artist Dashboard';
     }
@@ -91,20 +213,38 @@ document.addEventListener('DOMContentLoaded', function() {
         switch(view) {
             case 'dashboard':
                 return getDashboardContent();
-            case 'songs':
-                return getSongsContent();
-            case 'upload':
-                return getUploadContent();
-            case 'analytics':
-                return getAnalyticsContent();
-            case 'earnings':
-                return getEarningsContent();
-            case 'followers':
-                return getFollowersContent();
             case 'profile':
                 return getProfileContent();
+            case 'music':
+                return getMusicContent();
+            case 'analytics':
+                return getAnalyticsContent();
+            case 'revenue':
+                return getRevenueContent();
+            case 'subscription':
+                return getSubscriptionContent();
+            case 'notifications':
+                return getNotificationsContent();
             default:
                 return getDashboardContent();
+        }
+    }
+    
+    // Initialize view-specific components
+    function initializeViewComponents(view) {
+        switch(view) {
+            case 'music':
+                initializeAudioPlayers();
+                break;
+            case 'profile':
+                initializeProfileImageUpload();
+                break;
+            case 'subscription':
+                initializePaymentOptions();
+                break;
+            case 'notifications':
+                updateNotificationDropdown();
+                break;
         }
     }
     
@@ -112,10 +252,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function getDashboardContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Artist Dashboard</h1>
+                <h1 class="h3 mb-0 text-fix">Welcome back, Nova!</h1>
                 <div class="d-flex">
-                    <button class="btn btn-outline-secondary me-2">Export Data</button>
-                    <button class="btn btn-primary" id="viewProfileBtn">View Public Profile</button>
+                    <button class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-primary" id="uploadMusicBtn">
+                        <i class="fas fa-plus me-2"></i>Upload Music
+                    </button>
                 </div>
             </div>
 
@@ -126,25 +270,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-2">Total Followers</h6>
-                                    <h3 class="mb-0">2.4M</h3>
+                                    <h6 class="text-muted mb-2">Total Plays</h6>
+                                    <h3 class="mb-0">${mockData.stats.totalPlays}</h3>
                                     <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 12.5%</span>
-                                </div>
-                                <div class="stat-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Total Streams</h6>
-                                    <h3 class="mb-0">124.5M</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 8.3%</span>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-play-circle"></i>
@@ -158,12 +286,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-2">Monthly Earnings</h6>
-                                    <h3 class="mb-0">$18,240</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 24.7%</span>
+                                    <h6 class="text-muted mb-2">Total Likes</h6>
+                                    <h3 class="mb-0">${mockData.stats.totalLikes}</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 8.3%</span>
                                 </div>
                                 <div class="stat-icon">
-                                    <i class="fas fa-dollar-sign"></i>
+                                    <i class="fas fa-heart"></i>
                                 </div>
                             </div>
                         </div>
@@ -174,12 +302,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-2">Total Songs</h6>
-                                    <h3 class="mb-0">48</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 2 new</span>
+                                    <h6 class="text-muted mb-2">Downloads</h6>
+                                    <h3 class="mb-0">450K</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 5.7%</span>
                                 </div>
                                 <div class="stat-icon">
-                                    <i class="fas fa-music"></i>
+                                    <i class="fas fa-download"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Current Revenue</h6>
+                                    <h3 class="mb-0">${mockData.stats.monthlyRevenue}</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 24.7%</span>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="fas fa-dollar-sign"></i>
                                 </div>
                             </div>
                         </div>
@@ -187,31 +331,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <!-- Charts and Upload Form -->
-            <div class="row">
+            <!-- Charts Section -->
+            <div class="row mb-4">
                 <div class="col-lg-8 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Streams Overview</h5>
+                            <h5 class="card-title mb-0 text-fix">Monthly Streams</h5>
                         </div>
                         <div class="card-body">
                             <div class="chart-placeholder">
                                 <div class="text-center py-5">
                                     <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
-                                    <h5>Stream Performance</h5>
-                                    <p class="text-muted">Daily streams for the last 30 days</p>
-                                    <div class="d-flex justify-content-center">
-                                        <div class="mx-3 text-center">
-                                            <div class="h4 mb-0 text-primary">+245K</div>
-                                            <small class="text-muted">Avg. Daily Streams</small>
-                                        </div>
-                                        <div class="mx-3 text-center">
-                                            <div class="h4 mb-0 text-success">+18.7%</div>
-                                            <small class="text-muted">Growth This Month</small>
-                                        </div>
-                                        <div class="mx-3 text-center">
-                                            <div class="h4 mb-0 text-warning">42</div>
-                                            <small class="text-muted">Countries</small>
+                                    <h5 class="text-fix">Stream Analytics</h5>
+                                    <p class="text-muted text-secondary-fix">January 2024: 2.4M streams (+18.7% from Dec)</p>
+                                    <div class="d-flex justify-content-center mt-3">
+                                        <div class="progress w-75">
+                                            <div class="progress-bar" style="width: 75%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -222,43 +357,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="col-lg-4 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Quick Upload</h5>
+                            <h5 class="card-title mb-0 text-fix">Revenue Growth</h5>
                         </div>
                         <div class="card-body">
-                            <form id="quickUploadForm">
-                                <div class="mb-3">
-                                    <label class="form-label">Song Title</label>
-                                    <input type="text" class="form-control" placeholder="Enter song title" required>
+                            <div class="chart-placeholder">
+                                <div class="text-center py-4">
+                                    <i class="fas fa-chart-pie fa-4x text-muted mb-3"></i>
+                                    <h5 class="text-fix">Revenue Distribution</h5>
+                                    <div class="mt-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-fix">Streaming</span>
+                                            <span class="text-primary">65%</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-fix">Downloads</span>
+                                            <span class="text-primary">25%</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-fix">Other</span>
+                                            <span class="text-primary">10%</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Genre</label>
-                                    <select class="form-select" required>
-                                        <option value="">Select genre</option>
-                                        <option value="electronic">Electronic</option>
-                                        <option value="pop">Pop</option>
-                                        <option value="rock">Rock</option>
-                                        <option value="hiphop">Hip Hop</option>
-                                        <option value="rb">R&B</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Upload Audio File</label>
-                                    <input type="file" class="form-control" accept="audio/*" required>
-                                    <div class="form-text">Max file size: 50MB. Supported formats: MP3, WAV, FLAC</div>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100">Upload Song</button>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Activity -->
+            <!-- Recent Activity & Quick Stats -->
             <div class="row">
-                <div class="col-12">
+                <div class="col-lg-6 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Recent Activity</h5>
+                            <h5 class="card-title mb-0 text-fix">Recent Activity</h5>
                         </div>
                         <div class="card-body">
                             <div class="activity-timeline">
@@ -267,19 +399,319 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0 text-fix">Quick Stats</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <div class="text-center p-3 bg-dark rounded">
+                                        <div class="h4 mb-1 text-primary">48</div>
+                                        <small class="text-muted text-secondary-fix">Total Songs</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="text-center p-3 bg-dark rounded">
+                                        <div class="h4 mb-1 text-success">2.4M</div>
+                                        <small class="text-muted text-secondary-fix">Followers</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center p-3 bg-dark rounded">
+                                        <div class="h4 mb-1 text-warning">86%</div>
+                                        <small class="text-muted text-secondary-fix">Completion Rate</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center p-3 bg-dark rounded">
+                                        <div class="h4 mb-1 text-info">42</div>
+                                        <small class="text-muted text-secondary-fix">Countries</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <h6 class="mb-3 text-fix">Performance Insight</h6>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    <strong class="text-fix">Tip:</strong> Your most played song this month is "Midnight Pulse" with 245K plays
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
     
-    function getSongsContent() {
+    function getProfileContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">My Songs</h1>
-                <div class="d-flex">
-                    <input type="text" class="form-control form-control-sm me-2" placeholder="Search songs" id="songSearch">
-                    <button class="btn btn-primary" id="addSongBtn">
-                        <i class="fas fa-plus me-2"></i>Add New
-                    </button>
+                <h1 class="h3 mb-0">Profile Management</h1>
+                <button class="btn btn-primary" id="saveProfileBtn">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <!-- Profile Card -->
+                    <div class="card">
+                        <div class="card-body text-center p-4">
+                            <div class="profile-avatar mb-3">
+                                <img src="${mockData.profile.avatar}" 
+                                     alt="${mockData.profile.name}" class="rounded-circle" width="120" height="120" id="profileAvatar">
+                                <button class="btn btn-sm btn-outline-primary mt-2" id="changeAvatarBtn">
+                                    <i class="fas fa-camera me-1"></i>Change Photo
+                                </button>
+                                <div id="avatarUploadProgress" class="mt-2" style="display: none;">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted">Uploading...</small>
+                                </div>
+                            </div>
+                            <h4 class="card-title" id="artistNameDisplay">${mockData.profile.name}</h4>
+                            <p class="text-muted">Electronic Music Producer</p>
+                            <div class="d-flex justify-content-center mb-3">
+                                <div class="text-center mx-3">
+                                    <div class="h5 mb-0">2.4M</div>
+                                    <small class="text-muted">Followers</small>
+                                </div>
+                                <div class="text-center mx-3">
+                                    <div class="h5 mb-0">48</div>
+                                    <small class="text-muted">Songs</small>
+                                </div>
+                                <div class="text-center mx-3">
+                                    <div class="h5 mb-0">124M</div>
+                                    <small class="text-muted">Plays</small>
+                                </div>
+                            </div>
+                            <div class="artist-verification mb-3">
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Pro Artist
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Social Links -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Social Media</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Instagram</label>
+                                <input type="text" class="form-control" value="@novarhythm" id="instagramInput">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Twitter</label>
+                                <input type="text" class="form-control" value="@novarhythm" id="twitterInput">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">YouTube</label>
+                                <input type="text" class="form-control" value="NovaRhythmMusic" id="youtubeInput">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">TikTok</label>
+                                <input type="text" class="form-control" value="@novarhythm" id="tiktokInput">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Spotify</label>
+                                <input type="text" class="form-control" value="NovaRhythm" id="spotifyInput">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">SoundCloud</label>
+                                <input type="text" class="form-control" value="novarhythm" id="soundcloudInput">
+                            </div>
+                            <div>
+                                <h6 class="mb-2">Preview & Test Links</h6>
+                                <div class="d-flex flex-wrap gap-2" id="socialPreview">
+                                    <!-- Social media icons will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-8">
+                    <!-- Profile Details Form -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Profile Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="artistProfileForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Artist Name *</label>
+                                        <input type="text" class="form-control" value="${mockData.profile.name}" id="artistNameInput" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Real Name</label>
+                                        <input type="text" class="form-control" value="Alex Johnson" id="realNameInput">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Bio</label>
+                                    <textarea class="form-control" rows="4" id="bioInput">${mockData.profile.bio}</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Location</label>
+                                        <input type="text" class="form-control" value="Los Angeles, CA" id="locationInput">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Website</label>
+                                        <input type="url" class="form-control" value="https://novarhythm.com" id="websiteInput">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Primary Genre *</label>
+                                    <select class="form-select" id="genreSelect" required>
+                                        <option selected>Electronic</option>
+                                        <option>Ambient</option>
+                                        <option>Synthwave</option>
+                                        <option>House</option>
+                                        <option>Techno</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Notification Settings -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Notification Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6 class="mb-3">Email Notifications</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifNewFollowers" checked>
+                                    <label class="form-check-label" for="notifNewFollowers">
+                                        New followers
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifComments" checked>
+                                    <label class="form-check-label" for="notifComments">
+                                        New comments
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifStreamMilestones" checked>
+                                    <label class="form-check-label" for="notifStreamMilestones">
+                                        Stream milestones
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifRevenueUpdates" checked>
+                                    <label class="form-check-label" for="notifRevenueUpdates">
+                                        Revenue updates
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="notifMarketing" checked>
+                                    <label class="form-check-label" for="notifMarketing">
+                                        Marketing emails
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <button class="btn btn-primary" id="saveNotificationSettings">
+                                    <i class="fas fa-save me-2"></i>Save Notification Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function getMusicContent() {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Music Uploads</h1>
+                <button class="btn btn-primary" id="uploadNewSongBtn">
+                    <i class="fas fa-plus me-2"></i>Upload New Song
+                </button>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="row mb-4" id="uploadForm" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Upload New Song</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="songUploadForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Song Title *</label>
+                                        <input type="text" class="form-control" placeholder="Enter song title" id="songTitleInput" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Genre *</label>
+                                        <select class="form-select" id="songGenreSelect" required>
+                                            <option value="">Select genre</option>
+                                            <option>Electronic</option>
+                                            <option>Pop</option>
+                                            <option>Rock</option>
+                                            <option>Hip Hop</option>
+                                            <option>R&B</option>
+                                            <option>Ambient</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" rows="3" placeholder="Tell listeners about this song..." id="songDescription"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Audio File *</label>
+                                    <div class="upload-area" id="audioUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                        <h5>Drop audio file here or click to upload</h5>
+                                        <p class="text-muted">MP3, WAV, FLAC up to 50MB</p>
+                                        <input type="file" class="d-none" id="audioFileInput" accept="audio/*">
+                                    </div>
+                                    <div id="audioUploadProgress" class="mt-2" style="display: none;">
+                                        <div class="progress" style="height: 5px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <small class="text-muted">Uploading...</small>
+                                    </div>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="explicitContent">
+                                    <label class="form-check-label" for="explicitContent">
+                                        This song contains explicit content
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="rightsConfirm" required>
+                                    <label class="form-check-label" for="rightsConfirm">
+                                        I own all rights to this recording
+                                    </label>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-outline-secondary me-2" id="cancelUploadBtn">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="submitUploadBtn">
+                                        <i class="fas fa-upload me-2"></i>Upload Song
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -287,6 +719,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="row">
                 <div class="col-12">
                     <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Your Songs</h5>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -295,10 +730,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <th>#</th>
                                             <th>Song Title</th>
                                             <th>Genre</th>
-                                            <th>Release Date</th>
-                                            <th>Streams</th>
-                                            <th>Earnings</th>
-                                            <th>Status</th>
+                                            <th>Upload Date</th>
+                                            <th>Plays</th>
+                                            <th>Likes</th>
+                                            <th>Downloads</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -307,155 +742,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </tbody>
                                 </table>
                             </div>
-                            <nav aria-label="Table navigation">
-                                <ul class="pagination justify-content-center">
-                                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    function getUploadContent() {
-        return `
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Upload Music</h1>
-                <button class="btn btn-outline-secondary" id="viewUploadHistory">
-                    <i class="fas fa-history me-2"></i>View Upload History
-                </button>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Upload New Song</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="uploadSongForm">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Song Title *</label>
-                                        <input type="text" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Album (Optional)</label>
-                                        <input type="text" class="form-control" placeholder="Single">
-                                    </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted">
+                                    Showing ${uploadedSongs.length} of ${uploadedSongs.length + 43} songs
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Primary Genre *</label>
-                                        <select class="form-select" required>
-                                            <option value="">Select genre</option>
-                                            <option>Electronic</option>
-                                            <option>Pop</option>
-                                            <option>Rock</option>
-                                            <option>Hip Hop</option>
-                                            <option>R&B</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Mood/Tags</label>
-                                        <input type="text" class="form-control" placeholder="e.g., upbeat, chill, energetic">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Audio File *</label>
-                                    <input type="file" class="form-control" accept="audio/*" required>
-                                    <div class="form-text">Max file size: 50MB. Supported formats: MP3, WAV, FLAC, AAC</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Cover Art</label>
-                                    <input type="file" class="form-control" accept="image/*">
-                                    <div class="form-text">Recommended size: 3000x3000 pixels. JPG or PNG format.</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Song Description</label>
-                                    <textarea class="form-control" rows="3" placeholder="Tell listeners about this song..."></textarea>
-                                </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="explicitCheck">
-                                    <label class="form-check-label" for="explicitCheck">This song contains explicit content</label>
-                                </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="royaltyCheck" required>
-                                    <label class="form-check-label" for="royaltyCheck">I own all rights to this recording</label>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-upload me-2"></i>Upload Song
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary" id="saveDraftBtn">
-                                        <i class="fas fa-save me-2"></i>Save as Draft
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <!-- Upload Guidelines -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Upload Guidelines</h5>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-unstyled">
-                                <li class="mb-3">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    <strong>Audio Quality:</strong> Minimum 192kbps MP3
-                                </li>
-                                <li class="mb-3">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    <strong>File Size:</strong> Max 50MB per file
-                                </li>
-                                <li class="mb-3">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    <strong>Metadata:</strong> Include accurate song info
-                                </li>
-                                <li class="mb-3">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    <strong>Artwork:</strong> High-quality cover art (3000x3000)
-                                </li>
-                                <li class="mb-3">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    <strong>Rights:</strong> You must own all rights
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <!-- Upload Status -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Upload Status</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="upload-stats">
-                                <div class="d-flex justify-content-between mb-3">
-                                    <span>Total Uploads:</span>
-                                    <strong>48</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-3">
-                                    <span>Published:</span>
-                                    <strong class="text-success">46</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-3">
-                                    <span>Pending:</span>
-                                    <strong class="text-warning">2</strong>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Rejected:</span>
-                                    <strong class="text-danger">0</strong>
-                                </div>
+                                <nav>
+                                    <ul class="pagination mb-0">
+                                        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                                    </ul>
+                                </nav>
                             </div>
                         </div>
                     </div>
@@ -467,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getAnalyticsContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Analytics</h1>
+                <h1 class="h3 mb-0">Performance & Analytics</h1>
                 <div class="d-flex">
                     <div class="dropdown me-2">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -477,7 +776,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <li><a class="dropdown-item" href="#" data-period="7">Last 7 Days</a></li>
                             <li><a class="dropdown-item active" href="#" data-period="30">Last 30 Days</a></li>
                             <li><a class="dropdown-item" href="#" data-period="90">Last 90 Days</a></li>
-                            <li><a class="dropdown-item" href="#" data-period="365">Last Year</a></li>
                         </ul>
                     </div>
                     <button class="btn btn-primary">
@@ -486,75 +784,84 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <!-- Analytics Overview -->
+            <!-- Detailed Stats -->
             <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-md-3 col-6 mb-4">
                     <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Total Streams</h6>
-                                    <h3 class="mb-0">124.5M</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 18.7%</span>
-                                </div>
-                            </div>
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">Avg. Plays/Day</h6>
+                            <h3 class="mb-0">8.2K</h3>
+                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 12.3%</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-md-3 col-6 mb-4">
                     <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Listeners</h6>
-                                    <h3 class="mb-0">8.2M</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 12.3%</span>
-                                </div>
-                            </div>
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">Completion Rate</h6>
+                            <h3 class="mb-0">86%</h3>
+                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 2.1%</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-md-3 col-6 mb-4">
                     <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Avg. Listen Time</h6>
-                                    <h3 class="mb-0">2:45</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 5.2%</span>
-                                </div>
-                            </div>
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">Skip Rate</h6>
+                            <h3 class="mb-0">14%</h3>
+                            <span class="text-danger small"><i class="fas fa-arrow-down me-1"></i> 1.8%</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
+                <div class="col-md-3 col-6 mb-4">
                     <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Skip Rate</h6>
-                                    <h3 class="mb-0">18%</h3>
-                                    <span class="text-danger small"><i class="fas fa-arrow-down me-1"></i> 2.1%</span>
-                                </div>
-                            </div>
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">Avg. Listen Time</h6>
+                            <h3 class="mb-0">2:45</h3>
+                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 5.2%</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts -->
+            <!-- Performance Charts -->
             <div class="row mb-4">
                 <div class="col-lg-8 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Streams Over Time</h5>
+                            <h5 class="card-title mb-0">Song Performance</h5>
                         </div>
                         <div class="card-body">
                             <div class="chart-placeholder">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-chart-area fa-4x text-muted mb-3"></i>
-                                    <h5>Stream Analytics</h5>
-                                    <p class="text-muted">Daily stream count for the selected period</p>
+                                <div class="text-center py-4">
+                                    <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
+                                    <h5>Top Performing Songs</h5>
+                                    <div class="mt-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0 me-3">
+                                                <div class="bg-primary rounded" style="width: 80%; height: 20px;"></div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <small>Midnight Pulse - 245K plays</small>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0 me-3">
+                                                <div class="bg-primary rounded" style="width: 65%; height: 20px;"></div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <small>Dreamscape - 182K plays</small>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0 me-3">
+                                                <div class="bg-primary rounded" style="width: 50%; height: 20px;"></div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <small>Solar Flare - 158K plays</small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -563,29 +870,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="col-lg-4 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Top Countries</h5>
+                            <h5 class="card-title mb-0">Audience Demographics</h5>
                         </div>
                         <div class="card-body">
                             <div class="chart-placeholder">
                                 <div class="text-center py-4">
-                                    <i class="fas fa-globe-americas fa-4x text-muted mb-3"></i>
-                                    <h5>Geographic Distribution</h5>
+                                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                                    <h5>Audience Insights</h5>
                                     <div class="mt-3">
                                         <div class="d-flex justify-content-between mb-2">
-                                            <span>United States</span>
+                                            <span>18-24</span>
                                             <span class="text-primary">32%</span>
                                         </div>
                                         <div class="d-flex justify-content-between mb-2">
-                                            <span>United Kingdom</span>
-                                            <span class="text-primary">18%</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>Germany</span>
-                                            <span class="text-primary">12%</span>
+                                            <span>25-34</span>
+                                            <span class="text-primary">45%</span>
                                         </div>
                                         <div class="d-flex justify-content-between">
-                                            <span>Other</span>
-                                            <span class="text-primary">38%</span>
+                                            <span>35+</span>
+                                            <span class="text-primary">23%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -595,29 +898,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <!-- Top Songs Analytics -->
+            <!-- Insights Section -->
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Top Performing Songs</h5>
+                            <h5 class="card-title mb-0">Performance Insights</h5>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Song</th>
-                                            <th>Streams</th>
-                                            <th>Listeners</th>
-                                            <th>Completion Rate</th>
-                                            <th>Trend</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${getTopSongsAnalyticsRows()}
-                                    </tbody>
-                                </table>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-lightbulb me-2"></i>Best Time to Post</h6>
+                                        <p class="mb-0 small">Your audience is most active between 6-9 PM EST</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="alert alert-success">
+                                        <h6><i class="fas fa-trophy me-2"></i>Top Song</h6>
+                                        <p class="mb-0 small">"Midnight Pulse" gained 45K new plays this week</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="alert alert-warning">
+                                        <h6><i class="fas fa-chart-line me-2"></i>Growth Opportunity</h6>
+                                        <p class="mb-0 small">Try releasing more content on Fridays</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h6>Recommendations</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Your most played song this month is "Midnight Pulse"</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Engagement is highest when you post at 8 PM EST</li>
+                                    <li><i class="fas fa-check text-success me-2"></i> Consider creating a playlist of your top 5 songs</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -626,38 +941,43 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
     
-    function getEarningsContent() {
+    function getRevenueContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Earnings</h1>
-                <button class="btn btn-primary" id="requestPayoutBtn">
-                    <i class="fas fa-money-check-alt me-2"></i>Request Payout
+                <h1 class="h3 mb-0">Revenue & Royalties</h1>
+                <button class="btn btn-primary" id="withdrawEarningsBtn" ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,"")) < 50 ? 'disabled' : ''}>
+                    <i class="fas fa-money-check-alt me-2"></i>Withdraw Earnings
                 </button>
             </div>
 
-            <!-- Earnings Summary -->
+            <!-- Revenue Summary -->
             <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Earnings</h6>
+                                    <h3 class="mb-0">${mockData.stats.totalRevenue}</h3>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-xl-3 col-md-6 mb-4">
                     <div class="card stat-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">This Month</h6>
-                                    <h3 class="mb-0">$18,240</h3>
+                                    <h3 class="mb-0">${mockData.stats.monthlyRevenue}</h3>
                                     <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 24.7%</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Last Month</h6>
-                                    <h3 class="mb-0">$14,620</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 8.3%</span>
+                                <div class="stat-icon">
+                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
                             </div>
                         </div>
@@ -668,8 +988,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-2">Total Earned</h6>
-                                    <h3 class="mb-0">$245,820</h3>
+                                    <h6 class="text-muted mb-2">Pending Payout</h6>
+                                    <h3 class="mb-0">${mockData.stats.pendingPayouts}</h3>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="fas fa-clock"></i>
                                 </div>
                             </div>
                         </div>
@@ -680,8 +1003,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-2">Available Balance</h6>
-                                    <h3 class="mb-0">$8,450</h3>
+                                    <h6 class="text-muted mb-2">Available for Withdrawal</h6>
+                                    <h3 class="mb-0">${mockData.stats.availableForWithdrawal}</h3>
+                                    ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,"")) < 50 ? 
+                                    '<small class="text-warning">Min. $50 required</small>' : 
+                                    '<span class="text-success small">Ready to withdraw</span>'}
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
                                 </div>
                             </div>
                         </div>
@@ -689,19 +1018,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <!-- Earnings Chart -->
+            <!-- Revenue Chart -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Earnings Over Time</h5>
+                            <h5 class="card-title mb-0">Revenue Overview</h5>
                         </div>
                         <div class="card-body">
                             <div class="chart-placeholder">
-                                <div class="text-center py-5">
+                                <div class="text-center py-4">
                                     <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
-                                    <h5>Revenue Analytics</h5>
-                                    <p class="text-muted">Monthly earnings for the last 12 months</p>
+                                    <h5>Monthly Revenue</h5>
+                                    <p class="text-muted">Steady growth of 18.7% month over month</p>
                                     <div class="d-flex justify-content-center mt-3">
                                         <div class="mx-3 text-center">
                                             <div class="h4 mb-0 text-success">$245K</div>
@@ -723,31 +1052,127 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <!-- Recent Transactions -->
+            <!-- Withdrawal Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Withdraw Earnings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label class="form-label">Available Balance</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="text" class="form-control" value="${mockData.stats.availableForWithdrawal.replace('$', '')}" readonly>
+                                            <button class="btn btn-outline-primary" type="button" id="withdrawAllBtn">Withdraw All</button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Withdrawal Amount *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="withdrawAmount" 
+                                                   min="50" 
+                                                   max="${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""))}" 
+                                                   step="0.01"
+                                                   placeholder="Enter amount">
+                                        </div>
+                                        <small class="text-muted">Minimum withdrawal: $50</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Payment Method</label>
+                                        <select class="form-select" id="withdrawMethod">
+                                            <option value="paypal">PayPal</option>
+                                            <option value="bank">Bank Transfer</option>
+                                            <option value="stripe">Credit/Debit Card</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" id="processWithdrawalBtn">
+                                        <i class="fas fa-money-check-alt me-2"></i>Process Withdrawal
+                                    </button>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-info-circle me-2"></i>Withdrawal Info</h6>
+                                        <p class="small mb-1">• Processed within 3-5 business days</p>
+                                        <p class="small mb-1">• $2 processing fee per transaction</p>
+                                        <p class="small mb-1">• Minimum withdrawal: $50</p>
+                                        <p class="small mb-0">• Maximum withdrawal: $10,000/day</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Royalties Breakdown -->
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">Recent Transactions</h5>
-                            <button class="btn btn-sm btn-outline-secondary">View All</button>
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Royalties Breakdown</h5>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Date</th>
-                                            <th>Description</th>
-                                            <th>Streams</th>
-                                            <th>Amount</th>
+                                            <th>Source</th>
+                                            <th>Streams/Plays</th>
+                                            <th>Rate</th>
+                                            <th>Earnings</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${getTransactionRows()}
+                                        <tr>
+                                            <td>Beats Streaming</td>
+                                            <td>2.4M</td>
+                                            <td>$0.004/stream</td>
+                                            <td>$9,600</td>
+                                            <td><span class="badge bg-success">Paid</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Song Downloads</td>
+                                            <td>8,240</td>
+                                            <td>$0.99/download</td>
+                                            <td>$8,157</td>
+                                            <td><span class="badge bg-success">Paid</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>YouTube Content ID</td>
+                                            <td>450K</td>
+                                            <td>$0.001/view</td>
+                                            <td>$450</td>
+                                            <td><span class="badge bg-warning">Pending</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sync Licensing</td>
+                                            <td>12</td>
+                                            <td>$500/license</td>
+                                            <td>$6,000</td>
+                                            <td><span class="badge bg-success">Paid</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Merchandise Sales</td>
+                                            <td>320</td>
+                                            <td>$25/sale</td>
+                                            <td>$8,000</td>
+                                            <td><span class="badge bg-warning">Pending</span></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="mt-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> Payouts are processed on the 15th of each month. Minimum withdrawal amount is $50.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -755,84 +1180,28 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
     
-    function getFollowersContent() {
+    function getSubscriptionContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Followers</h1>
-                <button class="btn btn-primary" id="exportFollowersBtn">
-                    <i class="fas fa-download me-2"></i>Export List
+                <h1 class="h3 mb-0">Subscription Plan</h1>
+                <button class="btn btn-primary" id="manageBillingBtn">
+                    <i class="fas fa-credit-card me-2"></i>Manage Billing & Payments
                 </button>
             </div>
 
-            <!-- Followers Stats -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Total Followers</h6>
-                                    <h3 class="mb-0">2.4M</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 12.5%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">New This Month</h6>
-                                    <h3 class="mb-0">45,820</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 8.3%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Active Followers</h6>
-                                    <h3 class="mb-0">1.8M</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 5.2%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card stat-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted mb-2">Engagement Rate</h6>
-                                    <h3 class="mb-0">4.8%</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 0.7%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Follower Growth Chart -->
+            <!-- Current Plan -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Follower Growth</h5>
-                        </div>
                         <div class="card-body">
-                            <div class="chart-placeholder">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
-                                    <h5>Follower Analytics</h5>
-                                    <p class="text-muted">Monthly follower growth for the last 12 months</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">Current Plan: <span class="text-primary">Pro Artist</span></h5>
+                                    <p class="text-muted mb-0">Renews on February 15, 2024</p>
+                                    <small class="text-success"><i class="fas fa-check-circle me-1"></i> Active</small>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">$29.99<span class="text-muted small">/month</span></h4>
                                 </div>
                             </div>
                         </div>
@@ -840,220 +1209,193 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
 
-            <!-- Top Locations -->
-            <div class="row">
-                <div class="col-lg-6 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Top Cities</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="location-list">
-                                ${getTopCitiesList()}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Demographics</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="demographics-chart">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-chart-pie fa-4x text-muted mb-3"></i>
-                                    <h5>Age & Gender Distribution</h5>
-                                    <div class="row mt-4">
-                                        <div class="col-6">
-                                            <h6 class="text-primary">Age Groups</h6>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>18-24</span>
-                                                <span>32%</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>25-34</span>
-                                                <span>45%</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>35-44</span>
-                                                <span>18%</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span>45+</span>
-                                                <span>5%</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <h6 class="text-primary">Gender</h6>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Male</span>
-                                                <span>58%</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Female</span>
-                                                <span>40%</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span>Other</span>
-                                                <span>2%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    function getProfileContent() {
-        return `
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">Artist Profile</h1>
-                <button class="btn btn-primary" id="saveProfileBtn">
-                    <i class="fas fa-save me-2"></i>Save Changes
-                </button>
-            </div>
-
-            <div class="row">
+            <!-- Plans Comparison -->
+            <div class="row mb-4">
                 <div class="col-lg-4 mb-4">
-                    <!-- Profile Card -->
-                    <div class="card">
-                        <div class="card-body text-center p-4">
-                            <div class="profile-avatar mb-3">
-                                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
-                                     alt="Nova Rhythm" class="rounded-circle" width="120" height="120">
-                                <button class="btn btn-sm btn-outline-primary mt-2" id="changeAvatarBtn">
-                                    <i class="fas fa-camera me-1"></i>Change Photo
-                                </button>
-                            </div>
-                            <h4 class="card-title">Nova Rhythm</h4>
-                            <p class="text-muted">Electronic Music Producer</p>
-                            <div class="d-flex justify-content-center mb-3">
-                                <div class="text-center mx-3">
-                                    <div class="h5 mb-0">2.4M</div>
-                                    <small class="text-muted">Followers</small>
-                                </div>
-                                <div class="text-center mx-3">
-                                    <div class="h5 mb-0">48</div>
-                                    <small class="text-muted">Songs</small>
-                                </div>
-                                <div class="text-center mx-3">
-                                    <div class="h5 mb-0">124M</div>
-                                    <small class="text-muted">Streams</small>
-                                </div>
-                            </div>
-                            <div class="artist-verification mb-3">
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check-circle me-1"></i>Verified Artist
-                                </span>
-                            </div>
-                            <button class="btn btn-outline-secondary w-100 mb-2" id="viewPublicProfileBtn">
-                                <i class="fas fa-external-link-alt me-2"></i>View Public Profile
+                    <div class="card plan-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Free</h5>
+                            <h2 class="mb-3">$0<span class="text-muted small">/month</span></h2>
+                            <ul class="list-unstyled mb-4">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Upload up to 5 songs</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Basic analytics</li>
+                                <li class="mb-2"><i class="fas fa-times text-muted me-2"></i> <span class="text-muted">Advanced analytics</span></li>
+                                <li class="mb-2"><i class="fas fa-times text-muted me-2"></i> <span class="text-muted">Priority support</span></li>
+                                <li><i class="fas fa-times text-muted me-2"></i> <span class="text-muted">Custom artist page</span></li>
+                            </ul>
+                            <button class="btn btn-outline-primary w-100 ${currentPlan === 'Free' ? 'disabled' : ''}" data-plan="Free" data-price="0">
+                                ${currentPlan === 'Free' ? 'Current Plan' : 'Select Free'}
                             </button>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-lg-8">
-                    <!-- Profile Details Form -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Profile Information</h5>
-                        </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card plan-card featured">
                         <div class="card-body">
-                            <form id="artistProfileForm">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Artist Name *</label>
-                                        <input type="text" class="form-control" value="Nova Rhythm" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Real Name</label>
-                                        <input type="text" class="form-control" value="Alex Johnson">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Email</label>
-                                    <input type="email" class="form-control" value="nova@example.com">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Location</label>
-                                    <input type="text" class="form-control" value="Los Angeles, CA">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Genre *</label>
-                                    <select class="form-select" multiple>
-                                        <option selected>Electronic</option>
-                                        <option>Ambient</option>
-                                        <option>Synthwave</option>
-                                        <option>House</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Bio</label>
-                                    <textarea class="form-control" rows="4">Electronic music producer from Los Angeles. Creating atmospheric beats and melodic soundscapes since 2018. Influenced by ambient, synthwave, and deep house.</textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Website</label>
-                                    <input type="url" class="form-control" value="https://novarhythm.com">
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Facebook</label>
-                                        <input type="text" class="form-control" value="@novarhythm">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Instagram</label>
-                                        <input type="text" class="form-control" value="@novarhythm">
-                                    </div>
-                                </div>
-                            </form>
+                            <h5 class="card-title mb-3">Pro Artist</h5>
+                            <h2 class="mb-3">$29.99<span class="text-muted small">/month</span></h2>
+                            <ul class="list-unstyled mb-4">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Unlimited uploads</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Advanced analytics</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Priority support</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Custom artist page</li>
+                                <li><i class="fas fa-check text-success me-2"></i> Higher revenue share (85%)</li>
+                            </ul>
+                            <button class="btn btn-primary w-100 ${currentPlan === 'Pro' ? 'disabled' : ''}" data-plan="Pro" data-price="29.99">
+                                ${currentPlan === 'Pro' ? 'Current Plan' : 'Upgrade to Pro'}
+                            </button>
                         </div>
                     </div>
-                    
-                    <!-- Account Settings -->
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card plan-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Premium</h5>
+                            <h2 class="mb-3">$49.99<span class="text-muted small">/month</span></h2>
+                            <ul class="list-unstyled mb-4">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Everything in Pro</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Featured placements</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Dedicated manager</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Promotional campaigns</li>
+                                <li><i class="fas fa-check text-success me-2"></i> Highest revenue share (90%)</li>
+                            </ul>
+                            <button class="btn btn-outline-primary w-100 ${currentPlan === 'Premium' ? 'disabled' : ''}" data-plan="Premium" data-price="49.99">
+                                ${currentPlan === 'Premium' ? 'Current Plan' : 'Go Premium'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Management -->
+            <div class="row">
+                <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Account Settings</h5>
+                            <h5 class="card-title mb-0">Billing Information</h5>
                         </div>
                         <div class="card-body">
-                            <div class="mb-4">
-                                <h6 class="mb-3">Payment Information</h6>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span>Payment Method</span>
-                                    <span class="text-muted">PayPal: nova@example.com</span>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Payment Method</h6>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <i class="fas fa-credit-card fa-2x text-muted"></i>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0">Visa ending in 4242</p>
+                                            <small class="text-muted">Expires 12/25</small>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm" id="updatePaymentMethodBtn">
+                                        <i class="fas fa-edit me-2"></i>Update Payment Method
+                                    </button>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span>Payout Schedule</span>
-                                    <span class="text-muted">Monthly (15th of each month)</span>
+                                <div class="col-md-6">
+                                    <h6>Billing History</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Jan 15, 2024</td>
+                                                    <td>$29.99</td>
+                                                    <td><span class="badge bg-success">Paid</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Dec 15, 2023</td>
+                                                    <td>$29.99</td>
+                                                    <td><span class="badge bg-success">Paid</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Nov 15, 2023</td>
+                                                    <td>$29.99</td>
+                                                    <td><span class="badge bg-success">Paid</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                                <button class="btn btn-sm btn-outline-primary">Update Payment Info</button>
                             </div>
-                            
-                            <div class="mb-4">
-                                <h6 class="mb-3">Notification Settings</h6>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notif1" checked>
-                                    <label class="form-check-label" for="notif1">New follower notifications</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function getNotificationsContent() {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Notifications</h1>
+                <div>
+                    <button class="btn btn-outline-primary me-2" id="markAllReadBtn">
+                        <i class="fas fa-check-double me-2"></i>Mark All as Read
+                    </button>
+                    <button class="btn btn-outline-secondary" id="clearNotificationsBtn">
+                        <i class="fas fa-trash me-2"></i>Clear All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Notification Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                        <label class="form-check-label" for="emailNotifications">
+                                            Email Notifications
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notif2" checked>
-                                    <label class="form-check-label" for="notif2">Stream milestone notifications</label>
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                                        <label class="form-check-label" for="pushNotifications">
+                                            Push Notifications
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notif3">
-                                    <label class="form-check-label" for="notif3">Marketing emails</label>
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="smsNotifications">
+                                        <label class="form-check-label" for="smsNotifications">
+                                            SMS Notifications
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div>
-                                <h6 class="mb-3">Danger Zone</h6>
-                                <button class="btn btn-sm btn-outline-danger me-2">Deactivate Account</button>
-                                <button class="btn btn-sm btn-outline-danger">Delete Account</button>
+                            <button class="btn btn-primary" id="saveNotificationSettingsBtn">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications List -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Notifications</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="notificationsList">
+                                ${getNotificationsList()}
                             </div>
                         </div>
                     </div>
@@ -1065,9 +1407,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper functions for generating content
     function getActivityTimeline() {
         const activities = [
-            {time: '2 hours ago', action: 'New song "Cosmic Drift" uploaded', type: 'upload'},
+            {time: '2 hours ago', action: 'Uploaded new song "Cosmic Drift"', type: 'upload'},
             {time: '1 day ago', action: 'Reached 100K streams on "Midnight Pulse"', type: 'milestone'},
-            {time: '2 days ago', activity: 'Gained 5,420 new followers', type: 'followers'},
+            {time: '2 days ago', action: 'Gained 5,420 new followers', type: 'followers'},
             {time: '1 week ago', action: 'Payment of $8,450 processed', type: 'payment'},
             {time: '2 weeks ago', action: 'Featured on "Electronic Essentials" playlist', type: 'feature'}
         ];
@@ -1086,15 +1428,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function getSongsTableRows() {
-        const songs = [
-            {id: 1, title: 'Midnight Pulse', genre: 'Electronic', date: '2023-06-15', streams: '24.5M', earnings: '$8,450', status: 'active'},
-            {id: 2, title: 'Dreamscape', genre: 'Ambient', date: '2023-05-22', streams: '18.2M', earnings: '$6,120', status: 'active'},
-            {id: 3, title: 'Solar Flare', genre: 'Electronic', date: '2023-04-10', streams: '15.8M', earnings: '$5,340', status: 'active'},
-            {id: 4, title: 'Neon Nights', genre: 'Synthwave', date: '2023-03-28', streams: '12.4M', earnings: '$4,180', status: 'active'},
-            {id: 5, title: 'Cosmic Drift', genre: 'Ambient', date: '2023-02-15', streams: '9.7M', earnings: '$3,270', status: 'pending'}
-        ];
-        
-        return songs.map(song => `
+        return uploadedSongs.map(song => `
             <tr>
                 <td>${song.id}</td>
                 <td>
@@ -1110,11 +1444,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td>${song.genre}</td>
                 <td>${song.date}</td>
-                <td>${song.streams}</td>
-                <td>${song.earnings}</td>
-                <td><span class="badge bg-${song.status === 'active' ? 'success' : 'warning'}">${song.status}</span></td>
+                <td>${song.plays}</td>
+                <td>${song.likes}</td>
+                <td>${song.downloads}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary me-1 edit-song-btn" data-id="${song.id}">
+                    <button class="btn btn-sm btn-outline-primary me-1 play-song-btn" data-id="${song.id}" data-title="${song.title}" data-genre="${song.genre}">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary me-1 edit-song-btn" data-id="${song.id}">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger delete-song-btn" data-id="${song.id}">
@@ -1125,319 +1462,838 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
     }
     
-    function getTopSongsAnalyticsRows() {
-        const songs = [
-            {title: 'Midnight Pulse', streams: '24.5M', listeners: '8.2M', completion: '84%', trend: 'up'},
-            {title: 'Dreamscape', streams: '18.2M', listeners: '6.5M', completion: '78%', trend: 'up'},
-            {title: 'Solar Flare', streams: '15.8M', listeners: '5.8M', completion: '82%', trend: 'stable'},
-            {title: 'Neon Nights', streams: '12.4M', listeners: '4.2M', completion: '76%', trend: 'up'},
-            {title: 'Cosmic Drift', streams: '9.7M', listeners: '3.1M', completion: '81%', trend: 'down'}
-        ];
-        
-        return songs.map(song => `
-            <tr>
-                <td>${song.title}</td>
-                <td>${song.streams}</td>
-                <td>${song.listeners}</td>
-                <td>${song.completion}</td>
-                <td>
-                    <span class="text-${song.trend === 'up' ? 'success' : song.trend === 'down' ? 'danger' : 'warning'}">
-                        <i class="fas fa-arrow-${song.trend === 'up' ? 'up' : song.trend === 'down' ? 'down' : 'right'} me-1"></i>
-                        ${song.trend}
-                    </span>
-                </td>
-            </tr>
-        `).join('');
-    }
-    
-    function getTransactionRows() {
-        const transactions = [
-            {date: '2023-06-15', description: 'Streaming Revenue - June', streams: '2.4M', amount: '$8,450', status: 'paid'},
-            {date: '2023-05-15', description: 'Streaming Revenue - May', streams: '1.8M', amount: '$6,120', status: 'paid'},
-            {date: '2023-04-15', description: 'Streaming Revenue - April', streams: '1.6M', amount: '$5,340', status: 'paid'},
-            {date: '2023-03-15', description: 'Streaming Revenue - March', streams: '1.2M', amount: '$4,180', status: 'paid'},
-            {date: '2023-02-15', description: 'Streaming Revenue - February', streams: '970K', amount: '$3,270', status: 'pending'}
-        ];
-        
-        return transactions.map(tx => `
-            <tr>
-                <td>${tx.date}</td>
-                <td>${tx.description}</td>
-                <td>${tx.streams}</td>
-                <td>${tx.amount}</td>
-                <td><span class="badge bg-${tx.status === 'paid' ? 'success' : 'warning'}">${tx.status}</span></td>
-            </tr>
-        `).join('');
-    }
-    
-    function getTopCitiesList() {
-        const cities = [
-            {city: 'Los Angeles', country: 'USA', followers: '245K'},
-            {city: 'New York', country: 'USA', followers: '182K'},
-            {city: 'London', country: 'UK', followers: '156K'},
-            {city: 'Berlin', country: 'Germany', followers: '128K'},
-            {city: 'Tokyo', country: 'Japan', followers: '98K'},
-            {city: 'Sydney', country: 'Australia', followers: '76K'},
-            {city: 'Toronto', country: 'Canada', followers: '65K'},
-            {city: 'Paris', country: 'France', followers: '58K'}
-        ];
-        
-        return cities.map(city => `
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <div class="fw-bold">${city.city}</div>
-                    <div class="text-muted small">${city.country}</div>
+    function getNotificationsList() {
+        return mockData.notifications.map(notification => `
+            <div class="notification-item ${notification.read ? '' : 'unread'} mb-3 p-3 bg-dark rounded" data-id="${notification.id}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${notification.title}</h6>
+                        <p class="mb-1">${notification.message}</p>
+                        <small class="text-muted">${notification.time}</small>
+                    </div>
+                    <div>
+                        ${!notification.read ? `
+                            <button class="btn btn-sm btn-outline-primary mark-read-btn" data-id="${notification.id}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-notification-btn" data-id="${notification.id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="text-primary fw-bold">${city.followers}</div>
             </div>
         `).join('');
     }
     
-    // Re-attach event listeners after content loads
-    function reattachEventListeners() {
-        // Upload forms
-        const quickUploadForm = document.getElementById('quickUploadForm');
-        const uploadSongForm = document.getElementById('uploadSongForm');
+    function updateNotificationDropdown() {
+        const dropdownContainer = document.querySelector('.dropdown-notifications');
+        if (!dropdownContainer) return;
         
-        if (quickUploadForm) {
-            quickUploadForm.addEventListener('submit', handleQuickUpload);
+        const unreadNotifications = mockData.notifications.filter(n => !n.read);
+        const notificationCount = document.getElementById('notificationCount');
+        const topNotificationCount = document.getElementById('topNotificationCount');
+        
+        if (notificationCount) notificationCount.textContent = unreadNotifications.length;
+        if (topNotificationCount) topNotificationCount.textContent = unreadNotifications.length;
+        
+        if (unreadNotifications.length === 0) {
+            dropdownContainer.innerHTML = `
+                <div class="p-3 text-center">
+                    <p class="text-muted mb-0">No new notifications</p>
+                </div>
+            `;
+        } else {
+            dropdownContainer.innerHTML = unreadNotifications.slice(0, 3).map(notification => `
+                <a href="#" class="dropdown-item d-flex align-items-center py-2 border-bottom" data-id="${notification.id}">
+                    <div class="flex-shrink-0 me-3">
+                        <i class="fas fa-bell text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 small">${notification.title}</h6>
+                        <p class="mb-0 small text-muted">${notification.message}</p>
+                        <small class="text-muted">${notification.time}</small>
+                    </div>
+                </a>
+            `).join('');
         }
-        
-        if (uploadSongForm) {
-            uploadSongForm.addEventListener('submit', handleSongUpload);
-        }
-        
-        // Save draft button
-        const saveDraftBtn = document.getElementById('saveDraftBtn');
-        if (saveDraftBtn) {
-            saveDraftBtn.addEventListener('click', function() {
-                showNotification('Draft saved successfully!', 'success');
-            });
-        }
-        
-        // Song actions
-        const editButtons = document.querySelectorAll('.edit-song-btn');
-        const deleteButtons = document.querySelectorAll('.delete-song-btn');
-        
-        editButtons.forEach(btn => {
+    }
+    
+    // Initialize audio players
+    function initializeAudioPlayers() {
+        // Play song button
+        document.querySelectorAll('.play-song-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                const songId = this.getAttribute('data-id');
-                showNotification(`Editing song #${songId}`, 'info');
+                const songTitle = this.getAttribute('data-title');
+                const songGenre = this.getAttribute('data-genre');
+                
+                // Update modal content
+                document.getElementById('playingSongTitle').textContent = songTitle;
+                document.getElementById('playingSongGenre').textContent = songGenre;
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('audioPlayerModal'));
+                modal.show();
+                
+                // Initialize audio player
+                initializeAudioPlayer();
             });
         });
+    }
+    
+    function initializeAudioPlayer() {
+        let isPlaying = false;
         
-        deleteButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const songId = this.getAttribute('data-id');
-                const row = this.closest('tr');
-                const songTitle = row.querySelector('.fw-bold').textContent;
-                
-                if (confirm(`Delete "${songTitle}"? This action cannot be undone.`)) {
-                    row.style.opacity = '0.5';
-                    
-                    setTimeout(() => {
-                        row.remove();
-                        showNotification(`"${songTitle}" has been deleted`, 'danger');
-                    }, 300);
-                }
-            });
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playPauseIcon = document.getElementById('playPauseIcon');
+        
+        // Remove existing event listeners by cloning and replacing
+        const newPlayPauseBtn = playPauseBtn.cloneNode(true);
+        playPauseBtn.parentNode.replaceChild(newPlayPauseBtn, playPauseBtn);
+        
+        newPlayPauseBtn.addEventListener('click', function() {
+            const songTitle = document.getElementById('playingSongTitle').textContent;
+            
+            if (!isPlaying) {
+                // Start playing
+                isPlaying = true;
+                this.innerHTML = '<i class="fas fa-pause"></i>';
+                showNotification(`Now playing "${songTitle}"`, 'success');
+            } else {
+                // Pause
+                isPlaying = false;
+                this.innerHTML = '<i class="fas fa-play"></i>';
+                showNotification(`Paused "${songTitle}"`, 'info');
+            }
         });
         
-        // Search functionality
-        const songSearch = document.getElementById('songSearch');
-        if (songSearch) {
-            songSearch.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('#songsTableBody tr');
+        // Volume controls
+        const volumeBtn = document.getElementById('volumeBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeContainer = volumeBtn.nextElementSibling;
+        
+        volumeBtn.addEventListener('click', function() {
+            volumeContainer.style.display = volumeContainer.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        volumeSlider.addEventListener('input', function() {
+            const icon = volumeBtn.querySelector('i');
+            const volume = parseInt(this.value);
+            
+            if (volume === 0) {
+                icon.className = 'fas fa-volume-mute';
+            } else if (volume < 50) {
+                icon.className = 'fas fa-volume-down';
+            } else {
+                icon.className = 'fas fa-volume-up';
+            }
+        });
+        
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const songTitle = document.getElementById('playingSongTitle').textContent;
+            showNotification(`Downloading "${songTitle}"...`, 'info');
+        });
+    }
+    
+    // Initialize profile image upload
+    function initializeProfileImageUpload() {
+        const changeAvatarBtn = document.getElementById('changeAvatarBtn');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const uploadProgress = document.getElementById('avatarUploadProgress');
+        
+        if (changeAvatarBtn) {
+            // Create file input if it doesn't exist
+            if (!avatarFileInput) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.id = 'avatarFileInput';
+                input.accept = 'image/*';
+                input.className = 'd-none';
+                document.body.appendChild(input);
                 
-                rows.forEach(row => {
-                    const songTitle = row.querySelector('.fw-bold').textContent.toLowerCase();
-                    const genre = row.querySelectorAll('td')[2].textContent.toLowerCase();
-                    
-                    if (songTitle.includes(searchTerm) || genre.includes(searchTerm)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
+                input.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        const file = this.files[0];
+                        
+                        // Validate file type
+                        if (!file.type.match('image.*')) {
+                            showNotification('Please select an image file', 'danger');
+                            return;
+                        }
+                        
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            showNotification('Image size should be less than 5MB', 'danger');
+                            return;
+                        }
+                        
+                        // Show upload progress
+                        if (uploadProgress) {
+                            uploadProgress.style.display = 'block';
+                            const progressBar = uploadProgress.querySelector('.progress-bar');
+                            
+                            // Simulate upload
+                            let progress = 0;
+                            const interval = setInterval(() => {
+                                progress += 10;
+                                progressBar.style.width = `${progress}%`;
+                                
+                                if (progress >= 100) {
+                                    clearInterval(interval);
+                                    
+                                    // Create preview
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        // Update avatar
+                                        profileAvatar.src = e.target.result;
+                                        
+                                        // Update top bar image
+                                        const topBarImage = document.getElementById('topBarProfileImage');
+                                        if (topBarImage) {
+                                            topBarImage.src = e.target.result;
+                                        }
+                                        
+                                        // Hide progress
+                                        setTimeout(() => {
+                                            if (uploadProgress) {
+                                                uploadProgress.style.display = 'none';
+                                                progressBar.style.width = '0%';
+                                            }
+                                            
+                                            // Show success message
+                                            showNotification('Profile photo updated successfully!', 'success');
+                                        }, 500);
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            }, 100);
+                        }
                     }
                 });
-            });
+                
+                changeAvatarBtn.addEventListener('click', function() {
+                    input.click();
+                });
+            }
         }
+    }
+    
+    // Initialize payment options
+    function initializePaymentOptions() {
+        // Plan selection buttons
+        document.querySelectorAll('.plan-card .btn').forEach(btn => {
+            if (!btn.classList.contains('disabled')) {
+                btn.addEventListener('click', function() {
+                    const selectedPlan = this.getAttribute('data-plan');
+                    const selectedPrice = this.getAttribute('data-price');
+                    
+                    // Update payment modal
+                    document.getElementById('selectedPlanName').textContent = selectedPlan;
+                    document.getElementById('selectedPlanPrice').textContent = selectedPrice;
+                    
+                    // Show payment modal
+                    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                    modal.show();
+                });
+            }
+        });
         
-        // Add song button
-        const addSongBtn = document.getElementById('addSongBtn');
-        if (addSongBtn) {
-            addSongBtn.addEventListener('click', function() {
-                // Navigate to upload page
-                navItems.forEach(nav => nav.classList.remove('active'));
-                const uploadNav = document.querySelector('.list-group-item:nth-child(3)');
-                if (uploadNav) {
-                    uploadNav.classList.add('active');
-                    loadView('upload');
+        // Payment method toggle
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(method => {
+            method.addEventListener('change', function() {
+                const value = this.value;
+                
+                // Hide all forms
+                document.getElementById('creditCardForm').style.display = 'none';
+                document.getElementById('paypalInfo').style.display = 'none';
+                document.getElementById('applePayInfo').style.display = 'none';
+                
+                // Show selected form
+                if (value === 'creditCard') {
+                    document.getElementById('creditCardForm').style.display = 'block';
+                } else if (value === 'paypal') {
+                    document.getElementById('paypalInfo').style.display = 'block';
+                } else if (value === 'applePay') {
+                    document.getElementById('applePayInfo').style.display = 'block';
+                }
+            });
+        });
+        
+        // Process payment button
+        const processPaymentBtn = document.getElementById('processPaymentBtn');
+        if (processPaymentBtn) {
+            processPaymentBtn.addEventListener('click', function() {
+                const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+                let isValid = true;
+                
+                if (selectedMethod === 'creditCard') {
+                    // Validate credit card details
+                    const cardNumber = document.getElementById('cardNumber').value.trim();
+                    const cardExpiry = document.getElementById('cardExpiry').value.trim();
+                    const cardCVV = document.getElementById('cardCVV').value.trim();
+                    const cardName = document.getElementById('cardName').value.trim();
+                    
+                    if (!cardNumber || cardNumber.length < 16) {
+                        showNotification('Please enter a valid card number', 'danger');
+                        isValid = false;
+                    }
+                    
+                    if (!cardExpiry || !cardExpiry.match(/^\d{2}\/\d{2}$/)) {
+                        showNotification('Please enter a valid expiry date (MM/YY)', 'danger');
+                        isValid = false;
+                    }
+                    
+                    if (!cardCVV || cardCVV.length < 3) {
+                        showNotification('Please enter a valid CVV', 'danger');
+                        isValid = false;
+                    }
+                    
+                    if (!cardName) {
+                        showNotification('Please enter cardholder name', 'danger');
+                        isValid = false;
+                    }
+                }
+                
+                if (isValid) {
+                    // Disable button and show processing
+                    this.disabled = true;
+                    const originalText = this.textContent;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                    
+                    // Simulate payment processing
+                    setTimeout(() => {
+                        this.disabled = false;
+                        this.textContent = originalText;
+                        
+                        // Close modal
+                        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+                        
+                        // Show success message
+                        showNotification('Payment processed successfully!', 'success');
+                    }, 2000);
                 }
             });
         }
         
-        // View profile buttons
-        const viewProfileBtn = document.getElementById('viewProfileBtn');
-        const viewPublicProfileBtn = document.getElementById('viewPublicProfileBtn');
-        
-        if (viewProfileBtn) {
-            viewProfileBtn.addEventListener('click', function() {
-                showNotification('Opening public profile...', 'info');
-                setTimeout(() => {
-                    window.open('#', '_blank');
-                }, 500);
+        // Manage billing button
+        const manageBillingBtn = document.getElementById('manageBillingBtn');
+        if (manageBillingBtn) {
+            manageBillingBtn.addEventListener('click', function() {
+                // Show manage billing modal
+                const modal = new bootstrap.Modal(document.getElementById('manageBillingModal'));
+                modal.show();
             });
         }
+    }
+    
+    // Re-attach event listeners after content loads
+    function reattachEventListeners(view) {
+        // Common event listeners
+        attachCommonListeners();
         
-        if (viewPublicProfileBtn) {
-            viewPublicProfileBtn.addEventListener('click', function() {
-                showNotification('Opening public profile...', 'info');
-                setTimeout(() => {
-                    window.open('#', '_blank');
-                }, 500);
-            });
+        // View-specific event listeners
+        switch(view) {
+            case 'dashboard':
+                attachDashboardListeners();
+                break;
+            case 'profile':
+                attachProfileListeners();
+                break;
+            case 'music':
+                attachMusicListeners();
+                break;
+            case 'analytics':
+                attachAnalyticsListeners();
+                break;
+            case 'revenue':
+                attachRevenueListeners();
+                break;
+            case 'subscription':
+                attachSubscriptionListeners();
+                break;
+            case 'notifications':
+                attachNotificationsListeners();
+                break;
         }
-        
-        // Change avatar button
-        const changeAvatarBtn = document.getElementById('changeAvatarBtn');
-        if (changeAvatarBtn) {
-            changeAvatarBtn.addEventListener('click', function() {
-                showNotification('Avatar change functionality would open file dialog', 'info');
-            });
-        }
-        
+    }
+    
+    function attachCommonListeners() {
         // Save profile button
         const saveProfileBtn = document.getElementById('saveProfileBtn');
         if (saveProfileBtn) {
             saveProfileBtn.addEventListener('click', function() {
+                // Get form values
+                const artistName = document.getElementById('artistNameInput')?.value || mockData.profile.name;
+                const bio = document.getElementById('bioInput')?.value || mockData.profile.bio;
+                
+                // Update mock data
+                mockData.profile.name = artistName;
+                mockData.profile.bio = bio;
+                
+                // Update display
+                const nameDisplay = document.getElementById('artistNameDisplay');
+                if (nameDisplay) nameDisplay.textContent = artistName;
+                
+                // Update top bar
+                const topBarName = document.getElementById('topBarArtistName');
+                if (topBarName) topBarName.textContent = artistName;
+                
                 showNotification('Profile updated successfully!', 'success');
             });
         }
         
-        // Request payout button
-        const requestPayoutBtn = document.getElementById('requestPayoutBtn');
-        if (requestPayoutBtn) {
-            requestPayoutBtn.addEventListener('click', function() {
-                showNotification('Payout request submitted! Funds will be transferred within 3-5 business days.', 'success');
+        // Save notification settings in profile
+        const saveNotificationSettings = document.getElementById('saveNotificationSettings');
+        if (saveNotificationSettings) {
+            saveNotificationSettings.addEventListener('click', function() {
+                showNotification('Notification settings saved successfully!', 'success');
+            });
+        }
+    }
+    
+    function attachDashboardListeners() {
+        // Upload music button
+        const uploadMusicBtn = document.getElementById('uploadMusicBtn');
+        if (uploadMusicBtn) {
+            uploadMusicBtn.addEventListener('click', function() {
+                // Switch to music view and show upload modal
+                loadView('music');
+                setTimeout(() => {
+                    const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+                    uploadModal.show();
+                }, 100);
             });
         }
         
-        // Export followers button
-        const exportFollowersBtn = document.getElementById('exportFollowersBtn');
-        if (exportFollowersBtn) {
-            exportFollowersBtn.addEventListener('click', function() {
-                showNotification('Followers list exported to CSV file', 'success');
+        // Export data button - find by class and text content
+        const buttons = document.querySelectorAll('button.btn-outline-secondary');
+        const exportBtn = Array.from(buttons).find(btn => btn.textContent.includes('Export Data'));
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function() {
+                showNotification('Data export started. You will receive an email when ready.', 'info');
+            });
+        }
+    }
+    
+    function attachProfileListeners() {
+        // Update social media preview when inputs change
+        const socialInputs = ['instagramInput', 'twitterInput', 'youtubeInput', 'tiktokInput', 'spotifyInput', 'soundcloudInput'];
+        socialInputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('input', updateSocialPreview);
+            }
+        });
+        
+        // Initialize social preview
+        updateSocialPreview();
+    }
+    
+    function updateSocialPreview() {
+        console.log('Updating social preview');
+        const previewContainer = document.getElementById('socialPreview');
+        if (!previewContainer) {
+            console.error('socialPreview container not found');
+            return;
+        }
+        
+        const instagram = document.getElementById('instagramInput')?.value?.trim();
+        const twitter = document.getElementById('twitterInput')?.value?.trim();
+        const youtube = document.getElementById('youtubeInput')?.value?.trim();
+        const tiktok = document.getElementById('tiktokInput')?.value?.trim();
+        const spotify = document.getElementById('spotifyInput')?.value?.trim();
+        const soundcloud = document.getElementById('soundcloudInput')?.value?.trim();
+        
+        console.log('Social values:', {instagram, twitter, youtube, tiktok, spotify, soundcloud});
+        
+        let html = '';
+        
+        if (instagram) {
+            const handle = instagram.startsWith('@') ? instagram.substring(1) : instagram;
+            html += `<a href="https://instagram.com/${handle}" target="_blank" class="social-icon instagram" title="Instagram"><i class="fab fa-instagram"></i></a>`;
+        }
+        if (twitter) {
+            const handle = twitter.startsWith('@') ? twitter.substring(1) : twitter;
+            html += `<a href="https://twitter.com/${handle}" target="_blank" class="social-icon twitter" title="Twitter"><i class="fab fa-twitter"></i></a>`;
+        }
+        if (youtube) {
+            html += `<a href="https://youtube.com/${youtube.startsWith('@') ? '' : '@'}${youtube}" target="_blank" class="social-icon youtube" title="YouTube"><i class="fab fa-youtube"></i></a>`;
+        }
+        if (tiktok) {
+            const handle = tiktok.startsWith('@') ? tiktok.substring(1) : tiktok;
+            html += `<a href="https://tiktok.com/@${handle}" target="_blank" class="social-icon tiktok" title="TikTok"><i class="fab fa-tiktok"></i></a>`;
+        }
+        if (spotify) {
+            html += `<a href="https://open.spotify.com/artist/${spotify}" target="_blank" class="social-icon spotify" title="Spotify"><i class="fab fa-spotify"></i></a>`;
+        }
+        if (soundcloud) {
+            html += `<a href="https://soundcloud.com/${soundcloud}" target="_blank" class="social-icon soundcloud" title="SoundCloud"><i class="fab fa-soundcloud"></i></a>`;
+        }
+        
+        console.log('Generated HTML:', html);
+        previewContainer.innerHTML = html || '<small class="text-muted">No social media links set</small>';
+    }
+    
+    function attachMusicListeners() {
+        // Upload new song button
+        const uploadNewSongBtn = document.getElementById('uploadNewSongBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        
+        if (uploadNewSongBtn && uploadForm) {
+            uploadNewSongBtn.addEventListener('click', function() {
+                uploadForm.style.display = uploadForm.style.display === 'none' ? 'block' : 'none';
             });
         }
         
-        // View upload history button
-        const viewUploadHistory = document.getElementById('viewUploadHistory');
-        if (viewUploadHistory) {
-            viewUploadHistory.addEventListener('click', function() {
-                showNotification('Opening upload history...', 'info');
+        // Cancel upload button
+        const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+        if (cancelUploadBtn && uploadForm) {
+            cancelUploadBtn.addEventListener('click', function() {
+                uploadForm.style.display = 'none';
+                const songUploadForm = document.getElementById('songUploadForm');
+                if (songUploadForm) songUploadForm.reset();
             });
         }
         
-        // Period dropdown for analytics
-        const periodDropdown = document.querySelector('.dropdown-menu');
-        if (periodDropdown) {
-            const periodItems = periodDropdown.querySelectorAll('.dropdown-item');
-            periodItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const period = this.getAttribute('data-period');
+        // Audio upload area
+        const audioUploadArea = document.getElementById('audioUploadArea');
+        if (audioUploadArea) {
+            audioUploadArea.addEventListener('click', function() {
+                const audioFileInput = document.getElementById('audioFileInput');
+                if (audioFileInput) audioFileInput.click();
+            });
+        }
+        
+        // Song upload form
+        const songUploadForm = document.getElementById('songUploadForm');
+        if (songUploadForm) {
+            songUploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const songTitle = document.getElementById('songTitleInput')?.value;
+                const songGenre = document.getElementById('songGenreSelect')?.value;
+                
+                if (!songTitle || !songGenre) {
+                    showNotification('Please fill in all required fields', 'danger');
+                    return;
+                }
+                
+                const submitBtn = document.getElementById('submitUploadBtn');
+                if (submitBtn) {
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+                    submitBtn.disabled = true;
                     
-                    // Update active item
-                    periodItems.forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        
+                        // Add new song to uploadedSongs
+                        const newSong = {
+                            id: uploadedSongs.length + 1,
+                            title: songTitle,
+                            genre: songGenre,
+                            date: new Date().toISOString().split('T')[0],
+                            plays: '0',
+                            likes: '0',
+                            downloads: '0',
+                            status: 'pending',
+                            audioFile: null
+                        };
+                        
+                        uploadedSongs.unshift(newSong);
+                        
+                        showNotification(`"${songTitle}" uploaded successfully! It will be available after review.`, 'success');
+                        songUploadForm.reset();
+                        if (uploadForm) uploadForm.style.display = 'none';
+                        
+                        // Refresh songs table
+                        const songsTableBody = document.getElementById('songsTableBody');
+                        if (songsTableBody) {
+                            songsTableBody.innerHTML = getSongsTableRows();
+                            attachMusicListeners(); // Re-attach listeners for new rows
+                        }
+                    }, 2000);
+                }
+            });
+        }
+        
+        // Edit song buttons
+        document.querySelectorAll('.edit-song-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const songId = this.getAttribute('data-id');
+                const song = uploadedSongs.find(s => s.id == songId);
+                
+                if (song) {
+                    // Fill edit form
+                    document.getElementById('editSongTitle').value = song.title;
+                    document.getElementById('editSongGenre').value = song.genre;
+                    document.getElementById('editSongId').value = songId;
                     
-                    // Update dropdown button text
-                    const dropdownBtn = periodDropdown.previousElementSibling;
-                    dropdownBtn.textContent = this.textContent;
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('editSongModal'));
+                    modal.show();
+                }
+            });
+        });
+        
+        // Save song changes
+        const saveSongChanges = document.getElementById('saveSongChanges');
+        if (saveSongChanges) {
+            saveSongChanges.addEventListener('click', function() {
+                const songId = document.getElementById('editSongId').value;
+                const songTitle = document.getElementById('editSongTitle').value;
+                const songGenre = document.getElementById('editSongGenre').value;
+                
+                if (!songTitle || !songGenre) {
+                    showNotification('Please fill in all required fields', 'danger');
+                    return;
+                }
+                
+                // Find and update song
+                const songIndex = uploadedSongs.findIndex(s => s.id == songId);
+                if (songIndex !== -1) {
+                    uploadedSongs[songIndex].title = songTitle;
+                    uploadedSongs[songIndex].genre = songGenre;
                     
-                    showNotification(`Analytics updated for ${this.textContent}`, 'info');
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('editSongModal')).hide();
+                    
+                    // Refresh table
+                    const songsTableBody = document.getElementById('songsTableBody');
+                    if (songsTableBody) {
+                        songsTableBody.innerHTML = getSongsTableRows();
+                        attachMusicListeners();
+                    }
+                    
+                    showNotification(`"${songTitle}" updated successfully!`, 'success');
+                }
+            });
+        }
+        
+        // Delete song buttons
+        document.querySelectorAll('.delete-song-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const songId = this.getAttribute('data-id');
+                const song = uploadedSongs.find(s => s.id == songId);
+                
+                if (song && confirm(`Delete "${song.title}"? This action cannot be undone.`)) {
+                    // Remove from uploadedSongs
+                    uploadedSongs = uploadedSongs.filter(s => s.id != songId);
+                    
+                    // Remove row from table
+                    const row = this.closest('tr');
+                    row.style.opacity = '0.5';
+                    setTimeout(() => {
+                        row.remove();
+                        showNotification(`"${song.title}" has been deleted`, 'danger');
+                    }, 300);
+                }
+            });
+        });
+    }
+    
+    function attachAnalyticsListeners() {
+        // Period dropdown
+        const periodItems = document.querySelectorAll('.dropdown-item[data-period]');
+        periodItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const period = this.getAttribute('data-period');
+                
+                // Update active item
+                periodItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update dropdown button text
+                const dropdownBtn = this.closest('.dropdown-menu').previousElementSibling;
+                dropdownBtn.textContent = this.textContent;
+                
+                showNotification(`Analytics updated for ${this.textContent}`, 'info');
+            });
+        });
+    }
+    
+    function attachRevenueListeners() {
+        // Withdraw all button
+        const withdrawAllBtn = document.getElementById('withdrawAllBtn');
+        if (withdrawAllBtn) {
+            withdrawAllBtn.addEventListener('click', function() {
+                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""));
+                document.getElementById('withdrawAmount').value = availableAmount.toFixed(2);
+            });
+        }
+        
+        // Process withdrawal button
+        const processWithdrawalBtn = document.getElementById('processWithdrawalBtn');
+        if (processWithdrawalBtn) {
+            processWithdrawalBtn.addEventListener('click', function() {
+                const amountInput = document.getElementById('withdrawAmount');
+                const amount = parseFloat(amountInput.value);
+                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""));
+                const method = document.getElementById('withdrawMethod').value;
+                
+                if (!amount || isNaN(amount)) {
+                    showNotification('Please enter a valid amount', 'danger');
+                    return;
+                }
+                
+                if (amount < 50) {
+                    showNotification('Minimum withdrawal amount is $50', 'danger');
+                    return;
+                }
+                
+                if (amount > availableAmount) {
+                    showNotification('Insufficient balance', 'danger');
+                    return;
+                }
+                
+                if (amount > 10000) {
+                    showNotification('Maximum withdrawal per day is $10,000', 'danger');
+                    return;
+                }
+                
+                // Disable button and show processing
+                this.disabled = true;
+                const originalText = this.textContent;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                
+                // Simulate withdrawal processing
+                setTimeout(() => {
+                    this.disabled = false;
+                    this.textContent = originalText;
+                    
+                    // Update available balance
+                    const newBalance = availableAmount - amount;
+                    mockData.stats.availableForWithdrawal = `$${newBalance.toFixed(2)}`;
+                    
+                    // Clear input
+                    amountInput.value = '';
+                    
+                    // Show success message
+                    showNotification(`Successfully withdrew $${amount.toFixed(2)} via ${method}. Funds will arrive in 3-5 business days.`, 'success');
+                    
+                    // Update UI
+                    const availableBalanceEl = document.getElementById('availableBalance');
+                    if (availableBalanceEl) {
+                        availableBalanceEl.textContent = `$${newBalance.toFixed(2)}`;
+                    }
+                }, 2000);
+            });
+        }
+        
+        // Withdraw earnings button
+        const withdrawEarningsBtn = document.getElementById('withdrawEarningsBtn');
+        if (withdrawEarningsBtn) {
+            withdrawEarningsBtn.addEventListener('click', function() {
+                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""));
+                
+                if (availableAmount < 50) {
+                    showNotification(`Minimum withdrawal is $50. Current available: $${availableAmount.toFixed(2)}`, 'warning');
+                    return;
+                }
+                
+                // Show withdraw modal
+                const modal = new bootstrap.Modal(document.getElementById('withdrawEarningsModal'));
+                modal.show();
+            });
+        }
+    }
+    
+    function attachSubscriptionListeners() {
+        // Already handled in initializePaymentOptions
+    }
+    
+    function attachNotificationsListeners() {
+        // Mark all as read button
+        const markAllReadBtn = document.getElementById('markAllReadBtn');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function() {
+                // Mark all notifications as read
+                mockData.notifications.forEach(notification => {
+                    notification.read = true;
                 });
+                
+                // Update UI
+                const notifications = document.querySelectorAll('.notification-item');
+                notifications.forEach(notification => {
+                    notification.classList.remove('unread');
+                    const markReadBtn = notification.querySelector('.mark-read-btn');
+                    if (markReadBtn) markReadBtn.remove();
+                });
+                
+                // Update dropdown
+                updateNotificationDropdown();
+                
+                showNotification('All notifications marked as read', 'success');
             });
         }
-    }
-    
-    // Handle quick upload
-    function handleQuickUpload(e) {
-        e.preventDefault();
         
-        const form = e.target;
-        const formData = new FormData(form);
-        const songTitle = form.querySelector('input[type="text"]').value;
-        
-        if (!songTitle) {
-            alert('Please enter a song title');
-            return;
+        // Clear all notifications button
+        const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
+        if (clearNotificationsBtn) {
+            clearNotificationsBtn.addEventListener('click', function() {
+                if (confirm('Clear all notifications?')) {
+                    const notificationsList = document.getElementById('notificationsList');
+                    notificationsList.innerHTML = '<p class="text-center text-muted py-4">No notifications</p>';
+                    showNotification('All notifications cleared', 'success');
+                }
+            });
         }
         
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
-        submitBtn.disabled = true;
+        // Mark individual as read buttons
+        document.querySelectorAll('.mark-read-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                const notification = mockData.notifications.find(n => n.id == notificationId);
+                
+                if (notification) {
+                    notification.read = true;
+                    const notificationEl = this.closest('.notification-item');
+                    notificationEl.classList.remove('unread');
+                    this.remove();
+                    
+                    // Update dropdown
+                    updateNotificationDropdown();
+                    
+                    showNotification('Notification marked as read', 'success');
+                }
+            });
+        });
         
-        setTimeout(() => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            showNotification(`"${songTitle}" uploaded successfully!`, 'success');
-            form.reset();
-        }, 1500);
-    }
-    
-    // Handle song upload
-    function handleSongUpload(e) {
-        e.preventDefault();
-        
-        const form = e.target;
-        const songTitle = form.querySelector('input[type="text"]').value;
-        
-        if (!songTitle) {
-            alert('Please enter a song title');
-            return;
+        // Save notification settings button
+        const saveNotificationSettingsBtn = document.getElementById('saveNotificationSettingsBtn');
+        if (saveNotificationSettingsBtn) {
+            saveNotificationSettingsBtn.addEventListener('click', function() {
+                showNotification('Notification settings saved successfully!', 'success');
+            });
         }
-        
-        const royaltyCheck = form.querySelector('#royaltyCheck');
-        if (!royaltyCheck.checked) {
-            alert('You must confirm that you own all rights to this recording');
-            return;
-        }
-        
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
-        submitBtn.disabled = true;
-        
-        setTimeout(() => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            showNotification(`"${songTitle}" uploaded successfully! It will be available after review.`, 'success');
-            form.reset();
-        }, 2000);
     }
     
     // Notification function
     function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingAlerts = document.querySelectorAll('.alert.position-fixed');
+        existingAlerts.forEach(alert => {
+            alert.remove();
+        });
+        
         const notification = document.createElement('div');
         notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
         notification.innerHTML = `
             ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
         `;
         
         document.body.appendChild(notification);
         
+        // Auto-dismiss after 3 seconds
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
             }
         }, 3000);
     }
-    
-    // Initialize the dashboard view
-    loadView('dashboard');
 });
