@@ -15,12 +15,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetEmailInput = document.getElementById('resetEmail');
     const googleLoginBtn = document.getElementById('googleLogin');
     const facebookLoginBtn = document.getElementById('facebookLogin');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const passwordEyeIcon = document.getElementById('passwordEyeIcon');
     
     // Demo user credentials (for demo purposes only)
     const demoUsers = [
         { email: 'john@example.com', password: 'password123', name: 'John Smith' },
         { email: 'user@afrorhythm.com', password: 'AfroRhythm2023', name: 'Demo User' }
     ];
+    
+    // Toggle password visibility
+    togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        // Toggle eye icon
+        if (type === 'text') {
+            passwordEyeIcon.classList.remove('fa-eye');
+            passwordEyeIcon.classList.add('fa-eye-slash');
+            togglePasswordBtn.setAttribute('aria-label', 'Hide password');
+        } else {
+            passwordEyeIcon.classList.remove('fa-eye-slash');
+            passwordEyeIcon.classList.add('fa-eye');
+            togglePasswordBtn.setAttribute('aria-label', 'Show password');
+        }
+    });
     
     // Show error message
     function showError(message) {
@@ -95,8 +114,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Simulate API call delay
         setTimeout(() => {
-            // Check demo credentials
-            const user = demoUsers.find(u => u.email === email && u.password === password);
+            // Check demo credentials first
+            let user = demoUsers.find(u => u.email === email && u.password === password);
+            
+            // If not found in demo users, check registered users
+            if (!user) {
+                const registeredUsers = JSON.parse(localStorage.getItem('afroUsers') || '[]');
+                user = registeredUsers.find(u => u.email === email && u.password === password);
+            }
             
             if (user) {
                 // Successful login
@@ -105,14 +130,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Store user data in localStorage (for demo purposes)
                 localStorage.setItem('afroUser', JSON.stringify({
                     email: user.email,
-                    name: user.name,
+                    name: user.fullName || user.name,
                     isLoggedIn: true,
-                    loginTime: new Date().toISOString()
+                    loginTime: new Date().toISOString(),
+                    role: user.role || 'fan' // Default to fan for demo users
                 }));
                 
-                // Redirect to dashboard after 2 seconds
+                // Redirect to appropriate dashboard based on role
                 setTimeout(() => {
-                    window.location.href = '../fan.html';
+                    if (user.role === 'artist') {
+                        window.location.href = '../artist.html';
+                    } else {
+                        window.location.href = '../fan.html';
+                    }
                 }, 2000);
             } else {
                 // Failed login

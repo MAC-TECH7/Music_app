@@ -5,19 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beats - Artist Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts - Matching index page -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #1a1a1a;
-            --bg-tertiary: #2a2a2a;
-            --text-primary: #ffffff;
+            /* Colors - Matching index page palette */
+            --primary-color: #FF6B35; /* African sunset orange */
+            --secondary-color: #2E8B57; /* Forest green */
+            --accent-color: #8B4513; /* Earth brown */
+            --dark-color: #1A1A2E;
+            --light-color: #F8F9FA;
+            
+            /* Background colors */
+            --bg-primary: var(--dark-color);
+            --bg-secondary: #2a2a3e; /* Slightly lighter than dark-color */
+            --bg-tertiary: #3a3a4e; /* Even lighter */
+            --text-primary: var(--light-color);
             --text-secondary: #b3b3b3;
             --text-muted: #808080;
-            --accent-primary: #ff4d8d;
-            --accent-secondary: #9d4edd;
-            --accent-hover: #ff7aa8;
-            --border-color: #333333;
+            --accent-primary: var(--primary-color);
+            --accent-secondary: var(--secondary-color);
+            --accent-hover: #e55a2e; /* Darker orange for hover */
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow: rgba(0, 0, 0, 0.3);
             --success-color: #00cc88;
             --warning-color: #ffaa00;
             --danger-color: #ff375f;
@@ -30,7 +41,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Open Sans', sans-serif;
             background-color: var(--bg-primary) !important;
             color: var(--text-primary) !important;
             min-height: 100vh;
