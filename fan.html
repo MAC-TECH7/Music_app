@@ -10,12 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <!-- AOS Animation Library -->
-    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
     
     <style>
-        /* ALL YOUR CSS STYLES FROM BEFORE GO HERE */
-        /* Copy the entire <style> section from your original HTML */
         :root {
             --primary-color: #FF6B35;
             --secondary-color: #2E8B57;
@@ -57,9 +53,10 @@
         .app {
             display: flex;
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Enhanced Sidebar */
+        /* Sidebar */
         .sidebar {
             width: 280px;
             background: linear-gradient(180deg, var(--dark-color) 0%, #2a2a3e 100%);
@@ -122,6 +119,12 @@
             border-left: 3px solid transparent;
             margin: 2px 0;
             cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            font-size: inherit;
         }
 
         .nav-item:hover {
@@ -152,11 +155,17 @@
             font-weight: 600;
         }
 
-        /* Quick Stats */
+        /* Quick Stats - Hidden on mobile */
         .quick-stats {
             padding: var(--spacing-lg);
             background: rgba(255, 255, 255, 0.05);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 992px) {
+            .quick-stats {
+                display: none;
+            }
         }
 
         .stat-item {
@@ -198,7 +207,7 @@
             min-height: 100vh;
         }
 
-        /* Enhanced Top Bar */
+        /* Top Bar */
         .top-bar {
             background: var(--bg-secondary);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -331,6 +340,21 @@
             background: linear-gradient(180deg, var(--bg-primary) 0%, #1e1e2e 100%);
         }
 
+        /* Dashboard Views */
+        .dashboard-view {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .dashboard-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         /* Hero Welcome */
         .hero-welcome {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -437,6 +461,7 @@
             gap: var(--spacing-lg);
         }
 
+        /* Song Card */
         .song-card {
             background: var(--bg-secondary);
             border-radius: var(--radius-lg);
@@ -466,12 +491,6 @@
             color: white;
             overflow: hidden;
             position: relative;
-        }
-
-        .song-cover img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
 
         .song-info h4 {
@@ -560,7 +579,6 @@
             font-size: 32px;
             color: white;
             position: relative;
-            overflow: hidden;
         }
 
         .playlist-overlay {
@@ -611,7 +629,6 @@
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: 600;
-            backdrop-filter: blur(4px);
         }
 
         .playlist-badge {
@@ -1222,82 +1239,19 @@
             to { transform: translateX(100%); opacity: 0; }
         }
 
-        /* Modal Overlay */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        /* Color Options for Avatar */
-        .color-option {
-            transition: transform 0.2s ease;
-        }
-
-        .color-option:hover {
-            transform: scale(1.1);
-        }
-
-        .color-option.selected {
-            border: 3px solid white !important;
-            box-shadow: 0 0 0 2px var(--primary-color);
-        }
-
-        /* Playlist Option Menu */
-        .playlist-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            width: 100%;
+        /* Menu Toggle for Mobile */
+        .menu-toggle {
+            display: none;
             background: none;
             border: none;
             color: var(--text-primary);
-            text-align: left;
+            font-size: 24px;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .playlist-option:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .playlist-option i {
-            width: 20px;
-            text-align: center;
-        }
-
-        /* Loading States */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-
-        .loading::after {
-            content: '';
+            padding: var(--spacing-sm);
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
         }
 
         /* Responsive Design */
@@ -1343,6 +1297,10 @@
             .search-container {
                 width: 250px;
             }
+            
+            .top-bar {
+                padding-left: 60px;
+            }
         }
 
         @media (max-width: 768px) {
@@ -1377,148 +1335,6 @@
             .progress-container {
                 width: 100%;
             }
-            
-            .playlist-actions {
-                opacity: 1;
-                background: rgba(0, 0, 0, 0.5);
-                border-radius: 20px;
-                padding: 4px;
-            }
-            
-            .playlist-action-btn {
-                width: 24px;
-                height: 24px;
-                font-size: 10px;
-            }
-            
-            .playlist-description {
-                -webkit-line-clamp: 1;
-                min-height: 20px;
-            }
-            
-            .playlist-meta {
-                flex-direction: column;
-                gap: 4px;
-            }
-        }
-
-        /* Menu Toggle for Mobile */
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 24px;
-            cursor: pointer;
-            padding: var(--spacing-sm);
-        }
-
-        @media (max-width: 992px) {
-            .menu-toggle {
-                display: block;
-            }
-        }
-
-        /* Notification Dropdown */
-        .notification-dropdown {
-            position: absolute;
-            top: 60px;
-            right: 20px;
-            width: 350px;
-            background: var(--bg-secondary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            display: none;
-            z-index: 1001;
-        }
-
-        .notification-dropdown.show {
-            display: block;
-        }
-
-        .notification-header {
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .notification-header h4 {
-            margin: 0;
-            font-size: 16px;
-        }
-
-        .mark-all-read {
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .notification-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .notification-item {
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            gap: var(--spacing-md);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .notification-item:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .notification-item.unread {
-            background: rgba(255, 107, 53, 0.05);
-        }
-
-        .notification-icon {
-            width: 32px;
-            height: 32px;
-            background: rgba(255, 107, 53, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-color);
-            flex-shrink: 0;
-        }
-
-        .notification-content {
-            flex: 1;
-        }
-
-        .notification-content p {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .notification-time {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .notification-footer {
-            padding: var(--spacing-md);
-            text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .view-all-notifications {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
         }
     </style>
 </head>
@@ -1538,66 +1354,66 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <div class="nav-section-title">DISCOVER</div>
-                    <a class="nav-item active" data-view="discover">
+                    <button class="nav-item active" data-view="discover">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
-                    </a>
-                    <a class="nav-item" data-view="browse">
+                    </button>
+                    <button class="nav-item" data-view="browse">
                         <i class="fas fa-search"></i>
                         <span>Browse</span>
-                    </a>
-                    <a class="nav-item" data-view="genres">
+                    </button>
+                    <button class="nav-item" data-view="genres">
                         <i class="fas fa-tags"></i>
                         <span>Genres</span>
-                    </a>
+                    </button>
                 </div>
                 
                 <div class="nav-section">
                     <div class="nav-section-title">MY MUSIC</div>
-                    <a class="nav-item" data-view="mymusic">
+                    <button class="nav-item" data-view="mymusic">
                         <i class="fas fa-music"></i>
                         <span>My Music</span>
                         <span class="nav-badge" id="favoriteCount">0</span>
-                    </a>
-                    <a class="nav-item" data-view="playlists">
+                    </button>
+                    <button class="nav-item" data-view="playlists">
                         <i class="fas fa-list"></i>
                         <span>Playlists</span>
                         <span class="nav-badge" id="playlistCount">2</span>
-                    </a>
-                    <a class="nav-item" data-view="history">
+                    </button>
+                    <button class="nav-item" data-view="history">
                         <i class="fas fa-history"></i>
                         <span>History</span>
-                    </a>
+                    </button>
                 </div>
                 
                 <div class="nav-section">
                     <div class="nav-section-title">FOLLOWING</div>
-                    <a class="nav-item" data-view="following">
+                    <button class="nav-item" data-view="following">
                         <i class="fas fa-user-friends"></i>
                         <span>Following</span>
                         <span class="nav-badge" id="followingCount">0</span>
-                    </a>
-                    <a class="nav-item" data-view="notifications">
+                    </button>
+                    <button class="nav-item" data-view="notifications">
                         <i class="fas fa-bell"></i>
                         <span>Notifications</span>
                         <span class="nav-badge" id="notificationCount">2</span>
-                    </a>
+                    </button>
                 </div>
                 
                 <div class="nav-section">
                     <div class="nav-section-title">ACCOUNT</div>
-                    <a class="nav-item" data-view="profile">
+                    <button class="nav-item" data-view="profile">
                         <i class="fas fa-user"></i>
                         <span>Profile</span>
-                    </a>
-                    <a class="nav-item" data-view="settings">
+                    </button>
+                    <button class="nav-item" data-view="settings">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
-                    </a>
-                    <a class="nav-item" id="logoutBtn">
+                    </button>
+                    <button class="nav-item" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
-                    </a>
+                    </button>
                 </div>
             </nav>
             
@@ -1663,20 +1479,6 @@
                 </div>
             </div>
 
-            <!-- Notification Dropdown -->
-            <div class="notification-dropdown" id="notificationDropdown">
-                <div class="notification-header">
-                    <h4>Notifications</h4>
-                    <button class="mark-all-read" id="markAllRead">Mark all as read</button>
-                </div>
-                <div class="notification-list" id="notificationList">
-                    <!-- Notifications will be loaded here -->
-                </div>
-                <div class="notification-footer">
-                    <a href="#" class="view-all-notifications" data-view="notifications">View All Notifications</a>
-                </div>
-            </div>
-
             <!-- Content Area -->
             <div class="content-area" id="contentArea">
                 <!-- Discover View (Default) -->
@@ -1707,9 +1509,9 @@
                     <div class="section">
                         <div class="section-header">
                             <h2>🔥 Trending Now</h2>
-                            <a href="#" class="view-all" data-view="browse">
+                            <button class="view-all" data-view="browse">
                                 View All <i class="fas fa-arrow-right"></i>
-                            </a>
+                            </button>
                         </div>
                         <div class="cards-grid" id="trendingSongs">
                             <!-- Trending songs will be loaded here -->
@@ -1730,9 +1532,9 @@
                     <div class="section">
                         <div class="section-header">
                             <h2>🕒 Continue Listening</h2>
-                            <a href="#" class="view-all" data-view="history">
+                            <button class="view-all" data-view="history">
                                 View All <i class="fas fa-arrow-right"></i>
-                            </a>
+                            </button>
                         </div>
                         <div class="recently-played" id="recentlyPlayed">
                             <!-- Recently played songs will be loaded here -->
@@ -1743,9 +1545,9 @@
                     <div class="section">
                         <div class="section-header">
                             <h2>🎧 Made For You</h2>
-                            <a href="#" class="view-all" data-view="playlists">
+                            <button class="view-all" data-view="playlists">
                                 View All <i class="fas fa-arrow-right"></i>
-                            </a>
+                            </button>
                         </div>
                         <div class="cards-grid" id="recommendedPlaylists">
                             <!-- Recommended playlists will be loaded here -->
@@ -1756,9 +1558,9 @@
                     <div class="section">
                         <div class="section-header">
                             <h2>⭐ Your Favorite Artists</h2>
-                            <a href="#" class="view-all" data-view="following">
+                            <button class="view-all" data-view="following">
                                 View All <i class="fas fa-arrow-right"></i>
-                            </a>
+                            </button>
                         </div>
                         <div class="cards-grid" id="favoriteArtists">
                             <!-- Favorite artists will be loaded here -->
@@ -1805,9 +1607,9 @@
                         <div class="section">
                             <div class="section-header">
                                 <h3>❤️ Favorite Songs</h3>
-                                <a href="#" class="view-all" data-action="play-all-favorites">
+                                <button class="view-all" data-action="play-all-favorites">
                                     Play All <i class="fas fa-play"></i>
-                                </a>
+                                </button>
                             </div>
                             <div class="cards-grid" id="myFavoriteSongs">
                                 <!-- Favorite songs will be loaded here -->
@@ -2047,9 +1849,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- AOS Animation Library -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <!-- Custom JS - CORRECT PATH -->
+    <!-- Custom JS -->
     <script src="Js/fan.js"></script>
 </body>
 </html>
