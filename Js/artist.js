@@ -39,17 +39,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // State management
     let currentView = 'dashboard';
     let currentPlan = 'Pro'; // Current subscription plan
-    let uploadedSongs = []; // Store uploaded songs data
+    let uploadedSongs = []; // Store uploaded songs data (loaded from backend)
     
-    // Mock Data
+    // Mock Data for notifications and profile; songs will come from backend
     const mockData = {
-        songs: [
-            { id: 1, title: 'Midnight Pulse', genre: 'Electronic', date: '2024-01-15', plays: '245,820', likes: '12,450', downloads: '8,240', status: 'active', audioFile: null },
-            { id: 2, title: 'Dreamscape', genre: 'Ambient', date: '2024-01-10', plays: '182,340', likes: '9,820', downloads: '6,150', status: 'active', audioFile: null },
-            { id: 3, title: 'Solar Flare', genre: 'Electronic', date: '2024-01-05', plays: '158,920', likes: '8,450', downloads: '5,280', status: 'active', audioFile: null },
-            { id: 4, title: 'Neon Nights', genre: 'Synthwave', date: '2023-12-28', plays: '124,580', likes: '6,920', downloads: '4,180', status: 'active', audioFile: null },
-            { id: 5, title: 'Cosmic Drift', genre: 'Ambient', date: '2023-12-15', plays: '97,450', likes: '5,120', downloads: '3,270', status: 'pending', audioFile: null }
-        ],
+        songs: [], // will be populated from backend
         notifications: [
             { id: 1, title: 'New Follower', message: '@musiclover123 started following you', time: '2 hours ago', read: false },
             { id: 2, title: 'Stream Milestone', message: 'Your song "Midnight Pulse" reached 100K plays', time: '1 day ago', read: false },
@@ -67,17 +61,54 @@ document.addEventListener('DOMContentLoaded', function() {
             availableForWithdrawal: '$12,540'
         },
         profile: {
-            name: 'Nova Rhythm',
-            bio: 'Electronic music producer from Los Angeles. Creating atmospheric beats and melodic soundscapes since 2018. Influenced by ambient, synthwave, and deep house.',
+            name: 'Artist',
+            bio: 'Update your bio in the profile section to tell fans about yourself.',
             avatar: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
         }
     };
 
-    // Initialize uploaded songs
-    uploadedSongs = [...mockData.songs];
-    
-    // Initialize the dashboard
-    initializeDashboard();
+    // Load songs from backend first, then initialize dashboard
+    loadArtistSongsFromBackend().then(() => {
+        initializeDashboard();
+    }).catch(err => {
+        console.error('Error loading artist songs, using empty list:', err);
+        uploadedSongs = [];
+        mockData.songs = [];
+        initializeDashboard();
+    });
+
+    async function loadArtistSongsFromBackend() {
+        // Try to identify current user from localStorage
+        let currentUser = null;
+        try {
+            currentUser = JSON.parse(localStorage.getItem('afroUser') || 'null');
+        } catch (e) {
+            currentUser = null;
+        }
+
+        const res = await fetch('backend/api/songs.php');
+        const json = await res.json();
+        if (!json.success) {
+            throw new Error(json.message || 'Failed to load songs');
+        }
+
+        // Filter songs by artist when we know the artist ID; for now, show all active songs
+        const songs = json.data.filter(song => song.status === 'active' || song.status === 'pending');
+
+        uploadedSongs = songs.map(song => ({
+            id: song.id,
+            title: song.title,
+            genre: song.genre || 'Unknown',
+            date: song.uploaded_at ? song.uploaded_at.split(' ')[0] : '',
+            plays: Number(song.plays || 0).toLocaleString(),
+            likes: Number(song.likes || 0).toLocaleString(),
+            downloads: '0',
+            status: song.status,
+            audioFile: song.file_path || null
+        }));
+
+        mockData.songs = uploadedSongs;
+    }
     
     function initializeDashboard() {
         console.log('Initializing dashboard...');

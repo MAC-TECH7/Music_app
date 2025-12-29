@@ -101,6 +101,36 @@ $tables = [
         FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
     )",
 
+    "CREATE TABLE IF NOT EXISTS follows (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        artist_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_follow (user_id, artist_id)
+    )",
+
+    "CREATE TABLE IF NOT EXISTS listening_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        song_id INT NOT NULL,
+        played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
+        INDEX idx_user_played (user_id, played_at)
+    )",
+
+    "CREATE TABLE IF NOT EXISTS notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_unread (user_id, is_read)
+    )",
+
     "CREATE TABLE IF NOT EXISTS reports (
         id INT AUTO_INCREMENT PRIMARY KEY,
         reporter_id INT,

@@ -1,24 +1,3 @@
-// Read role from URL parameter
-function getRoleFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('role');
-}
-
-// In your DOMContentLoaded function, add:
-const roleFromURL = getRoleFromURL();
-if (roleFromURL) {
-    // Pre-select the role based on URL parameter
-    const roleInput = document.getElementById('role' + roleFromURL.charAt(0).toUpperCase() + roleFromURL.slice(1));
-    if (roleInput) {
-        roleInput.checked = true;
-        // Also add selected class to the role option
-        const roleOption = document.querySelector(`.role-option[data-role="${roleFromURL}"]`);
-        if (roleOption) {
-            roleOption.classList.add('selected');
-        }
-    }
-}
-
 // Signup Page JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
@@ -48,6 +27,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
     const confirmPasswordEyeIcon = document.getElementById('confirmPasswordEyeIcon');
     
+    // Read role from URL parameter (e.g. signup.html?role=artist)
+    function getRoleFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('role');
+    }
+
+    const roleFromURL = getRoleFromURL();
+    if (roleFromURL) {
+        const roleId = 'role' + roleFromURL.charAt(0).toUpperCase() + roleFromURL.slice(1);
+        const roleInput = document.getElementById(roleId);
+        if (roleInput) {
+            roleInput.checked = true;
+            const roleOption = document.querySelector(`.role-option[data-role="${roleFromURL}"]`);
+            if (roleOption) {
+                roleOption.classList.add('selected');
+            }
+        }
+    }
+
     // Toggle password visibility for main password
     togglePasswordBtn.addEventListener('click', function() {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -314,62 +312,62 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Check if user already exists
-        const existingUsers = JSON.parse(localStorage.getItem('afroUsers') || '[]');
-        const userExists = existingUsers.some(user => user.email === email);
-        
-        if (userExists) {
-            showError('An account with this email already exists');
-            return;
-        }
-        
         // Show loading state
         const originalText = signupBtn.innerHTML;
         signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
         signupBtn.disabled = true;
         
-        // Simulate API call delay
-        setTimeout(() => {
-            // Create new user object
-            const newUser = {
-                id: Date.now(),
-                firstName: firstName,
-                lastName: lastName,
-                fullName: `${firstName} ${lastName}`,
-                email: email,
-                phone: phone || '',
-                location: location || '',
-                password: password, // In real app, this would be hashed
-                newsletter: newsletterCheck.checked,
-                createdAt: new Date().toISOString(),
-                role: userRole
-            };
-            
-            // Save to localStorage (for demo purposes)
-            existingUsers.push(newUser);
-            localStorage.setItem('afroUsers', JSON.stringify(existingUsers));
-            
-            // Also set as current user
+        // Call backend to create user
+        const fullName = `${firstName} ${lastName}`;
+        const payload = {
+            name: fullName,
+            email: email,
+            phone: phone || null,
+            password: password,
+            type: userRole === 'artist' ? 'artist' : 'fan',
+            status: 'active'
+        };
+
+        fetch('../backend/api/users.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json().then(body => ({ ok: res.ok, status: res.status, body })))
+        .then(({ ok, status, body }) => {
+            if (!ok || !body.success) {
+                if (status === 409) {
+                    throw new Error('An account with this email already exists');
+                }
+                throw new Error(body.message || 'Failed to create account');
+            }
+
+            // Also set as current user (minimal info, no password)
             localStorage.setItem('afroUser', JSON.stringify({
-                email: newUser.email,
-                name: newUser.fullName,
+                email: email,
+                name: fullName,
                 isLoggedIn: true,
                 loginTime: new Date().toISOString(),
-                role: userRole
+                role: payload.type
             }));
-            
-            // Show success message
+
             showSuccess('Account created successfully! Redirecting to dashboard...');
-            
-            // Redirect to appropriate dashboard based on role
+
             setTimeout(() => {
                 if (userRole === 'artist') {
                     window.location.href = '../artist.html';
                 } else {
                     window.location.href = '../fan.html';
                 }
-            }, 3000);
-        }, 2000);
+            }, 1500);
+        })
+        .catch(err => {
+            showError(err.message || 'Error creating account');
+            signupBtn.innerHTML = originalText;
+            signupBtn.disabled = false;
+        });
     });
     
     // Google signup

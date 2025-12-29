@@ -18,12 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePasswordBtn = document.getElementById('togglePassword');
     const passwordEyeIcon = document.getElementById('passwordEyeIcon');
     
-    // Demo user credentials (for demo purposes only)
-    const demoUsers = [
-        { email: 'john@example.com', password: 'password123', name: 'John Smith' },
-        { email: 'user@afrorhythm.com', password: 'AfroRhythm2023', name: 'Demo User' }
-    ];
-    
     // Toggle password visibility
     togglePasswordBtn.addEventListener('click', function() {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -112,53 +106,59 @@ document.addEventListener('DOMContentLoaded', function() {
         loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
         loginBtn.disabled = true;
         
-        // Simulate API call delay
-        setTimeout(() => {
-            // Check demo credentials first
-            let user = demoUsers.find(u => u.email === email && u.password === password);
-            
-            // If not found in demo users, check registered users
-            if (!user) {
-                const registeredUsers = JSON.parse(localStorage.getItem('afroUsers') || '[]');
-                user = registeredUsers.find(u => u.email === email && u.password === password);
+        // Call backend login API
+        fetch('../backend/api/login.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        })
+        .then(res => res.json().then(body => ({ ok: res.ok, status: res.status, body })))
+        .then(({ ok, body }) => {
+            if (!ok || !body.success) {
+                throw new Error(body.message || 'Invalid email or password');
             }
-            
-            if (user) {
-                // Successful login
-                showSuccess('Login successful! Redirecting to dashboard...');
-                
-                // Store user data in localStorage (for demo purposes)
-                localStorage.setItem('afroUser', JSON.stringify({
-                    email: user.email,
-                    name: user.fullName || user.name,
-                    isLoggedIn: true,
-                    loginTime: new Date().toISOString(),
-                    role: user.role || 'fan' // Default to fan for demo users
-                }));
-                
-                // Redirect to appropriate dashboard based on role
-                setTimeout(() => {
-                    if (user.role === 'artist') {
-                        window.location.href = '../artist.html';
-                    } else {
-                        window.location.href = '../fan.html';
-                    }
-                }, 2000);
-            } else {
-                // Failed login
-                showError('Invalid email or password. Please try again.');
-                
-                // Reset button state
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
-                
-                // Shake animation for error
-                loginForm.classList.add('shake');
-                setTimeout(() => {
-                    loginForm.classList.remove('shake');
-                }, 500);
-            }
-        }, 1500);
+
+            const user = body.data.user;
+
+            showSuccess('Login successful! Redirecting to dashboard...');
+
+            // Store minimal user data in localStorage for frontend routing
+            localStorage.setItem('afroUser', JSON.stringify({
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                phone: user.phone,
+                role: user.type,
+                status: user.status,
+                joined: user.joined,
+                avatar: user.avatar,
+                isLoggedIn: true,
+                loginTime: new Date().toISOString()
+            }));
+
+            setTimeout(() => {
+                if (user.type === 'artist') {
+                    window.location.href = '../artist.html';
+                } else if (user.type === 'admin' || user.type === 'moderator') {
+                    window.location.href = '../admin.html';
+                } else {
+                    window.location.href = '../fan.html';
+                }
+            }, 1000);
+        })
+        .catch(err => {
+            showError(err.message || 'Login failed. Please try again.');
+            loginBtn.innerHTML = originalText;
+            loginBtn.disabled = false;
+
+            // Shake animation for error
+            loginForm.classList.add('shake');
+            setTimeout(() => {
+                loginForm.classList.remove('shake');
+            }, 500);
+        });
     });
     
     // Forgot password link

@@ -335,7 +335,7 @@ async function loadSampleData() {
     
     try {
         // Fetch users
-        const usersResponse = await fetch('../backend/api/users.php');
+        const usersResponse = await fetch('backend/api/users.php');
         const usersData = await usersResponse.json();
         let users = usersData.success ? usersData.data : [];
         
@@ -343,7 +343,7 @@ async function loadSampleData() {
         users = mergeUsersWithLocalStorage(users);
         
         // Fetch artists
-        const artistsResponse = await fetch('../backend/api/artists.php');
+        const artistsResponse = await fetch('backend/api/artists.php');
         const artistsData = await artistsResponse.json();
         let artists = artistsData.success ? artistsData.data.map(artist => ({
             id: artist.id,
@@ -375,7 +375,7 @@ async function loadSampleData() {
         }
         
         // Fetch songs
-        const songsResponse = await fetch('../backend/api/songs.php');
+        const songsResponse = await fetch('backend/api/songs.php');
         const songsData = await songsResponse.json();
         let songs = songsData.success ? songsData.data.map(song => ({
             id: song.id,
@@ -411,7 +411,7 @@ async function loadSampleData() {
         }
         
         // Fetch subscriptions
-        const subsResponse = await fetch('../backend/api/subscriptions.php');
+        const subsResponse = await fetch('backend/api/subscriptions.php');
         const subsData = await subsResponse.json();
         let subscriptions = subsData.success ? subsData.data : [];
         
@@ -427,15 +427,15 @@ async function loadSampleData() {
         }
         
         // Fetch admin data
-        const adminAnalyticsResponse = await fetch('../backend/api/admin.php?action=analytics');
+        const adminAnalyticsResponse = await fetch('backend/api/admin.php?action=analytics');
         const adminAnalyticsData = await adminAnalyticsResponse.json();
         const analytics = adminAnalyticsData.success ? adminAnalyticsData.data : {};
         
-        const adminRevenueResponse = await fetch('../backend/api/admin.php?action=revenue');
+        const adminRevenueResponse = await fetch('backend/api/admin.php?action=revenue');
         const adminRevenueData = await adminRevenueResponse.json();
         const revenue = adminRevenueData.success ? adminRevenueData.data : {};
         
-        const adminReportsResponse = await fetch('../backend/api/admin.php?action=reports');
+        const adminReportsResponse = await fetch('backend/api/admin.php?action=reports');
         const adminReportsData = await adminReportsResponse.json();
         const reports = adminReportsData.success ? adminReportsData.data : [];
         
@@ -1368,7 +1368,7 @@ function populateReportsTable(reports) {
 // Admin action functions
 async function approveArtist(artistId) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=approve_artist', {
+        const response = await fetch('backend/api/admin.php?action=approve_artist', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ artist_id: artistId })
@@ -1388,7 +1388,7 @@ async function approveArtist(artistId) {
 
 async function rejectArtist(artistId) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=reject_artist', {
+        const response = await fetch('backend/api/admin.php?action=reject_artist', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ artist_id: artistId })
@@ -1408,7 +1408,7 @@ async function rejectArtist(artistId) {
 
 async function approveSong(songId) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=approve_song', {
+        const response = await fetch('backend/api/admin.php?action=approve_song', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ song_id: songId })
@@ -1428,7 +1428,7 @@ async function approveSong(songId) {
 
 async function blockSong(songId) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=block_song', {
+        const response = await fetch('backend/api/admin.php?action=block_song', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ song_id: songId })
@@ -1448,7 +1448,7 @@ async function blockSong(songId) {
 
 async function assignRole(userId, role) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=assign_role', {
+        const response = await fetch('backend/api/admin.php?action=assign_role', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: userId, role: role })
@@ -1468,7 +1468,7 @@ async function assignRole(userId, role) {
 
 async function changeUserStatus(userId, status) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=change_status', {
+        const response = await fetch('backend/api/admin.php?action=change_status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: userId, status: status })
@@ -1488,7 +1488,7 @@ async function changeUserStatus(userId, status) {
 
 async function resolveReport(reportId) {
     try {
-        const response = await fetch('../backend/api/admin.php?action=resolve_report', {
+        const response = await fetch('backend/api/admin.php?action=resolve_report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ report_id: reportId, admin_id: 1 }) // Assuming admin ID 1
@@ -1685,7 +1685,7 @@ function addNewUser() {
     submitBtn.disabled = true;
     
     // Make actual API call to create user
-    fetch('../backend/api/users.php', {
+    fetch('backend/api/users.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1823,7 +1823,7 @@ function addNewArtist() {
     submitBtn.disabled = true;
     
     // Make API call
-    fetch('../backend/api/artists.php', {
+    fetch('backend/api/artists.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1932,7 +1932,7 @@ function addNewSong() {
     submitBtn.disabled = true;
     
     // Make API call
-    fetch('../backend/api/songs.php', {
+    fetch('backend/api/songs.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -2035,7 +2035,7 @@ function addNewSubscription() {
     submitBtn.disabled = true;
     
     // Make API call
-    fetch('../backend/api/subscriptions.php', {
+    fetch('backend/api/subscriptions.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
