@@ -14,24 +14,11 @@ let audioContext = null;
 let audioElement = null;
 let currentPlaylist = null;
 
-// ========== SAMPLE DATA ==========
-const sampleSongs = [
-    { id: 1, title: 'Soul Makossa', artist: 'Manu Dibango Legacy', genre: 'Makossa', duration: '4:32', plays: 245000, coverColor: '#FF6B35', audioUrl: '#' },
-    { id: 2, title: 'Bikutsi Rhythm', artist: 'Bikutsi Queens', genre: 'Bikutsi', duration: '3:45', plays: 189000, coverColor: '#2E8B57', audioUrl: '#' },
-    { id: 3, title: 'City Lights', artist: 'Yaoundé Vibes', genre: 'Afrobeat', duration: '5:12', plays: 156000, coverColor: '#4A6CF7', audioUrl: '#' },
-    { id: 4, title: 'Mountain Song', artist: 'Bamenda Roots', genre: 'Traditional', duration: '4:08', plays: 134000, coverColor: '#8B4513', audioUrl: '#' },
-    { id: 5, title: 'Coastal Vibes', artist: 'Douala Beats', genre: 'Assiko', duration: '3:58', plays: 112000, coverColor: '#9C27B0', audioUrl: '#' },
-    { id: 6, title: 'African Sunrise', artist: 'New Gen Collective', genre: 'Afrobeat', duration: '4:45', plays: 98000, coverColor: '#2196F3', audioUrl: '#' }
-];
+// Data loaded from backend
+let sampleSongs = [];
+let sampleArtists = [];
 
-const sampleArtists = [
-    { id: 1, name: 'Manu Dibango Legacy', followers: 45000, monthlyListeners: 245000, genre: 'Makossa', bio: 'Keeping the legacy of Makossa music alive', avatarColor: '#FF6B35' },
-    { id: 2, name: 'Bikutsi Queens', followers: 32000, monthlyListeners: 189000, genre: 'Bikutsi', bio: 'Revolutionary Bikutsi all-female group', avatarColor: '#2E8B57' },
-    { id: 3, name: 'Yaoundé Vibes', followers: 28000, monthlyListeners: 156000, genre: 'Afrobeat', bio: 'Modern Afrobeat from the capital', avatarColor: '#4A6CF7' },
-    { id: 4, name: 'Bamenda Roots', followers: 25000, monthlyListeners: 134000, genre: 'Traditional', bio: 'Traditional Cameroonian music', avatarColor: '#8B4513' },
-    { id: 5, name: 'Douala Beats', followers: 22000, monthlyListeners: 112000, genre: 'Assiko', bio: 'Coastal rhythms and beats', avatarColor: '#9C27B0' }
-];
-
+// Static playlist definitions referencing song IDs (will be resolved after songs load)
 const samplePlaylists = [
     { 
         id: 101, 
@@ -95,37 +82,92 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!checkAuth()) {
         return;
     }
-    
-    // Load user data
-    loadUserData();
-    
-    // Setup navigation
-    setupNavigation();
-    
-    // Initialize music player
-    initializeMusicPlayer();
-    
-    // Setup user interactions
-    setupUserInteractions();
-    
-    // Setup notifications
-    setupNotifications();
-    
-    // Setup search with real functionality
-    setupSearch();
-    
-    // Load default view
-    loadViewContent('discover');
-    
-    // Initialize audio
-    initializeAudio();
-    
-    // Update UI
-    updateUserProfileUI();
-    updateQuickStats();
-    
-    console.log("✅ Fan Dashboard fully initialized!");
+
+    // Load songs and artists from backend, then load user data, then init UI
+    loadBackendData().then(async () => {
+        // Load user data from backend (requires currentUser.id)
+        await loadUserData();
+        // Setup navigation
+        setupNavigation();
+
+        // Initialize music player
+        initializeMusicPlayer();
+
+        // Setup user interactions
+        setupUserInteractions();
+
+        // Setup notifications
+        setupNotifications();
+
+        // Setup search with real functionality
+        setupSearch();
+
+        // Load default view
+        loadViewContent('discover');
+
+        // Initialize audio
+        initializeAudio();
+
+        // Update UI
+        updateUserProfileUI();
+        updateQuickStats();
+
+        console.log("✅ Fan Dashboard fully initialized with backend data!");
+    }).catch(err => {
+        console.error('Error loading backend data, falling back to local sample data:', err);
+        // Fallback: keep any existing in-memory sampleSongs/sampleArtists (if you decide to add some)
+        setupNavigation();
+        initializeMusicPlayer();
+        setupUserInteractions();
+        setupNotifications();
+        setupSearch();
+        loadViewContent('discover');
+        initializeAudio();
+        updateUserProfileUI();
+        updateQuickStats();
+    });
 });
+
+// Fetch songs and artists from backend APIs
+async function loadBackendData() {
+    const [songsRes, artistsRes] = await Promise.all([
+        fetch('backend/api/songs.php'),
+        fetch('backend/api/artists.php')
+    ]);
+
+    const songsJson = await songsRes.json();
+    const artistsJson = await artistsRes.json();
+
+    if (!songsJson.success) {
+        throw new Error(songsJson.message || 'Failed to load songs');
+    }
+    if (!artistsJson.success) {
+        throw new Error(artistsJson.message || 'Failed to load artists');
+    }
+
+    // Map backend songs into the structure used by the dashboard
+    sampleSongs = songsJson.data.map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: song.artist_name || 'Unknown Artist',
+        genre: song.genre || 'Unknown',
+        duration: song.duration || '0:00',
+        plays: Number(song.plays) || 0,
+        coverColor: '#FF6B35',
+        audioUrl: song.file_path || '#'
+    }));
+
+    // Map backend artists
+    sampleArtists = artistsJson.data.map(artist => ({
+        id: artist.id,
+        name: artist.name,
+        followers: Number(artist.followers) || 0,
+        monthlyListeners: Number(artist.followers) || 0,
+        genre: artist.genre || 'Unknown',
+        bio: artist.bio || '',
+        avatarColor: '#2E8B57'
+    }));
+}
 
 // ========== AUTHENTICATION ==========
 function checkAuth() {
@@ -202,63 +244,104 @@ function updateUserProfileUI() {
 }
 
 // ========== USER DATA MANAGEMENT ==========
-function loadUserData() {
-    console.log("💾 Loading user data...");
-    const savedData = localStorage.getItem('afroUserData');
-    if (savedData) {
-        try {
-            const data = JSON.parse(savedData);
-            userFavorites = data.favorites || { songs: [], artists: [], playlists: [] };
-            userFollowing = data.following || [];
-            userPlaylists = data.playlists || [];
-            listeningHistory = data.history || [];
-            likedPlaylists = data.likedPlaylists || [];
-            notifications = data.notifications || generateDefaultNotifications();
-            console.log("✅ User data loaded from localStorage");
-        } catch (e) {
-            console.error('Error loading user data:', e);
-        }
-    } else {
-        // Generate default notifications
-        notifications = generateDefaultNotifications();
+async function loadUserData() {
+    console.log("💾 Loading user data from backend...");
+    
+    if (!currentUser || !currentUser.id) {
+        console.warn("⚠️ No user ID found, skipping backend data load");
+        return;
     }
     
-    // Initialize with sample data if empty
-    if (userPlaylists.length === 0) {
-        userPlaylists = [
-            {
-                id: 1,
-                name: 'My Makossa Mix',
-                description: 'Classic makossa tracks for every mood',
-                creator: 'You',
-                songs: [1, 2],
-                plays: 245,
-                likes: 45,
-                isPublic: true,
-                createdAt: new Date().toISOString(),
-                coverColor: '#FF6B35',
-                tags: ['makossa', 'classic', 'personal']
-            },
-            {
-                id: 2,
-                name: 'Cameroon Classics',
-                description: 'Timeless Cameroonian music collection',
-                creator: 'You',
-                songs: [1, 3, 4],
-                plays: 189,
-                likes: 32,
-                isPublic: false,
-                createdAt: new Date().toISOString(),
-                coverColor: '#2E8B57',
-                tags: ['classic', 'collection', 'cameroon']
+    const userId = currentUser.id;
+    
+    try {
+        // Load all user data in parallel
+        const [favoritesRes, followsRes, playlistsRes, historyRes, notificationsRes] = await Promise.all([
+            fetch(`backend/api/favorites.php?user_id=${userId}`),
+            fetch(`backend/api/follows.php?user_id=${userId}`),
+            fetch(`backend/api/playlists.php?user_id=${userId}`),
+            fetch(`backend/api/history.php?user_id=${userId}&limit=50`),
+            fetch(`backend/api/notifications.php?user_id=${userId}`)
+        ]);
+        
+        // Process favorites
+        if (favoritesRes.ok) {
+            const favoritesJson = await favoritesRes.json();
+            if (favoritesJson.success) {
+                userFavorites.songs = favoritesJson.data.map(fav => fav.song_id);
+                console.log(`✅ Loaded ${userFavorites.songs.length} favorite songs`);
             }
-        ];
-        saveUserData();
-        console.log("📝 Created default playlists");
+        }
+        
+        // Process follows
+        if (followsRes.ok) {
+            const followsJson = await followsRes.json();
+            if (followsJson.success) {
+                userFollowing = followsJson.data.map(follow => follow.artist_id);
+                console.log(`✅ Loaded ${userFollowing.length} followed artists`);
+            }
+        }
+        
+        // Process playlists
+        if (playlistsRes.ok) {
+            const playlistsJson = await playlistsRes.json();
+            if (playlistsJson.success) {
+                userPlaylists = playlistsJson.data.map(playlist => ({
+                    id: playlist.id,
+                    name: playlist.name,
+                    description: playlist.description || '',
+                    creator: playlist.creator_name || 'You',
+                    songs: [], // Will be loaded when playlist is opened
+                    song_count: playlist.song_count || 0,
+                    isPublic: playlist.is_public == 1,
+                    createdAt: playlist.created_at,
+                    coverColor: '#FF6B35'
+                }));
+                console.log(`✅ Loaded ${userPlaylists.length} playlists`);
+            }
+        }
+        
+        // Process listening history
+        if (historyRes.ok) {
+            const historyJson = await historyRes.json();
+            if (historyJson.success) {
+                listeningHistory = historyJson.data.map(item => ({
+                    id: item.id,
+                    songId: item.song_id,
+                    timestamp: item.played_at,
+                    playedAt: new Date(item.played_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }));
+                console.log(`✅ Loaded ${listeningHistory.length} history items`);
+            }
+        }
+        
+        // Process notifications
+        if (notificationsRes.ok) {
+            const notificationsJson = await notificationsRes.json();
+            if (notificationsJson.success) {
+                notifications = notificationsJson.data.map(notif => ({
+                    id: notif.id,
+                    message: notif.message,
+                    read: notif.is_read == 1,
+                    timestamp: notif.created_at
+                }));
+                console.log(`✅ Loaded ${notifications.length} notifications`);
+            }
+        }
+        
+        // Update notifications badge
+        updateNotificationsBadge();
+        
+        console.log("✅ All user data loaded from backend");
+    } catch (error) {
+        console.error('Error loading user data from backend:', error);
+        // Fallback to empty arrays
+        userFavorites = { songs: [], artists: [], playlists: [] };
+        userFollowing = [];
+        userPlaylists = [];
+        listeningHistory = [];
+        notifications = [];
     }
-    
-    // Update notifications badge
-    updateNotificationsBadge();
 }
 
 function generateDefaultNotifications() {
@@ -302,16 +385,11 @@ function generateDefaultNotifications() {
     ];
 }
 
+// Note: saveUserData() is deprecated - data is now saved directly to backend via API calls
+// Keeping for backward compatibility but it does nothing
 function saveUserData() {
-    const data = {
-        favorites: userFavorites,
-        following: userFollowing,
-        playlists: userPlaylists,
-        history: listeningHistory,
-        likedPlaylists: likedPlaylists,
-        notifications: notifications
-    };
-    localStorage.setItem('afroUserData', JSON.stringify(data));
+    // Data is now saved directly to backend via API calls
+    // This function is kept for backward compatibility
 }
 
 // ========== NAVIGATION SYSTEM ==========
@@ -1065,15 +1143,39 @@ function getNotificationAction(type) {
     }
 }
 
-function updateNotificationsBadge() {
-    const unreadCount = notifications.filter(n => !n.read).length;
-    const badge = document.getElementById('notificationBadge');
-    if (badge) {
-        if (unreadCount > 0) {
-            badge.textContent = unreadCount;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
+async function updateNotificationsBadge() {
+    if (!currentUser || !currentUser.id) {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`backend/api/notifications.php?user_id=${currentUser.id}&unread_only=true`);
+        const data = await response.json();
+        
+        const unreadCount = data.unread_count || 0;
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating notification badge:', error);
+        // Fallback to local count
+        const unreadCount = notifications.filter(n => !n.read).length;
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
         }
     }
 }
@@ -1655,83 +1757,166 @@ function updatePlaybackTime(percent) {
 }
 
 // ========== CORE FUNCTIONALITIES ==========
-function toggleFavoriteSong(songId, btn) {
-    const songIndex = userFavorites.songs.indexOf(songId);
+async function toggleFavoriteSong(songId, btn) {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to favorite songs', 'warning');
+        return;
+    }
+    
     const song = sampleSongs.find(s => s.id === songId);
+    const isFavorited = userFavorites.songs.includes(songId);
     
-    if (songIndex === -1) {
-        userFavorites.songs.push(songId);
-        btn.classList.add('favorited');
-        const heartIcon = btn.querySelector('i');
-        if (heartIcon) heartIcon.className = 'fas fa-heart';
-        
-        showNotification(`Added "${song?.title}" to favorites!`, 'success');
-        
-        // Add notification for frequently favorited songs
-        if (userFavorites.songs.length % 5 === 0) {
-            addNotification({
-                type: 'milestone',
-                title: 'Favorites Milestone',
-                message: `You've favorited ${userFavorites.songs.length} songs!`,
-                timestamp: new Date().toISOString(),
-                read: false
+    try {
+        if (!isFavorited) {
+            // Add to favorites
+            const response = await fetch('backend/api/favorites.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    song_id: songId
+                })
             });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                userFavorites.songs.push(songId);
+                btn.classList.add('favorited');
+                const heartIcon = btn.querySelector('i');
+                if (heartIcon) heartIcon.className = 'fas fa-heart';
+                
+                showNotification(`Added "${song?.title}" to favorites!`, 'success');
+                
+                // Add notification for frequently favorited songs
+                if (userFavorites.songs.length % 5 === 0) {
+                    await createNotification(`You've favorited ${userFavorites.songs.length} songs!`);
+                }
+            } else {
+                showNotification(data.message || 'Failed to add to favorites', 'error');
+            }
+        } else {
+            // Remove from favorites
+            const response = await fetch('backend/api/favorites.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    song_id: songId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                userFavorites.songs = userFavorites.songs.filter(id => id !== songId);
+                btn.classList.remove('favorited');
+                const heartIcon = btn.querySelector('i');
+                if (heartIcon) heartIcon.className = 'far fa-heart';
+                
+                showNotification(`Removed "${song?.title}" from favorites`, 'info');
+            } else {
+                showNotification(data.message || 'Failed to remove from favorites', 'error');
+            }
         }
-    } else {
-        userFavorites.songs.splice(songIndex, 1);
-        btn.classList.remove('favorited');
-        const heartIcon = btn.querySelector('i');
-        if (heartIcon) heartIcon.className = 'far fa-heart';
         
-        showNotification(`Removed "${song?.title}" from favorites`, 'info');
+        updateQuickStats();
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+        showNotification('Error updating favorites', 'error');
     }
-    
-    saveUserData();
-    updateQuickStats();
 }
 
-function toggleFollowArtist(artistId, btn) {
-    const artistIndex = userFollowing.indexOf(artistId);
+async function toggleFollowArtist(artistId, btn) {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to follow artists', 'warning');
+        return;
+    }
+    
     const artist = sampleArtists.find(a => a.id === artistId);
+    const isFollowing = userFollowing.includes(artistId);
     
-    if (artistIndex === -1) {
-        userFollowing.push(artistId);
-        if (btn.classList.contains('unfollow-btn')) {
-            btn.classList.remove('unfollow-btn');
+    try {
+        if (!isFollowing) {
+            // Follow artist
+            const response = await fetch('backend/api/follows.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    artist_id: artistId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                userFollowing.push(artistId);
+                if (btn.classList.contains('unfollow-btn')) {
+                    btn.classList.remove('unfollow-btn');
+                }
+                btn.classList.add('following');
+                btn.textContent = 'Following';
+                
+                showNotification(`Now following ${artist?.name}!`, 'success');
+                
+                // Create notification
+                await createNotification(`You're now following ${artist?.name}`);
+                
+                // Update artist followers count in local data
+                const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
+                if (artistIndex !== -1) {
+                    sampleArtists[artistIndex].followers = (sampleArtists[artistIndex].followers || 0) + 1;
+                }
+            } else {
+                showNotification(data.message || 'Failed to follow artist', 'error');
+            }
+        } else {
+            // Unfollow artist
+            const response = await fetch('backend/api/follows.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    artist_id: artistId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                userFollowing = userFollowing.filter(id => id !== artistId);
+                btn.classList.remove('following');
+                if (btn.classList.contains('unfollow-btn')) {
+                    btn.classList.remove('unfollow-btn');
+                }
+                btn.textContent = 'Follow';
+                
+                showNotification(`Unfollowed ${artist?.name}`, 'info');
+                
+                // Update artist followers count in local data
+                const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
+                if (artistIndex !== -1) {
+                    sampleArtists[artistIndex].followers = Math.max(0, (sampleArtists[artistIndex].followers || 0) - 1);
+                }
+            } else {
+                showNotification(data.message || 'Failed to unfollow artist', 'error');
+            }
         }
-        btn.classList.add('following');
-        btn.textContent = 'Following';
         
-        showNotification(`Now following ${artist?.name}!`, 'success');
-        
-        // Add notification
-        addNotification({
-            type: 'artist_follow',
-            title: 'Artist Followed',
-            message: `You're now following ${artist?.name}`,
-            timestamp: new Date().toISOString(),
-            read: false,
-            artistId: artistId
-        });
-    } else {
-        userFollowing.splice(artistIndex, 1);
-        btn.classList.remove('following');
-        if (btn.classList.contains('unfollow-btn')) {
-            btn.classList.remove('unfollow-btn');
-        }
-        btn.textContent = 'Follow';
-        
-        showNotification(`Unfollowed ${artist?.name}`, 'info');
+        updateQuickStats();
+    } catch (error) {
+        console.error('Error toggling follow:', error);
+        showNotification('Error updating follow status', 'error');
     }
-    
-    saveUserData();
-    updateQuickStats();
 }
 
-function playSong(songId) {
+async function playSong(songId) {
     const song = sampleSongs.find(s => s.id === songId);
     if (song) {
-        addToHistory(songId);
+        // Add to history (async, but don't wait - fire and forget)
+        addToHistory(songId).catch(err => console.error('Error adding to history:', err));
+        
         updateNowPlayingUI(song);
         
         const playBtn = document.getElementById('playPauseBtn');
@@ -1762,25 +1947,80 @@ function updateNowPlayingUI(song) {
     }
 }
 
-function addToHistory(songId) {
-    const existingIndex = listeningHistory.findIndex(item => item.songId === songId);
-    
-    if (existingIndex !== -1) {
-        listeningHistory.splice(existingIndex, 1);
+async function addToHistory(songId) {
+    if (!currentUser || !currentUser.id) {
+        // Still track locally if not logged in
+        const existingIndex = listeningHistory.findIndex(item => item.songId === songId);
+        if (existingIndex !== -1) {
+            listeningHistory.splice(existingIndex, 1);
+        }
+        listeningHistory.unshift({
+            songId: songId,
+            timestamp: new Date().toISOString(),
+            playedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        if (listeningHistory.length > 50) {
+            listeningHistory = listeningHistory.slice(0, 50);
+        }
+        updateQuickStats();
+        return;
     }
     
-    listeningHistory.unshift({
-        songId: songId,
-        timestamp: new Date().toISOString(),
-        playedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-    
-    if (listeningHistory.length > 50) {
-        listeningHistory = listeningHistory.slice(0, 50);
+    try {
+        // Add to backend listening history (also updates song play count)
+        const response = await fetch('backend/api/history.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                song_id: songId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update local history
+            const existingIndex = listeningHistory.findIndex(item => item.songId === songId);
+            if (existingIndex !== -1) {
+                listeningHistory.splice(existingIndex, 1);
+            }
+            
+            listeningHistory.unshift({
+                songId: songId,
+                timestamp: new Date().toISOString(),
+                playedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            
+            if (listeningHistory.length > 50) {
+                listeningHistory = listeningHistory.slice(0, 50);
+            }
+            
+            // Update song play count in local data
+            const songIndex = sampleSongs.findIndex(s => s.id === songId);
+            if (songIndex !== -1) {
+                sampleSongs[songIndex].plays = (sampleSongs[songIndex].plays || 0) + 1;
+            }
+            
+            updateQuickStats();
+        }
+    } catch (error) {
+        console.error('Error adding to history:', error);
+        // Fallback to local tracking
+        const existingIndex = listeningHistory.findIndex(item => item.songId === songId);
+        if (existingIndex !== -1) {
+            listeningHistory.splice(existingIndex, 1);
+        }
+        listeningHistory.unshift({
+            songId: songId,
+            timestamp: new Date().toISOString(),
+            playedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        if (listeningHistory.length > 50) {
+            listeningHistory = listeningHistory.slice(0, 50);
+        }
+        updateQuickStats();
     }
-    
-    saveUserData();
-    updateQuickStats();
 }
 
 function playPlaylist(playlistId) {
@@ -1964,22 +2204,45 @@ function showAddToPlaylistModal(songId) {
     document.body.appendChild(modalOverlay);
 }
 
-function addSongToPlaylist(playlistId, songId) {
-    const playlist = userPlaylists.find(p => p.id === playlistId);
-    if (!playlist) return;
+async function addSongToPlaylist(playlistId, songId) {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to add songs to playlists', 'warning');
+        return;
+    }
     
-    if (!playlist.songs.includes(songId)) {
-        playlist.songs.push(songId);
-        saveUserData();
+    try {
+        const response = await fetch('backend/api/playlists.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playlist_id: playlistId,
+                song_id: songId
+            })
+        });
         
-        const song = sampleSongs.find(s => s.id === songId);
-        showNotification(`Added "${song?.title}" to "${playlist.name}"`, 'success');
+        const data = await response.json();
         
-        // Close modal
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) {
-            document.body.removeChild(modal);
+        if (data.success) {
+            const song = sampleSongs.find(s => s.id === songId);
+            const playlist = userPlaylists.find(p => p.id === playlistId);
+            showNotification(`Added "${song?.title}" to "${playlist?.name || 'playlist'}"`, 'success');
+            
+            // Close modal
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+            
+            // Reload playlist if viewing it
+            if (document.getElementById('playlists-view')?.classList.contains('active')) {
+                loadPlaylistsView();
+            }
+        } else {
+            showNotification(data.message || 'Failed to add song to playlist', 'error');
         }
+    } catch (error) {
+        console.error('Error adding song to playlist:', error);
+        showNotification('Error adding song to playlist', 'error');
     }
 }
 
@@ -2070,7 +2333,12 @@ function updateColorPreview(color) {
     }
 }
 
-function createNewPlaylist(songId = null) {
+async function createNewPlaylist(songId = null) {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to create playlists', 'warning');
+        return;
+    }
+    
     const name = document.getElementById('playlistName')?.value;
     if (!name) {
         showNotification('Please enter a playlist name', 'warning');
@@ -2079,40 +2347,48 @@ function createNewPlaylist(songId = null) {
     
     const description = document.getElementById('playlistDescription')?.value || '';
     const isPublic = document.querySelector('input[name="privacy"][value="public"]')?.checked || true;
-    const color = document.getElementById('selectedColor')?.value || getRandomColor();
     
-    const newPlaylist = {
-        id: Date.now(), // Simple ID generation
-        name: name,
-        description: description,
-        creator: 'You',
-        songs: songId ? [songId] : [],
-        plays: 0,
-        likes: 0,
-        isPublic: isPublic,
-        createdAt: new Date().toISOString(),
-        coverColor: color,
-        tags: []
-    };
-    
-    userPlaylists.push(newPlaylist);
-    saveUserData();
-    
-    showNotification(`Created playlist "${name}"`, 'success');
-    
-    // Close modal
-    const modal = document.querySelector('.modal-overlay');
-    if (modal) {
-        document.body.removeChild(modal);
-    }
-    
-    // Refresh playlists view if active
-    if (document.getElementById('playlists-view')?.classList.contains('active')) {
-        loadPlaylistsView();
-    }
-    
-    if (document.getElementById('mymusic-view')?.classList.contains('active')) {
-        loadMyMusicView();
+    try {
+        const response = await fetch('backend/api/playlists.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                name: name,
+                description: description,
+                is_public: isPublic,
+                songs: songId ? [songId] : []
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`Created playlist "${name}"`, 'success');
+            
+            // Reload user playlists
+            await loadUserData();
+            
+            // Close modal
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+            
+            // Refresh playlists view if active
+            if (document.getElementById('playlists-view')?.classList.contains('active')) {
+                loadPlaylistsView();
+            }
+            
+            if (document.getElementById('mymusic-view')?.classList.contains('active')) {
+                loadMyMusicView();
+            }
+        } else {
+            showNotification(data.message || 'Failed to create playlist', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        showNotification('Error creating playlist', 'error');
     }
 }
 
@@ -2232,24 +2508,48 @@ function updatePlaylist(playlistId) {
     }
 }
 
-function deletePlaylist(playlistId) {
+async function deletePlaylist(playlistId) {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to delete playlists', 'warning');
+        return;
+    }
+    
     const playlist = userPlaylists.find(p => p.id === playlistId);
-    if (!playlist) return;
+    if (!playlist) {
+        showNotification('Playlist not found', 'error');
+        return;
+    }
     
     if (confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
-        const index = userPlaylists.findIndex(p => p.id === playlistId);
-        if (index !== -1) {
-            userPlaylists.splice(index, 1);
-            saveUserData();
-            showNotification(`Deleted playlist "${playlist.name}"`, 'info');
+        try {
+            const response = await fetch(`backend/api/playlists.php?id=${playlistId}`, {
+                method: 'DELETE'
+            });
             
-            // Refresh views
-            if (document.getElementById('playlists-view')?.classList.contains('active')) {
-                loadPlaylistsView();
+            const data = await response.json();
+            
+            if (data.success) {
+                // Remove from local array
+                const index = userPlaylists.findIndex(p => p.id === playlistId);
+                if (index !== -1) {
+                    userPlaylists.splice(index, 1);
+                }
+                
+                showNotification(`Deleted playlist "${playlist.name}"`, 'info');
+                
+                // Refresh views
+                if (document.getElementById('playlists-view')?.classList.contains('active')) {
+                    loadPlaylistsView();
+                }
+                if (document.getElementById('mymusic-view')?.classList.contains('active')) {
+                    loadMyMusicView();
+                }
+            } else {
+                showNotification(data.message || 'Failed to delete playlist', 'error');
             }
-            if (document.getElementById('mymusic-view')?.classList.contains('active')) {
-                loadMyMusicView();
-            }
+        } catch (error) {
+            console.error('Error deleting playlist:', error);
+            showNotification('Error deleting playlist', 'error');
         }
     }
 }
@@ -2351,22 +2651,45 @@ function shareToSocial(platform, title, url) {
     showNotification(`Shared on ${platform}`, 'success');
 }
 
-function clearListeningHistory() {
+async function clearListeningHistory() {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to clear history', 'warning');
+        return;
+    }
+    
     if (listeningHistory.length === 0) {
         showNotification('Your listening history is already empty', 'info');
         return;
     }
     
     if (confirm('Are you sure you want to clear your listening history?')) {
-        listeningHistory = [];
-        saveUserData();
-        showNotification('Listening history cleared', 'info');
-        
-        if (document.getElementById('history-view')?.classList.contains('active')) {
-            loadHistoryView();
+        try {
+            const response = await fetch('backend/api/history.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                listeningHistory = [];
+                showNotification('Listening history cleared', 'info');
+                
+                if (document.getElementById('history-view')?.classList.contains('active')) {
+                    loadHistoryView();
+                }
+                
+                updateQuickStats();
+            } else {
+                showNotification(data.message || 'Failed to clear history', 'error');
+            }
+        } catch (error) {
+            console.error('Error clearing history:', error);
+            showNotification('Error clearing history', 'error');
         }
-        
-        updateQuickStats();
     }
 }
 
@@ -2473,24 +2796,88 @@ function handleNotificationClick(notificationId) {
     }
 }
 
-function markAllNotificationsRead() {
-    notifications.forEach(notification => {
-        notification.read = true;
-    });
-    saveUserData();
-    updateNotificationsBadge();
-    showNotification('All notifications marked as read', 'info');
+async function markAllNotificationsRead() {
+    if (!currentUser || !currentUser.id) {
+        showNotification('Please log in to mark notifications as read', 'warning');
+        return;
+    }
     
-    if (document.getElementById('notifications-view')?.classList.contains('active')) {
-        loadNotificationsView();
+    try {
+        const response = await fetch('backend/api/notifications.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'mark_all_read',
+                user_id: currentUser.id
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update local notifications
+            notifications.forEach(notification => {
+                notification.read = true;
+            });
+            
+            updateNotificationsBadge();
+            showNotification('All notifications marked as read', 'info');
+            
+            if (document.getElementById('notifications-view')?.classList.contains('active')) {
+                loadNotificationsView();
+            }
+        } else {
+            showNotification(data.message || 'Failed to mark notifications as read', 'error');
+        }
+    } catch (error) {
+        console.error('Error marking notifications as read:', error);
+        showNotification('Error updating notifications', 'error');
     }
 }
 
+async function createNotification(message) {
+    if (!currentUser || !currentUser.id) {
+        return; // Skip if not logged in
+    }
+    
+    try {
+        const response = await fetch('backend/api/notifications.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                message: message
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add to local notifications
+            notifications.unshift({
+                id: data.data.id,
+                message: message,
+                read: false,
+                timestamp: new Date().toISOString()
+            });
+            
+            updateNotificationsBadge();
+        }
+    } catch (error) {
+        console.error('Error creating notification:', error);
+    }
+}
+
+// Legacy function for backward compatibility
 function addNotification(notification) {
     notification.id = Date.now();
     notifications.unshift(notification);
-    saveUserData();
     updateNotificationsBadge();
+    
+    // Also create in backend if user is logged in
+    if (currentUser && currentUser.id) {
+        createNotification(notification.message || notification.title);
+    }
 }
 
 // ========== SEARCH FUNCTIONALITY ==========
