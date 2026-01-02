@@ -1,0 +1,521 @@
+/* Dashboard Styles */
+:root {
+    --sidebar-width: 250px;
+    --sidebar-bg: #121212;
+    --sidebar-color: #b3b3b3;
+    --sidebar-active: #6c63ff;
+    --content-bg: #0a0a0a;
+    --card-bg: #1e1e1e;
+    --border-color: #2a2a2a;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--content-bg);
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* Sidebar */
+#sidebar-wrapper {
+    min-height: 100vh;
+    background: var(--sidebar-bg);
+    width: var(--sidebar-width);
+    transition: margin 0.25s ease-out;
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-heading {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.list-group-item {
+    background: transparent;
+    border: none;
+    color: var(--sidebar-color);
+    padding: 1rem 1.5rem;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover, 
+.list-group-item.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    border-left-color: var(--sidebar-active);
+}
+
+.list-group-item.active {
+    font-weight: 600;
+}
+
+/* Page Content */
+#page-content-wrapper {
+    width: 100%;
+    padding-bottom: 80px;
+}
+
+/* Stats Cards */
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--sidebar-active);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(108, 99, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--sidebar-active);
+}
+
+/* Tables */
+.table {
+    color: #ffffff;
+    --bs-table-bg: transparent;
+}
+
+.table-hover tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.table thead th {
+    border-bottom: 1px solid var(--border-color);
+    color: var(--sidebar-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody td {
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+/* Music Cards */
+.music-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.music-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--sidebar-active);
+}
+
+.music-card-img {
+    position: relative;
+    overflow: hidden;
+    height: 180px;
+}
+
+.music-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.music-card:hover .music-card-img img {
+    transform: scale(1.1);
+}
+
+.play-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.music-card:hover .play-button {
+    opacity: 1;
+}
+
+.play-button i {
+    width: 60px;
+    height: 60px;
+    background: var(--sidebar-active);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.music-card-body {
+    padding: 1rem;
+}
+
+/* Playlist Cards */
+.playlist-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.playlist-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--sidebar-active);
+}
+
+.playlist-card-img {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+}
+
+.playlist-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.playlist-card:hover .playlist-card-img img {
+    transform: scale(1.1);
+}
+
+.playlist-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.playlist-card:hover .playlist-overlay {
+    opacity: 1;
+}
+
+.playlist-overlay i {
+    width: 60px;
+    height: 60px;
+    background: var(--sidebar-active);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.playlist-card-body {
+    padding: 1rem;
+}
+
+/* Create Playlist */
+.create-playlist {
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.create-playlist-icon {
+    width: 60px;
+    height: 60px;
+    border: 2px dashed var(--sidebar-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--sidebar-color);
+}
+
+/* Recommendation Cards */
+.recommendation-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.recommendation-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--sidebar-active);
+}
+
+.recommendation-img {
+    height: 180px;
+    overflow: hidden;
+}
+
+.recommendation-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.recommendation-card:hover .recommendation-img img {
+    transform: scale(1.1);
+}
+
+.recommendation-body {
+    padding: 1.5rem;
+}
+
+/* Category Cards */
+.category-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--sidebar-active);
+}
+
+.category-img {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+}
+
+.category-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.category-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+/* Search Cards */
+.search-result-card, .search-term-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    padding: 1.5rem;
+}
+
+.search-result-card:hover {
+    border-color: var(--sidebar-active);
+    transform: translateX(5px);
+}
+
+.search-term-card:hover {
+    border-color: var(--sidebar-active);
+}
+
+.result-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(108, 99, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sidebar-active);
+}
+
+/* Now Playing Bar */
+.now-playing-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 0;
+    z-index: 1000;
+}
+
+.now-playing-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.now-playing-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.player-controls .progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.player-controls .progress-bar {
+    background: var(--sidebar-active);
+}
+
+.volume-slider .progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    border: 1px dashed var(--border-color);
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: white;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--sidebar-active);
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.25);
+}
+
+/* Modal */
+.modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+
+/* Activity Timeline */
+.activity-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.activity-item {
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.activity-icon {
+    position: absolute;
+    left: -30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.activity-icon.upload { background: var(--sidebar-active); }
+.activity-icon.milestone { background: #ffc107; }
+.activity-icon.followers { background: #28a745; }
+.activity-icon.payment { background: #17a2b8; }
+.activity-icon.feature { background: #dc3545; }
+
+.activity-content {
+    flex: 1;
+}
+
+/* Liked Icon */
+.liked-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(220, 53, 69, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Artist Verification */
+.artist-verification .badge {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: -250px;
+    }
+    
+    #sidebar-wrapper.show {
+        margin-left: 0;
+    }
+    
+    #page-content-wrapper {
+        min-width: 0;
+        width: 100%;
+    }
+    
+    .music-card-img, .playlist-card-img, .recommendation-img, .category-img {
+        height: 150px;
+    }
+}
