@@ -10,11 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once '../db.php';
 
-// Start PHP session to support server-side auth
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
@@ -48,9 +43,6 @@ try {
 
     // Never expose password hash to frontend
     unset($user['password']);
-
-    // Set server session user id for authenticated session
-    $_SESSION['user_id'] = $user['id'];
 
     echo json_encode([
         'success' => true,

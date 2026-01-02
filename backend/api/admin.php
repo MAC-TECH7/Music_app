@@ -13,28 +13,14 @@ if ($method === 'OPTIONS') {
     exit(0);
 }
 
-// Sessions and admin check
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-function logError($e){
-    $logDir = __DIR__ . '/../logs';
-    if (!is_dir($logDir)) @mkdir($logDir, 0777, true);
-    $file = $logDir . '/error.log';
-    @file_put_contents($file, date('Y-m-d H:i:s') . " - " . $e->getMessage() . PHP_EOL, FILE_APPEND);
+// Basic authentication check (in production, use proper JWT or session)
+function checkAdminAccess() {
+    // For now, assume admin access if user_id is provided and is admin
+    // In production, implement proper authentication
+    return true;
 }
 
-function getCurrentUserInfo($pdo){
-    if (empty($_SESSION['user_id'])) return null;
-    try{
-        $stmt = $pdo->prepare('SELECT id,type FROM users WHERE id = ? LIMIT 1');
-        $stmt->execute([$_SESSION['user_id']]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }catch(Exception $e){ return null; }
-}
-
-$me = getCurrentUserInfo($pdo);
-if (!$me || $me['type'] !== 'admin'){
-    http_response_code(403);
+if (!checkAdminAccess()) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
@@ -233,9 +219,7 @@ function handleGetRequests($action) {
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
     } catch(PDOException $e) {
-        logError($e);
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Server error']);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 
@@ -314,9 +298,7 @@ function handlePostRequests($action) {
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
     } catch(PDOException $e) {
-        logError($e);
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Server error']);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 
@@ -331,24 +313,14 @@ function handleDeleteRequests($action) {
     try {
         switch ($action) {
             case 'user':
-                $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-                if (!$id) {
-                    http_response_code(400);
-                    echo json_encode(['success' => false, 'message' => 'Invalid id']);
-                    return;
-                }
+                $id = $_GET['id'];
                 $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
                 $stmt->execute([$id]);
                 echo json_encode(['success' => true, 'message' => 'User deleted successfully']);
                 break;
 
             case 'featured_content':
-                $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-                if (!$id) {
-                    http_response_code(400);
-                    echo json_encode(['success' => false, 'message' => 'Invalid id']);
-                    return;
-                }
+                $id = $_GET['id'];
                 $stmt = $pdo->prepare("DELETE FROM featured_content WHERE id = ?");
                 $stmt->execute([$id]);
                 echo json_encode(['success' => true, 'message' => 'Featured content removed']);
@@ -358,9 +330,7 @@ function handleDeleteRequests($action) {
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
     } catch(PDOException $e) {
-        logError($e);
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Server error']);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 ?>

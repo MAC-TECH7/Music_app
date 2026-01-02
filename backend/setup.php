@@ -1,4 +1,5 @@
 <?php
+require_once 'db.php';
 
 // Create database if it doesn't exist
 try {
