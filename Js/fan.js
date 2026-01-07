@@ -14,16 +14,30 @@ let audioContext = null;
 let audioElement = null;
 let currentPlaylist = null;
 
-// Data loaded from backend
-let sampleSongs = [];
-let sampleArtists = [];
+// Data loaded from backend (with default fallback)
+let sampleSongs = [
+    { id: 1, title: 'Soul Makossa', artist: 'Manu Dibango Legacy', genre: 'Makossa', duration: '4:32', plays: 245000, coverColor: '#FF6B35', audioUrl: '#' },
+    { id: 2, title: 'Bikutsi Rhythm', artist: 'Bikutsi Queens', genre: 'Bikutsi', duration: '3:45', plays: 189000, coverColor: '#2E8B57', audioUrl: '#' },
+    { id: 3, title: 'City Lights', artist: 'Yaoundé Vibes', genre: 'Afrobeat', duration: '5:12', plays: 156000, coverColor: '#4A6CF7', audioUrl: '#' },
+    { id: 4, title: 'Mountain Song', artist: 'Bamenda Roots', genre: 'Traditional', duration: '4:08', plays: 134000, coverColor: '#8B4513', audioUrl: '#' },
+    { id: 5, title: 'Coastal Vibes', artist: 'Douala Beats', genre: 'Assiko', duration: '3:58', plays: 112000, coverColor: '#9C27B0', audioUrl: '#' },
+    { id: 6, title: 'African Sunrise', artist: 'New Gen Collective', genre: 'Afrobeat', duration: '4:45', plays: 98000, coverColor: '#2196F3', audioUrl: '#' }
+];
+
+let sampleArtists = [
+    { id: 1, name: 'Manu Dibango Legacy', followers: 45000, monthlyListeners: 245000, genre: 'Makossa', bio: 'Keeping the legacy of Makossa music alive', avatarColor: '#FF6B35' },
+    { id: 2, name: 'Bikutsi Queens', followers: 32000, monthlyListeners: 189000, genre: 'Bikutsi', bio: 'Revolutionary Bikutsi all-female group', avatarColor: '#2E8B57' },
+    { id: 3, name: 'Yaoundé Vibes', followers: 28000, monthlyListeners: 156000, genre: 'Afrobeat', bio: 'Modern Afrobeat from the capital', avatarColor: '#4A6CF7' },
+    { id: 4, name: 'Bamenda Roots', followers: 25000, monthlyListeners: 134000, genre: 'Traditional', bio: 'Traditional Cameroonian music', avatarColor: '#8B4513' },
+    { id: 5, name: 'Douala Beats', followers: 22000, monthlyListeners: 112000, genre: 'Assiko', bio: 'Coastal rhythms and beats', avatarColor: '#9C27B0' }
+];
 
 // Static playlist definitions referencing song IDs (will be resolved after songs load)
 const samplePlaylists = [
-    { 
-        id: 101, 
-        name: 'Morning Makossa', 
-        description: 'Start your day with classic Makossa rhythms', 
+    {
+        id: 101,
+        name: 'Morning Makossa',
+        description: 'Start your day with classic Makossa rhythms',
         creator: 'AfroRhythm',
         songs: [1, 2, 3],
         plays: 12500,
@@ -33,10 +47,10 @@ const samplePlaylists = [
         coverColor: '#FF6B35',
         tags: ['morning', 'makossa', 'classic']
     },
-    { 
-        id: 102, 
-        name: 'Workout Bikutsi', 
-        description: 'High-energy Bikutsi beats for your workout', 
+    {
+        id: 102,
+        name: 'Workout Bikutsi',
+        description: 'High-energy Bikutsi beats for your workout',
         creator: 'AfroRhythm',
         songs: [2, 4, 5],
         plays: 9800,
@@ -46,10 +60,10 @@ const samplePlaylists = [
         coverColor: '#2E8B57',
         tags: ['workout', 'energy', 'bikutsi']
     },
-    { 
-        id: 103, 
-        name: 'Chill Afrobeat', 
-        description: 'Relax and unwind with smooth Afrobeat vibes', 
+    {
+        id: 103,
+        name: 'Chill Afrobeat',
+        description: 'Relax and unwind with smooth Afrobeat vibes',
         creator: 'AfroRhythm',
         songs: [3, 6, 1],
         plays: 15600,
@@ -59,10 +73,10 @@ const samplePlaylists = [
         coverColor: '#4A6CF7',
         tags: ['chill', 'relax', 'afrobeat']
     },
-    { 
-        id: 104, 
-        name: 'Party Mix', 
-        description: 'The ultimate party playlist with Cameroon\'s best', 
+    {
+        id: 104,
+        name: 'Party Mix',
+        description: 'The ultimate party playlist with Cameroon\'s best',
         creator: 'AfroRhythm',
         songs: [1, 2, 3, 4, 5, 6],
         plays: 23400,
@@ -75,47 +89,38 @@ const samplePlaylists = [
 ];
 
 // ========== MAIN INITIALIZATION ==========
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log("🎵 AfroRhythm Fan Dashboard Initializing...");
-    
+
     // Check authentication
     if (!checkAuth()) {
         return;
     }
 
-    // Load songs and artists from backend, then load user data, then init UI
+    // Check protocol
+    if (window.location.protocol === 'file:') {
+        console.warn("⚠️ Running from file system. Backend features will not work. Please access via localhost (e.g., http://localhost/Music_app/fan.html)");
+        showNotification("Running from file system. Backend unavailable.", "warning");
+    }
+
+    console.log("🚀 Initializing Fan Dashboard...");
+
+    // Load songs and artists from backend
     loadBackendData().then(async () => {
-        // Load user data from backend (requires currentUser.id)
-        await loadUserData();
-        // Setup navigation
-        setupNavigation();
+        console.log("✅ Backend data loaded successfully");
 
-        // Initialize music player
-        initializeMusicPlayer();
-
-        // Setup user interactions
-        setupUserInteractions();
-
-        // Setup notifications
-        setupNotifications();
-
-        // Setup search with real functionality
-        setupSearch();
-
-        // Load default view
-        loadViewContent('discover');
-
-        // Initialize audio
-        initializeAudio();
-
-        // Update UI
-        updateUserProfileUI();
-        updateQuickStats();
-
-        console.log("✅ Fan Dashboard fully initialized with backend data!");
+        // Attempt to load user data if logged in
+        if (checkAuth()) {
+            await loadUserData();
+        } else {
+            console.log("ℹ️ No user logged in, skipping user-specific data load");
+        }
     }).catch(err => {
-        console.error('Error loading backend data, falling back to local sample data:', err);
-        // Fallback: keep any existing in-memory sampleSongs/sampleArtists (if you decide to add some)
+        console.error('❌ Backend load failed, using fallback data:', err);
+        showNotification("Backend unavailable. Using offline mode.", "warning");
+        // Fallback data is already in place (restored in previous step)
+    }).finally(() => {
+        // Initialize UI regardless of data source
         setupNavigation();
         initializeMusicPlayer();
         setupUserInteractions();
@@ -125,48 +130,78 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeAudio();
         updateUserProfileUI();
         updateQuickStats();
+
+        console.log("✅ Fan Dashboard fully initialized!");
     });
 });
 
 // Fetch songs and artists from backend APIs
 async function loadBackendData() {
-    const [songsRes, artistsRes] = await Promise.all([
-        fetch('backend/api/songs.php'),
-        fetch('backend/api/artists.php')
-    ]);
+    console.log("📡 Fetching data from backend...");
 
-    const songsJson = await songsRes.json();
-    const artistsJson = await artistsRes.json();
+    // Define endpoints - assumes script is running at root/fan.html or similar
+    const songsUrl = 'backend/api/songs.php';
+    const artistsUrl = 'backend/api/artists.php';
 
-    if (!songsJson.success) {
-        throw new Error(songsJson.message || 'Failed to load songs');
+    console.log(`fetching: ${songsUrl}`);
+    console.log(`fetching: ${artistsUrl}`);
+
+    try {
+        const [songsRes, artistsRes] = await Promise.all([
+            fetch(songsUrl),
+            fetch(artistsUrl)
+        ]);
+
+        if (!songsRes.ok) throw new Error(`Songs API error: ${songsRes.status} ${songsRes.statusText}`);
+        if (!artistsRes.ok) throw new Error(`Artists API error: ${artistsRes.status} ${artistsRes.statusText}`);
+
+        const songsJson = await songsRes.json();
+        const artistsJson = await artistsRes.json();
+
+        if (!songsJson.success) throw new Error(songsJson.message || 'Songs API returned failure');
+        if (!artistsJson.success) throw new Error(artistsJson.message || 'Artists API returned failure');
+
+        console.log(`✅ Loaded ${songsJson.data.length} songs from backend`);
+        console.log(`✅ Loaded ${artistsJson.data.length} artists from backend`);
+
+        // Map backend songs
+        if (songsJson.data && songsJson.data.length > 0) {
+            sampleSongs = songsJson.data.map(song => ({
+                id: parseInt(song.id),
+                title: song.title,
+                artist: song.artist_name || 'Unknown Artist',
+                genre: song.genre || 'Unknown',
+                duration: song.duration || '0:00',
+                plays: parseInt(song.plays) || 0,
+                coverColor: getTimeBasedColor(song.id), // Dynamic color
+                audioUrl: song.file_path || '#' // Ensure this path is reachable from frontend
+            }));
+        }
+
+        // Map backend artists
+        if (artistsJson.data && artistsJson.data.length > 0) {
+            sampleArtists = artistsJson.data.map(artist => ({
+                id: parseInt(artist.id),
+                name: artist.name,
+                followers: parseInt(artist.followers) || 0,
+                monthlyListeners: parseInt(artist.followers) * 5 || 0, // Mock calc
+                genre: artist.genre || 'Unknown',
+                bio: artist.bio || 'No biography available',
+                avatarColor: getTimeBasedColor(artist.id + 100)
+            }));
+        }
+
+        return true;
+    } catch (error) {
+        console.error("fetch error detail:", error);
+        throw error; // Re-throw to trigger fallback
     }
-    if (!artistsJson.success) {
-        throw new Error(artistsJson.message || 'Failed to load artists');
-    }
+}
 
-    // Map backend songs into the structure used by the dashboard
-    sampleSongs = songsJson.data.map(song => ({
-        id: song.id,
-        title: song.title,
-        artist: song.artist_name || 'Unknown Artist',
-        genre: song.genre || 'Unknown',
-        duration: song.duration || '0:00',
-        plays: Number(song.plays) || 0,
-        coverColor: '#FF6B35',
-        audioUrl: song.file_path || '#'
-    }));
-
-    // Map backend artists
-    sampleArtists = artistsJson.data.map(artist => ({
-        id: artist.id,
-        name: artist.name,
-        followers: Number(artist.followers) || 0,
-        monthlyListeners: Number(artist.followers) || 0,
-        genre: artist.genre || 'Unknown',
-        bio: artist.bio || '',
-        avatarColor: '#2E8B57'
-    }));
+// Helper to generate consistent colors
+function getTimeBasedColor(seed) {
+    const colors = ['#FF6B35', '#2E8B57', '#4A6CF7', '#8B4513', '#9C27B0', '#2196F3', '#E91E63', '#FFA000'];
+    return colors[seed % colors.length];
 }
 
 // ========== AUTHENTICATION ==========
@@ -208,30 +243,30 @@ function updateUserProfileUI() {
     const profileAvatar = document.getElementById('profileAvatar');
     const profileName = document.getElementById('profileName');
     const profileEmail = document.getElementById('profileEmail');
-    
+
     if (currentUser) {
         const initials = currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'FU';
-        
+
         if (userAvatar) {
             userAvatar.textContent = initials;
             if (currentUser.avatarColor) {
                 userAvatar.style.background = currentUser.avatarColor;
             }
         }
-        
+
         if (userName) userName.textContent = currentUser.name || 'Fan User';
         if (userEmail) userEmail.textContent = currentUser.email || 'fan@example.com';
-        
+
         if (profileAvatar) {
             profileAvatar.textContent = initials;
             if (currentUser.avatarColor) {
                 profileAvatar.style.background = currentUser.avatarColor;
             }
         }
-        
+
         if (profileName) profileName.textContent = currentUser.name || 'Fan User';
         if (profileEmail) profileEmail.textContent = currentUser.email || 'fan@example.com';
-        
+
         const memberSince = document.getElementById('memberSince');
         if (memberSince) memberSince.textContent = currentUser.memberSince || '2023';
     }
@@ -247,7 +282,7 @@ async function loadUserData() {
     }
 
     const userId = currentUser.id;
-    
+
     try {
         // Load all user data in parallel
         const [favoritesRes, followsRes, playlistsRes, historyRes, notificationsRes] = await Promise.all([
@@ -257,7 +292,7 @@ async function loadUserData() {
             fetch(`backend/api/history.php?user_id=${userId}&limit=50`),
             fetch(`backend/api/notifications.php?user_id=${userId}`)
         ]);
-        
+
         // Process favorites
         if (favoritesRes.ok) {
             const favoritesJson = await favoritesRes.json();
@@ -266,7 +301,7 @@ async function loadUserData() {
                 console.log(`✅ Loaded ${userFavorites.songs.length} favorite songs`);
             }
         }
-        
+
         // Process follows
         if (followsRes.ok) {
             const followsJson = await followsRes.json();
@@ -275,7 +310,7 @@ async function loadUserData() {
                 console.log(`✅ Loaded ${userFollowing.length} followed artists`);
             }
         }
-        
+
         // Process playlists
         if (playlistsRes.ok) {
             const playlistsJson = await playlistsRes.json();
@@ -294,7 +329,7 @@ async function loadUserData() {
                 console.log(`✅ Loaded ${userPlaylists.length} playlists`);
             }
         }
-        
+
         // Process listening history
         if (historyRes.ok) {
             const historyJson = await historyRes.json();
@@ -308,7 +343,7 @@ async function loadUserData() {
                 console.log(`✅ Loaded ${listeningHistory.length} history items`);
             }
         }
-        
+
         // Process notifications
         if (notificationsRes.ok) {
             const notificationsJson = await notificationsRes.json();
@@ -322,10 +357,10 @@ async function loadUserData() {
                 console.log(`✅ Loaded ${notifications.length} notifications`);
             }
         }
-        
+
         // Update notifications badge
         updateNotificationsBadge();
-        
+
         console.log("✅ All user data loaded from backend");
     } catch (error) {
         console.error('Error loading user data from backend:', error);
@@ -389,50 +424,50 @@ function saveUserData() {
 // ========== NAVIGATION SYSTEM ==========
 function setupNavigation() {
     console.log("🔗 Setting up navigation...");
-    
+
     // Mobile menu toggle
     const menuToggle = document.getElementById('menuToggle');
     const menuToggle2 = document.getElementById('menuToggle2');
     const sidebar = document.getElementById('sidebar');
-    
+
     if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', function(e) {
+        menuToggle.addEventListener('click', function (e) {
             e.stopPropagation();
             sidebar.classList.toggle('active');
         });
     }
-    
+
     if (menuToggle2 && sidebar) {
-        menuToggle2.addEventListener('click', function(e) {
+        menuToggle2.addEventListener('click', function (e) {
             e.stopPropagation();
             sidebar.classList.toggle('active');
         });
     }
-    
+
     // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (sidebar && sidebar.classList.contains('active') && window.innerWidth <= 992) {
             if (!sidebar.contains(e.target) && !e.target.closest('.menu-toggle')) {
                 sidebar.classList.remove('active');
             }
         }
     });
-    
+
     // Navigation click handlers
     const navItems = document.querySelectorAll('.nav-item[data-view]');
     navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
+        item.addEventListener('click', function (e) {
             e.preventDefault();
             const viewId = this.getAttribute('data-view');
             console.log(`🖱️ Navigation clicked: ${viewId}`);
             switchDashboardView(viewId);
         });
     });
-    
+
     // View All buttons
     const viewAllButtons = document.querySelectorAll('.view-all[data-view]');
     viewAllButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function (e) {
             e.preventDefault();
             const viewId = this.getAttribute('data-view');
             if (viewId) {
@@ -440,43 +475,43 @@ function setupNavigation() {
             }
         });
     });
-    
+
     console.log("✅ Navigation setup complete");
 }
 
 function switchDashboardView(viewId) {
     console.log(`🔄 Switching to view: ${viewId}`);
-    
+
     // Hide all views
     document.querySelectorAll('.dashboard-view').forEach(view => {
         view.classList.remove('active');
     });
-    
+
     // Show selected view
     const targetView = document.getElementById(`${viewId}-view`);
     if (targetView) {
         targetView.classList.add('active');
-        
+
         // Load content for this view
         loadViewContent(viewId);
     }
-    
+
     // Update active nav item
     document.querySelectorAll('.nav-item[data-view]').forEach(nav => {
         nav.classList.remove('active');
     });
-    
+
     const activeNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
     if (activeNav) {
         activeNav.classList.add('active');
     }
-    
+
     // Close mobile sidebar
     const sidebar = document.getElementById('sidebar');
     if (sidebar && window.innerWidth <= 992) {
         sidebar.classList.remove('active');
     }
-    
+
     // Scroll to top
     window.scrollTo(0, 0);
 }
@@ -487,8 +522,8 @@ window.switchDashboardView = switchDashboardView;
 // ========== VIEW CONTENT LOADERS ==========
 function loadViewContent(viewId) {
     console.log(`📂 Loading content for: ${viewId}`);
-    
-    switch(viewId) {
+
+    switch (viewId) {
         case 'discover':
             loadDiscoverView();
             break;
@@ -522,7 +557,7 @@ function loadViewContent(viewId) {
         default:
             console.log(`⚠️ Unknown view: ${viewId}`);
     }
-    
+
     // Update stats
     updateQuickStats();
 }
@@ -530,7 +565,7 @@ function loadViewContent(viewId) {
 // ========== DISCOVER VIEW ==========
 function loadDiscoverView() {
     console.log("🔍 Loading discover view...");
-    
+
     // Load trending songs
     const trendingSongs = document.getElementById('trendingSongs');
     if (trendingSongs) {
@@ -541,7 +576,7 @@ function loadDiscoverView() {
             trendingSongs.appendChild(songCard);
         });
     }
-    
+
     // Load genre chips
     const genreChips = document.getElementById('genreChips');
     if (genreChips) {
@@ -551,10 +586,10 @@ function loadDiscoverView() {
                 ${genre}
             </button>
         `).join('');
-        
+
         // Add click handlers
         document.querySelectorAll('.genre-chip').forEach(chip => {
-            chip.addEventListener('click', function() {
+            chip.addEventListener('click', function () {
                 document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('active'));
                 this.classList.add('active');
                 const genre = this.getAttribute('data-genre');
@@ -562,13 +597,13 @@ function loadDiscoverView() {
             });
         });
     }
-    
+
     // Load recently played
     const recentlyPlayed = document.getElementById('recentlyPlayed');
     if (recentlyPlayed) {
         loadRecentlyPlayed();
     }
-    
+
     // Load recommended playlists
     const recommendedPlaylists = document.getElementById('recommendedPlaylists');
     if (recommendedPlaylists) {
@@ -578,7 +613,7 @@ function loadDiscoverView() {
             recommendedPlaylists.appendChild(createPlaylistCard(playlist));
         });
     }
-    
+
     // Load favorite artists
     const favoriteArtists = document.getElementById('favoriteArtists');
     if (favoriteArtists) {
@@ -594,7 +629,7 @@ function filterSongsByGenre(genre) {
         });
         return;
     }
-    
+
     // Filter songs by genre
     document.querySelectorAll('.song-card').forEach(card => {
         const songId = parseInt(card.querySelector('.play-btn')?.getAttribute('data-song-id'));
@@ -612,7 +647,7 @@ function filterSongsByGenre(genre) {
 function loadRecentlyPlayed() {
     const recentlyPlayed = document.getElementById('recentlyPlayed');
     if (!recentlyPlayed) return;
-    
+
     if (listeningHistory.length === 0) {
         recentlyPlayed.innerHTML = `
             <div class="recent-song" style="min-width: 100%; text-align: center; padding: 40px;">
@@ -624,7 +659,7 @@ function loadRecentlyPlayed() {
         listeningHistory.slice(0, 3).forEach(item => {
             const song = sampleSongs.find(s => s.id === item.songId);
             if (!song) return;
-            
+
             const timeAgo = getTimeAgo(new Date(item.timestamp));
             const recentSong = document.createElement('div');
             recentSong.className = 'recent-song';
@@ -648,7 +683,7 @@ function loadRecentlyPlayed() {
 function loadFavoriteArtists() {
     const favoriteArtists = document.getElementById('favoriteArtists');
     if (!favoriteArtists) return;
-    
+
     if (userFollowing.length === 0) {
         favoriteArtists.innerHTML = `
             <div class="artist-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
@@ -663,7 +698,7 @@ function loadFavoriteArtists() {
         userFollowing.slice(0, 4).forEach(artistId => {
             const artist = sampleArtists.find(a => a.id === artistId);
             if (!artist) return;
-            
+
             const artistCard = document.createElement('div');
             artistCard.className = 'artist-card';
             artistCard.innerHTML = `
@@ -684,18 +719,18 @@ function loadBrowseView() {
     console.log("🔍 Loading browse view...");
     const browseSongs = document.getElementById('browseSongs');
     if (!browseSongs) return;
-    
+
     browseSongs.innerHTML = '';
-    
+
     sampleSongs.forEach(song => {
         const isFavorite = userFavorites.songs.includes(song.id);
         browseSongs.appendChild(createSongCard(song, isFavorite));
     });
-    
+
     // Setup browse search with real filtering
     const browseSearch = document.getElementById('browseSearch');
     if (browseSearch) {
-        browseSearch.addEventListener('input', function() {
+        browseSearch.addEventListener('input', function () {
             filterSongsBySearch(this.value.toLowerCase().trim());
         });
     }
@@ -703,7 +738,7 @@ function loadBrowseView() {
 
 function filterSongsBySearch(query) {
     const songs = document.querySelectorAll('#browseSongs .song-card');
-    
+
     if (!query) {
         // Show all songs if search is empty
         songs.forEach(song => {
@@ -711,16 +746,16 @@ function filterSongsBySearch(query) {
         });
         return;
     }
-    
+
     songs.forEach(song => {
         const title = song.querySelector('h4').textContent.toLowerCase();
         const artist = song.querySelector('p').textContent.toLowerCase();
         const songId = parseInt(song.querySelector('.play-btn')?.getAttribute('data-song-id'));
-        
+
         if (songId) {
             const songData = sampleSongs.find(s => s.id === songId);
             const genre = songData?.genre.toLowerCase() || '';
-            
+
             if (title.includes(query) || artist.includes(query) || genre.includes(query)) {
                 song.style.display = 'block';
             } else {
@@ -735,7 +770,7 @@ function loadGenresView() {
     console.log("🎵 Loading genres view...");
     const genresGrid = document.getElementById('genresGrid');
     if (!genresGrid) return;
-    
+
     const genres = [
         { name: 'Makossa', icon: 'fas fa-music', color: '#FF6B35', count: 245, description: 'Rhythmic dance music from Douala' },
         { name: 'Bikutsi', icon: 'fas fa-drum', color: '#2E8B57', count: 189, description: 'Traditional Beti dance music' },
@@ -746,7 +781,7 @@ function loadGenresView() {
         { name: 'Hip Hop', icon: 'fas fa-microphone', color: '#FFA726', count: 87, description: 'Urban rap and hip hop' },
         { name: 'Highlife', icon: 'fas fa-glass-cheers', color: '#4CAF50', count: 76, description: 'West African guitar music' }
     ];
-    
+
     genresGrid.innerHTML = genres.map(genre => `
         <div class="song-card" data-genre="${genre.name.toLowerCase()}">
             <div class="song-cover" style="background: ${genre.color};">
@@ -766,7 +801,7 @@ function loadGenresView() {
 // ========== MY MUSIC VIEW ==========
 function loadMyMusicView() {
     console.log("🎶 Loading my music view...");
-    
+
     // Load favorite songs
     const myFavoriteSongs = document.getElementById('myFavoriteSongs');
     if (myFavoriteSongs) {
@@ -792,12 +827,12 @@ function loadMyMusicView() {
             });
         }
     }
-    
+
     // Load my playlists
     const myPlaylists = document.getElementById('myPlaylists');
     if (myPlaylists) {
         myPlaylists.innerHTML = '';
-        
+
         // Add create playlist card
         const createCard = document.createElement('div');
         createCard.className = 'playlist-card create-card';
@@ -810,7 +845,7 @@ function loadMyMusicView() {
             <p>Start building your collection</p>
         `;
         myPlaylists.appendChild(createCard);
-        
+
         // Add user's playlists
         if (userPlaylists.length === 0) {
             const emptyState = document.createElement('div');
@@ -837,9 +872,9 @@ function loadPlaylistsView() {
     console.log("📋 Loading playlists view...");
     const allPlaylists = document.getElementById('allPlaylists');
     if (!allPlaylists) return;
-    
+
     allPlaylists.innerHTML = '';
-    
+
     // Add create playlist card
     const createCard = document.createElement('div');
     createCard.className = 'playlist-card create-card';
@@ -852,10 +887,10 @@ function loadPlaylistsView() {
         <p>Start building your collection</p>
     `;
     allPlaylists.appendChild(createCard);
-    
+
     // Combine sample playlists with user playlists
     const allPlaylistsData = [...samplePlaylists, ...userPlaylists];
-    
+
     allPlaylistsData.forEach(playlist => {
         allPlaylists.appendChild(createPlaylistCard(playlist));
     });
@@ -866,7 +901,7 @@ function loadHistoryView() {
     console.log("🕒 Loading history view...");
     const listeningHistoryEl = document.getElementById('listeningHistory');
     if (!listeningHistoryEl) return;
-    
+
     if (listeningHistory.length === 0) {
         listeningHistoryEl.innerHTML = `
             <div class="song-card" style="grid-column: 1 / -1; text-align: center; padding: 60px;">
@@ -880,15 +915,15 @@ function loadHistoryView() {
         `;
         return;
     }
-    
+
     listeningHistoryEl.innerHTML = '';
-    
+
     listeningHistory.forEach(item => {
         const song = sampleSongs.find(s => s.id === item.songId);
         if (!song) return;
-        
+
         const timeAgo = getTimeAgo(new Date(item.timestamp));
-        
+
         const historyCard = document.createElement('div');
         historyCard.className = 'song-card';
         historyCard.innerHTML = `
@@ -919,7 +954,7 @@ function loadHistoryView() {
 // ========== FOLLOWING VIEW ==========
 function loadFollowingView() {
     console.log("👥 Loading following view...");
-    
+
     // Load followed artists
     const followingArtists = document.getElementById('followingArtists');
     if (followingArtists) {
@@ -939,7 +974,7 @@ function loadFollowingView() {
             userFollowing.forEach(artistId => {
                 const artist = sampleArtists.find(a => a.id === artistId);
                 if (!artist) return;
-                
+
                 const artistCard = document.createElement('div');
                 artistCard.className = 'artist-card';
                 artistCard.innerHTML = `
@@ -954,7 +989,7 @@ function loadFollowingView() {
             });
         }
     }
-    
+
     // Load artist activity
     const artistActivity = document.getElementById('artistActivity');
     if (artistActivity) {
@@ -965,7 +1000,7 @@ function loadFollowingView() {
 function loadArtistActivity() {
     const artistActivity = document.getElementById('artistActivity');
     if (!artistActivity) return;
-    
+
     if (userFollowing.length === 0) {
         artistActivity.innerHTML = `
             <div class="activity-item" style="text-align: center; padding: 40px;">
@@ -974,14 +1009,14 @@ function loadArtistActivity() {
         `;
     } else {
         artistActivity.innerHTML = '';
-        
+
         // Get activities from followed artists
         const activities = [];
-        
+
         userFollowing.forEach(artistId => {
             const artist = sampleArtists.find(a => a.id === artistId);
             if (!artist) return;
-            
+
             // Generate some sample activities
             const activityTypes = [
                 {
@@ -1006,10 +1041,10 @@ function loadArtistActivity() {
                     getItem: () => 'Studio Session'
                 }
             ];
-            
+
             const randomActivity = activityTypes[Math.floor(Math.random() * activityTypes.length)];
             const timeAgo = getRandomTimeAgo();
-            
+
             activities.push({
                 artist: artist.name,
                 action: randomActivity.action,
@@ -1019,7 +1054,7 @@ function loadArtistActivity() {
                 artistId: artist.id
             });
         });
-        
+
         // Sort by time (newest first) and take top 5
         activities.sort((a, b) => {
             const timeA = getTimeFromString(a.time);
@@ -1076,9 +1111,9 @@ function loadNotificationsView() {
     console.log("🔔 Loading notifications view...");
     const allNotifications = document.getElementById('allNotifications');
     if (!allNotifications) return;
-    
+
     allNotifications.innerHTML = '';
-    
+
     if (notifications.length === 0) {
         allNotifications.innerHTML = `
             <div class="activity-item" style="text-align: center; padding: 40px; grid-column: 1 / -1;">
@@ -1089,12 +1124,12 @@ function loadNotificationsView() {
         `;
         return;
     }
-    
+
     // Sort notifications by timestamp (newest first)
-    const sortedNotifications = [...notifications].sort((a, b) => 
+    const sortedNotifications = [...notifications].sort((a, b) =>
         new Date(b.timestamp) - new Date(a.timestamp)
     );
-    
+
     sortedNotifications.forEach(notification => {
         const notificationItem = document.createElement('div');
         notificationItem.className = `activity-item ${notification.read ? '' : 'unread'}`;
@@ -1117,7 +1152,7 @@ function loadNotificationsView() {
 }
 
 function getNotificationIcon(type) {
-    switch(type) {
+    switch (type) {
         case 'new_release': return 'fas fa-music';
         case 'concert': return 'fas fa-calendar-alt';
         case 'artist_joined': return 'fas fa-user-plus';
@@ -1128,7 +1163,7 @@ function getNotificationIcon(type) {
 }
 
 function getNotificationAction(type) {
-    switch(type) {
+    switch (type) {
         case 'new_release': return 'Listen';
         case 'concert': return 'View Event';
         case 'artist_joined': return 'Follow';
@@ -1143,11 +1178,11 @@ async function updateNotificationsBadge() {
         if (badge) badge.style.display = 'none';
         return;
     }
-    
+
     try {
         const response = await fetch(`backend/api/notifications.php?user_id=${currentUser.id}&unread_only=true`);
         const data = await response.json();
-        
+
         const unreadCount = data.unread_count || 0;
         const badge = document.getElementById('notificationBadge');
         if (badge) {
@@ -1177,18 +1212,18 @@ async function updateNotificationsBadge() {
 // ========== PROFILE VIEW ==========
 function loadProfileView() {
     console.log("👤 Loading profile view...");
-    
+
     // Update profile stats
     const profileTotalPlays = document.getElementById('profileTotalPlays');
     const profileSongsLiked = document.getElementById('profileSongsLiked');
     const profileArtistsFollowed = document.getElementById('profileArtistsFollowed');
     const profileHoursListened = document.getElementById('profileHoursListened');
-    
+
     if (profileTotalPlays) profileTotalPlays.textContent = `${(listeningHistory.length * 3).toLocaleString()} plays`;
     if (profileSongsLiked) profileSongsLiked.textContent = `${userFavorites.songs.length} songs`;
     if (profileArtistsFollowed) profileArtistsFollowed.textContent = `${userFollowing.length} artists`;
     if (profileHoursListened) profileHoursListened.textContent = `${Math.floor(listeningHistory.length * 0.2)} hours`;
-    
+
     // Load listening trends
     loadListeningTrends();
 }
@@ -1196,7 +1231,7 @@ function loadProfileView() {
 function loadListeningTrends() {
     const listeningTrends = document.getElementById('listeningTrends');
     if (!listeningTrends) return;
-    
+
     // Calculate genre distribution from listening history
     const genreCounts = {};
     listeningHistory.forEach(item => {
@@ -1205,16 +1240,16 @@ function loadListeningTrends() {
             genreCounts[song.genre] = (genreCounts[song.genre] || 0) + 1;
         }
     });
-    
+
     // Create trend visualization
     let trendsHTML = '<div style="margin-top: 20px;">';
     trendsHTML += '<h4 style="margin-bottom: 15px;">Your Listening Trends</h4>';
-    
+
     if (Object.keys(genreCounts).length === 0) {
         trendsHTML += '<p style="color: var(--text-secondary);">No listening data yet</p>';
     } else {
         const totalPlays = Object.values(genreCounts).reduce((a, b) => a + b, 0);
-        
+
         Object.entries(genreCounts).forEach(([genre, count]) => {
             const percentage = Math.round((count / totalPlays) * 100);
             trendsHTML += `
@@ -1230,7 +1265,7 @@ function loadListeningTrends() {
             `;
         });
     }
-    
+
     trendsHTML += '</div>';
     listeningTrends.innerHTML = trendsHTML;
 }
@@ -1238,12 +1273,12 @@ function loadListeningTrends() {
 // ========== SETTINGS VIEW ==========
 function loadSettingsView() {
     console.log("⚙️ Loading settings view...");
-    
+
     // Setup settings cards with real functionality
     const settingsCards = document.querySelectorAll('#settings-view .song-card');
     settingsCards.forEach(card => {
         card.style.cursor = 'pointer';
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             const title = this.querySelector('h4').textContent;
             openSettingsModal(title);
         });
@@ -1267,10 +1302,10 @@ function openSettingsModal(settingType) {
         z-index: 2000;
         backdrop-filter: blur(5px);
     `;
-    
+
     // Create modal content based on setting type
     let modalContent = '';
-    switch(settingType) {
+    switch (settingType) {
         case 'Account Settings':
             modalContent = createAccountSettingsModal();
             break;
@@ -1286,16 +1321,16 @@ function openSettingsModal(settingType) {
         default:
             modalContent = createDefaultSettingsModal(settingType);
     }
-    
+
     modalOverlay.innerHTML = modalContent;
-    
+
     // Add close functionality
-    modalOverlay.addEventListener('click', function(e) {
+    modalOverlay.addEventListener('click', function (e) {
         if (e.target === modalOverlay) {
             document.body.removeChild(modalOverlay);
         }
     });
-    
+
     document.body.appendChild(modalOverlay);
 }
 
@@ -1390,13 +1425,13 @@ function createPlaylistCard(playlist) {
     const card = document.createElement('div');
     card.className = 'playlist-card';
     card.setAttribute('data-playlist-id', playlist.id);
-    
+
     const songCount = playlist.songs?.length || 0;
     const totalDuration = calculatePlaylistDuration(playlist);
     const isUserPlaylist = userPlaylists.some(p => p.id === playlist.id);
     const isLiked = likedPlaylists.includes(playlist.id);
     const coverColor = playlist.coverColor || getRandomColor();
-    
+
     card.innerHTML = `
         <div class="playlist-cover" style="background: ${coverColor};">
             <i class="fas fa-music"></i>
@@ -1440,7 +1475,7 @@ function createPlaylistCard(playlist) {
             </button>
         </div>
     `;
-    
+
     return card;
 }
 
@@ -1451,7 +1486,7 @@ function getTimeAgo(date) {
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    
+
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
@@ -1461,11 +1496,11 @@ function calculatePlaylistDuration(playlist) {
     if (!playlist.songs || playlist.songs.length === 0) {
         return '0:00';
     }
-    
+
     const totalMinutes = playlist.songs.length * 3.5;
     const hours = Math.floor(totalMinutes / 60);
     const minutes = Math.floor(totalMinutes % 60);
-    
+
     if (hours > 0) {
         return `${hours}h ${minutes}m`;
     }
@@ -1474,7 +1509,7 @@ function calculatePlaylistDuration(playlist) {
 
 function getRandomColor() {
     const colors = [
-        '#FF6B35', '#2E8B57', '#4A6CF7', '#8B4513', 
+        '#FF6B35', '#2E8B57', '#4A6CF7', '#8B4513',
         '#9C27B0', '#2196F3', '#FFA726', '#4CAF50',
         '#E91E63', '#00BCD4', '#8BC34A', '#FF5722'
     ];
@@ -1484,9 +1519,31 @@ function getRandomColor() {
 // ========== USER INTERACTIONS ==========
 function setupUserInteractions() {
     console.log("🖱️ Setting up user interactions...");
-    
+
+    // Stats Toggle
+    const statsToggleBtn = document.getElementById('statsToggleBtn');
+    if (statsToggleBtn) {
+        statsToggleBtn.addEventListener('click', function () {
+            const content = document.getElementById('quickStatsContent');
+            const icon = document.getElementById('statsToggleIcon');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                content.style.animation = 'fadeIn 0.3s ease';
+                if (icon) icon.style.transform = 'rotate(180deg)';
+
+                // Scroll to bottom to show stats
+                const sidebar = document.querySelector('.sidebar-nav');
+                if (sidebar) sidebar.scrollTop = sidebar.scrollHeight;
+            } else {
+                content.style.display = 'none';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        });
+    }
+
     // Event delegation for dynamic elements
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         // Favorite song buttons
         if (e.target.closest('.favorite-btn')) {
             e.preventDefault();
@@ -1494,7 +1551,7 @@ function setupUserInteractions() {
             const songId = parseInt(btn.getAttribute('data-song-id'));
             toggleFavoriteSong(songId, btn);
         }
-        
+
         // Follow artist buttons
         if (e.target.closest('.follow-btn:not(.unfollow-btn)')) {
             e.preventDefault();
@@ -1502,7 +1559,7 @@ function setupUserInteractions() {
             const artistId = parseInt(btn.getAttribute('data-artist-id'));
             toggleFollowArtist(artistId, btn);
         }
-        
+
         // Unfollow artist buttons
         if (e.target.closest('.unfollow-btn')) {
             e.preventDefault();
@@ -1510,7 +1567,7 @@ function setupUserInteractions() {
             const artistId = parseInt(btn.getAttribute('data-artist-id'));
             toggleFollowArtist(artistId, btn);
         }
-        
+
         // Play song buttons
         if (e.target.closest('.play-btn:not(.playlist-action-btn):not(.play-playlist-btn)')) {
             e.preventDefault();
@@ -1518,7 +1575,7 @@ function setupUserInteractions() {
             const songId = parseInt(btn.getAttribute('data-song-id'));
             if (songId) playSong(songId);
         }
-        
+
         // Play playlist buttons
         if (e.target.closest('.play-playlist-btn, .playlist-action-btn.play-btn')) {
             e.preventDefault();
@@ -1526,7 +1583,7 @@ function setupUserInteractions() {
             const playlistId = parseInt(btn.getAttribute('data-playlist-id'));
             if (playlistId) playPlaylist(playlistId);
         }
-        
+
         // Like playlist buttons
         if (e.target.closest('.like-btn')) {
             e.preventDefault();
@@ -1534,7 +1591,7 @@ function setupUserInteractions() {
             const playlistId = parseInt(btn.getAttribute('data-playlist-id'));
             if (playlistId) togglePlaylistLike(playlistId, btn);
         }
-        
+
         // Add to playlist buttons
         if (e.target.closest('.add-to-playlist-btn')) {
             e.preventDefault();
@@ -1542,7 +1599,7 @@ function setupUserInteractions() {
             const songId = parseInt(btn.getAttribute('data-song-id'));
             if (songId) showAddToPlaylistModal(songId);
         }
-        
+
         // More options buttons
         if (e.target.closest('.more-btn')) {
             e.preventDefault();
@@ -1550,56 +1607,56 @@ function setupUserInteractions() {
             const playlistId = parseInt(btn.getAttribute('data-playlist-id'));
             if (playlistId) showPlaylistOptions(playlistId, btn);
         }
-        
+
         // Create playlist buttons
         if (e.target.closest('#createPlaylistBtn, #createNewPlaylistCard, #createPlaylistBtn2, #createNewPlaylistCard2')) {
             e.preventDefault();
             showCreatePlaylistModal();
         }
-        
+
         // Clear history button
         if (e.target.closest('#clearHistoryBtn')) {
             e.preventDefault();
             clearListeningHistory();
         }
-        
+
         // Edit profile button
         if (e.target.closest('#editProfileBtn')) {
             e.preventDefault();
             openSettingsModal('Account Settings');
         }
-        
+
         // Mark all notifications read
         if (e.target.closest('#markAllNotificationsRead')) {
             e.preventDefault();
             markAllNotificationsRead();
         }
-        
+
         // Play all favorites button
         if (e.target.closest('[data-action="play-all-favorites"]')) {
             e.preventDefault();
             playAllFavorites();
         }
     });
-    
+
     // Setup logout button
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
+        logoutBtn.addEventListener('click', function (e) {
             e.preventDefault();
             logout();
         });
     }
-    
+
     // Setup notification button
     const notificationBtn = document.getElementById('notificationBtn');
     if (notificationBtn) {
-        notificationBtn.addEventListener('click', function(e) {
+        notificationBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             showNotificationDropdown();
         });
     }
-    
+
     console.log("✅ User interactions setup complete");
 }
 
@@ -1608,14 +1665,14 @@ function initializeAudio() {
     // Create audio element for playback simulation
     audioElement = new Audio();
     audioElement.volume = currentVolume;
-    
+
     // Setup volume control
     const volumeSlider = document.querySelector('.volume-slider');
     const volumeLevel = document.querySelector('.volume-level');
     const volumeBtn = document.querySelector('.volume-btn');
-    
+
     if (volumeSlider && volumeLevel) {
-        volumeSlider.addEventListener('click', function(e) {
+        volumeSlider.addEventListener('click', function (e) {
             const rect = this.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
             currentVolume = Math.max(0, Math.min(1, percent));
@@ -1623,7 +1680,7 @@ function initializeAudio() {
             if (audioElement) {
                 audioElement.volume = currentVolume;
             }
-            
+
             // Update volume icon
             if (volumeBtn) {
                 const icon = volumeBtn.querySelector('i');
@@ -1637,15 +1694,15 @@ function initializeAudio() {
             }
         });
     }
-    
+
     // Setup next/previous buttons
     const prevBtn = document.querySelector('.control-btn:nth-child(1)');
     const nextBtn = document.querySelector('.control-btn:nth-child(3)');
-    
+
     if (prevBtn) {
         prevBtn.addEventListener('click', playPreviousSong);
     }
-    
+
     if (nextBtn) {
         nextBtn.addEventListener('click', playNextSong);
     }
@@ -1654,10 +1711,10 @@ function initializeAudio() {
 function initializeMusicPlayer() {
     const playPauseBtn = document.getElementById('playPauseBtn');
     const progressBar = document.getElementById('progressBar');
-    
+
     if (!playPauseBtn) return;
-    
-    playPauseBtn.addEventListener('click', function() {
+
+    playPauseBtn.addEventListener('click', function () {
         const nowPlayingTitle = document.getElementById('nowPlayingTitle');
         if (nowPlayingTitle && nowPlayingTitle.textContent === 'Not Playing') {
             // If nothing is playing, play a random song
@@ -1665,12 +1722,12 @@ function initializeMusicPlayer() {
             playSong(randomSong.id);
             return;
         }
-        
+
         togglePlayPause();
     });
-    
+
     if (progressBar) {
-        progressBar.addEventListener('click', function(e) {
+        progressBar.addEventListener('click', function (e) {
             const rect = this.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
             const progressFill = document.getElementById('progressFill');
@@ -1684,10 +1741,10 @@ function initializeMusicPlayer() {
 
 function togglePlayPause() {
     if (!audioElement) return;
-    
+
     isPlaying = !isPlaying;
     const playBtn = document.getElementById('playPauseBtn');
-    
+
     if (playBtn) {
         const icon = playBtn.querySelector('i');
         if (isPlaying) {
@@ -1841,7 +1898,7 @@ function updatePlaybackTime(percent) {
         const minutes = Math.floor(currentSeconds / 60);
         const seconds = currentSeconds % 60;
         currentTimeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
+
         const totalMinutes = Math.floor(totalSeconds / 60);
         const totalSecondsRemainder = totalSeconds % 60;
         totalTimeEl.textContent = `${totalMinutes}:${totalSecondsRemainder.toString().padStart(2, '0')}`;
@@ -1854,10 +1911,10 @@ async function toggleFavoriteSong(songId, btn) {
         showNotification('Please log in to favorite songs', 'warning');
         return;
     }
-    
+
     const song = sampleSongs.find(s => s.id === songId);
     const isFavorited = userFavorites.songs.includes(songId);
-    
+
     try {
         if (!isFavorited) {
             // Add to favorites
@@ -1869,17 +1926,17 @@ async function toggleFavoriteSong(songId, btn) {
                     song_id: songId
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 userFavorites.songs.push(songId);
                 btn.classList.add('favorited');
                 const heartIcon = btn.querySelector('i');
                 if (heartIcon) heartIcon.className = 'fas fa-heart';
-                
+
                 showNotification(`Added "${song?.title}" to favorites!`, 'success');
-                
+
                 // Add notification for frequently favorited songs
                 if (userFavorites.songs.length % 5 === 0) {
                     await createNotification(`You've favorited ${userFavorites.songs.length} songs!`);
@@ -1897,21 +1954,21 @@ async function toggleFavoriteSong(songId, btn) {
                     song_id: songId
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 userFavorites.songs = userFavorites.songs.filter(id => id !== songId);
                 btn.classList.remove('favorited');
                 const heartIcon = btn.querySelector('i');
                 if (heartIcon) heartIcon.className = 'far fa-heart';
-                
+
                 showNotification(`Removed "${song?.title}" from favorites`, 'info');
             } else {
                 showNotification(data.message || 'Failed to remove from favorites', 'error');
             }
         }
-        
+
         updateQuickStats();
     } catch (error) {
         console.error('Error toggling favorite:', error);
@@ -1924,10 +1981,10 @@ async function toggleFollowArtist(artistId, btn) {
         showNotification('Please log in to follow artists', 'warning');
         return;
     }
-    
+
     const artist = sampleArtists.find(a => a.id === artistId);
     const isFollowing = userFollowing.includes(artistId);
-    
+
     try {
         if (!isFollowing) {
             // Follow artist
@@ -1939,9 +1996,9 @@ async function toggleFollowArtist(artistId, btn) {
                     artist_id: artistId
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 userFollowing.push(artistId);
                 if (btn.classList.contains('unfollow-btn')) {
@@ -1949,12 +2006,12 @@ async function toggleFollowArtist(artistId, btn) {
                 }
                 btn.classList.add('following');
                 btn.textContent = 'Following';
-                
+
                 showNotification(`Now following ${artist?.name}!`, 'success');
-                
+
                 // Create notification
                 await createNotification(`You're now following ${artist?.name}`);
-                
+
                 // Update artist followers count in local data
                 const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
                 if (artistIndex !== -1) {
@@ -1973,9 +2030,9 @@ async function toggleFollowArtist(artistId, btn) {
                     artist_id: artistId
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 userFollowing = userFollowing.filter(id => id !== artistId);
                 btn.classList.remove('following');
@@ -1983,9 +2040,9 @@ async function toggleFollowArtist(artistId, btn) {
                     btn.classList.remove('unfollow-btn');
                 }
                 btn.textContent = 'Follow';
-                
+
                 showNotification(`Unfollowed ${artist?.name}`, 'info');
-                
+
                 // Update artist followers count in local data
                 const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
                 if (artistIndex !== -1) {
@@ -1995,7 +2052,7 @@ async function toggleFollowArtist(artistId, btn) {
                 showNotification(data.message || 'Failed to unfollow artist', 'error');
             }
         }
-        
+
         updateQuickStats();
     } catch (error) {
         console.error('Error toggling follow:', error);
@@ -2030,7 +2087,7 @@ function updateNowPlayingUI(song) {
     const nowPlayingTitle = document.getElementById('nowPlayingTitle');
     const nowPlayingArtist = document.getElementById('nowPlayingArtist');
     const nowPlayingCover = document.querySelector('.now-playing-cover');
-    
+
     if (nowPlayingTitle) nowPlayingTitle.textContent = song.title;
     if (nowPlayingArtist) nowPlayingArtist.textContent = song.artist;
     if (nowPlayingCover) {
@@ -2057,7 +2114,7 @@ async function addToHistory(songId) {
         updateQuickStats();
         return;
     }
-    
+
     try {
         // Add to backend listening history (also updates song play count)
         const response = await fetch('backend/api/history.php', {
@@ -2068,32 +2125,32 @@ async function addToHistory(songId) {
                 song_id: songId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Update local history
             const existingIndex = listeningHistory.findIndex(item => item.songId === songId);
             if (existingIndex !== -1) {
                 listeningHistory.splice(existingIndex, 1);
             }
-            
+
             listeningHistory.unshift({
                 songId: songId,
                 timestamp: new Date().toISOString(),
                 playedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
-            
+
             if (listeningHistory.length > 50) {
                 listeningHistory = listeningHistory.slice(0, 50);
             }
-            
+
             // Update song play count in local data
             const songIndex = sampleSongs.findIndex(s => s.id === songId);
             if (songIndex !== -1) {
                 sampleSongs[songIndex].plays = (sampleSongs[songIndex].plays || 0) + 1;
             }
-            
+
             updateQuickStats();
         }
     } catch (error) {
@@ -2117,32 +2174,32 @@ async function addToHistory(songId) {
 
 function playPlaylist(playlistId) {
     const playlist = [...userPlaylists, ...samplePlaylists].find(p => p.id === playlistId);
-    
+
     if (!playlist) {
         showNotification('Playlist not found', 'error');
         return;
     }
-    
+
     if (!playlist.songs || playlist.songs.length === 0) {
         showNotification('Playlist is empty', 'warning');
         return;
     }
-    
+
     // Set current playlist context
     currentPlaylist = playlist;
-    
+
     // Play first song in playlist
     const firstSongId = playlist.songs[0];
     const song = sampleSongs.find(s => s.id === firstSongId);
-    
+
     if (song) {
         playSong(firstSongId);
         showNotification(`Playing "${playlist.name}" playlist`, 'info');
-        
+
         // Increment playlist plays
         playlist.plays = (playlist.plays || 0) + 1;
         saveUserData();
-        
+
         // Update current song index in playlist context
         currentSongIndex = 0;
     }
@@ -2150,11 +2207,11 @@ function playPlaylist(playlistId) {
 
 function playNextInPlaylist() {
     if (!currentPlaylist || !currentPlaylist.songs) return;
-    
+
     currentSongIndex = (currentSongIndex + 1) % currentPlaylist.songs.length;
     const nextSongId = currentPlaylist.songs[currentSongIndex];
     const song = sampleSongs.find(s => s.id === nextSongId);
-    
+
     if (song) {
         playSong(nextSongId);
     }
@@ -2177,7 +2234,7 @@ function playAllFavorites() {
         showNotification('No favorite songs to play', 'warning');
         return;
     }
-    
+
     // Create a temporary playlist from favorites
     const favoritesPlaylist = {
         id: -1,
@@ -2185,10 +2242,10 @@ function playAllFavorites() {
         songs: [...userFavorites.songs],
         plays: 0
     };
-    
+
     currentPlaylist = favoritesPlaylist;
     currentSongIndex = 0;
-    
+
     const firstSongId = userFavorites.songs[0];
     playSong(firstSongId);
     showNotification('Playing all favorite songs', 'info');
@@ -2197,19 +2254,19 @@ function playAllFavorites() {
 function togglePlaylistLike(playlistId, btn) {
     const playlist = [...userPlaylists, ...samplePlaylists].find(p => p.id === playlistId);
     if (!playlist) return;
-    
+
     const index = likedPlaylists.indexOf(playlistId);
     const heartIcon = btn?.querySelector('i');
-    
+
     if (index === -1) {
         likedPlaylists.push(playlistId);
         playlist.likes = (playlist.likes || 0) + 1;
-        
+
         if (btn) btn.classList.add('liked');
         if (heartIcon) heartIcon.className = 'fas fa-heart';
-        
+
         showNotification(`Added "${playlist.name}" to liked playlists`, 'success');
-        
+
         addNotification({
             type: 'playlist_like',
             title: 'Playlist Liked',
@@ -2221,13 +2278,13 @@ function togglePlaylistLike(playlistId, btn) {
     } else {
         likedPlaylists.splice(index, 1);
         playlist.likes = Math.max(0, (playlist.likes || 1) - 1);
-        
+
         if (btn) btn.classList.remove('liked');
         if (heartIcon) heartIcon.className = 'far fa-heart';
-        
+
         showNotification(`Removed "${playlist.name}" from liked playlists`, 'info');
     }
-    
+
     saveUserData();
     updateQuickStats();
 }
@@ -2235,7 +2292,7 @@ function togglePlaylistLike(playlistId, btn) {
 function showAddToPlaylistModal(songId) {
     const song = sampleSongs.find(s => s.id === songId);
     if (!song) return;
-    
+
     // Create modal
     const modalOverlay = document.createElement('div');
     modalOverlay.className = 'modal-overlay';
@@ -2252,7 +2309,7 @@ function showAddToPlaylistModal(songId) {
         z-index: 2000;
         backdrop-filter: blur(5px);
     `;
-    
+
     modalOverlay.innerHTML = `
         <div class="settings-modal" style="background: var(--bg-secondary); border-radius: var(--radius-xl); padding: var(--spacing-xl); max-width: 400px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
@@ -2286,13 +2343,13 @@ function showAddToPlaylistModal(songId) {
             </button>
         </div>
     `;
-    
-    modalOverlay.addEventListener('click', function(e) {
+
+    modalOverlay.addEventListener('click', function (e) {
         if (e.target === modalOverlay) {
             document.body.removeChild(modalOverlay);
         }
     });
-    
+
     document.body.appendChild(modalOverlay);
 }
 
@@ -2301,7 +2358,7 @@ async function addSongToPlaylist(playlistId, songId) {
         showNotification('Please log in to add songs to playlists', 'warning');
         return;
     }
-    
+
     try {
         const response = await fetch('backend/api/playlists.php', {
             method: 'POST',
@@ -2311,20 +2368,20 @@ async function addSongToPlaylist(playlistId, songId) {
                 song_id: songId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             const song = sampleSongs.find(s => s.id === songId);
             const playlist = userPlaylists.find(p => p.id === playlistId);
             showNotification(`Added "${song?.title}" to "${playlist?.name || 'playlist'}"`, 'success');
-            
+
             // Close modal
             const modal = document.querySelector('.modal-overlay');
             if (modal) {
                 document.body.removeChild(modal);
             }
-            
+
             // Reload playlist if viewing it
             if (document.getElementById('playlists-view')?.classList.contains('active')) {
                 loadPlaylistsView();
@@ -2354,7 +2411,7 @@ function showCreatePlaylistModal(songId = null) {
         z-index: 2000;
         backdrop-filter: blur(5px);
     `;
-    
+
     modalOverlay.innerHTML = `
         <div class="settings-modal" style="background: var(--bg-secondary); border-radius: var(--radius-xl); padding: var(--spacing-xl); max-width: 400px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
@@ -2408,13 +2465,13 @@ function showCreatePlaylistModal(songId = null) {
             </div>
         </div>
     `;
-    
-    modalOverlay.addEventListener('click', function(e) {
+
+    modalOverlay.addEventListener('click', function (e) {
         if (e.target === modalOverlay) {
             document.body.removeChild(modalOverlay);
         }
     });
-    
+
     document.body.appendChild(modalOverlay);
 }
 
@@ -2430,16 +2487,16 @@ async function createNewPlaylist(songId = null) {
         showNotification('Please log in to create playlists', 'warning');
         return;
     }
-    
+
     const name = document.getElementById('playlistName')?.value;
     if (!name) {
         showNotification('Please enter a playlist name', 'warning');
         return;
     }
-    
+
     const description = document.getElementById('playlistDescription')?.value || '';
     const isPublic = document.querySelector('input[name="privacy"][value="public"]')?.checked || true;
-    
+
     try {
         const response = await fetch('backend/api/playlists.php', {
             method: 'POST',
@@ -2452,26 +2509,26 @@ async function createNewPlaylist(songId = null) {
                 songs: songId ? [songId] : []
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification(`Created playlist "${name}"`, 'success');
-            
+
             // Reload user playlists
             await loadUserData();
-            
+
             // Close modal
             const modal = document.querySelector('.modal-overlay');
             if (modal) {
                 document.body.removeChild(modal);
             }
-            
+
             // Refresh playlists view if active
             if (document.getElementById('playlists-view')?.classList.contains('active')) {
                 loadPlaylistsView();
             }
-            
+
             if (document.getElementById('mymusic-view')?.classList.contains('active')) {
                 loadMyMusicView();
             }
@@ -2487,7 +2544,7 @@ async function createNewPlaylist(songId = null) {
 function showPlaylistOptions(playlistId, button) {
     const playlist = [...userPlaylists, ...samplePlaylists].find(p => p.id === playlistId);
     if (!playlist) return;
-    
+
     // Create context menu
     const menu = document.createElement('div');
     menu.style.cssText = `
@@ -2500,13 +2557,13 @@ function showPlaylistOptions(playlistId, button) {
         z-index: 1000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     `;
-    
+
     const rect = button.getBoundingClientRect();
     menu.style.top = `${rect.bottom + 5}px`;
     menu.style.right = `${window.innerWidth - rect.right}px`;
-    
+
     const isUserPlaylist = userPlaylists.some(p => p.id === playlistId);
-    
+
     menu.innerHTML = `
         <button class="playlist-option" onclick="playPlaylist(${playlistId}); this.closest('div').remove()">
             <i class="fas fa-play"></i> Play
@@ -2526,9 +2583,9 @@ function showPlaylistOptions(playlistId, button) {
             <i class="fas fa-share"></i> Share
         </button>
     `;
-    
+
     document.body.appendChild(menu);
-    
+
     // Close menu when clicking outside
     setTimeout(() => {
         const closeMenu = (e) => {
@@ -2544,21 +2601,21 @@ function showPlaylistOptions(playlistId, button) {
 function editPlaylist(playlistId) {
     const playlist = userPlaylists.find(p => p.id === playlistId);
     if (!playlist) return;
-    
+
     showCreatePlaylistModal();
-    
+
     // Pre-fill form with playlist data
     setTimeout(() => {
         const nameInput = document.getElementById('playlistName');
         const descInput = document.getElementById('playlistDescription');
         const colorInput = document.getElementById('selectedColor');
         const preview = document.getElementById('colorPreview');
-        
+
         if (nameInput) nameInput.value = playlist.name;
         if (descInput) descInput.value = playlist.description || '';
         if (colorInput) colorInput.value = playlist.coverColor || getRandomColor();
         if (preview && playlist.coverColor) preview.style.background = playlist.coverColor;
-        
+
         // Change create button to update button
         const createBtn = document.querySelector('.settings-modal button');
         if (createBtn) {
@@ -2571,26 +2628,26 @@ function editPlaylist(playlistId) {
 function updatePlaylist(playlistId) {
     const playlist = userPlaylists.find(p => p.id === playlistId);
     if (!playlist) return;
-    
+
     const name = document.getElementById('playlistName')?.value;
     if (!name) {
         showNotification('Please enter a playlist name', 'warning');
         return;
     }
-    
+
     playlist.name = name;
     playlist.description = document.getElementById('playlistDescription')?.value || '';
     playlist.coverColor = document.getElementById('selectedColor')?.value || playlist.coverColor;
-    
+
     saveUserData();
     showNotification(`Updated playlist "${name}"`, 'success');
-    
+
     // Close modal
     const modal = document.querySelector('.modal-overlay');
     if (modal) {
         document.body.removeChild(modal);
     }
-    
+
     // Refresh views
     if (document.getElementById('playlists-view')?.classList.contains('active')) {
         loadPlaylistsView();
@@ -2605,30 +2662,30 @@ async function deletePlaylist(playlistId) {
         showNotification('Please log in to delete playlists', 'warning');
         return;
     }
-    
+
     const playlist = userPlaylists.find(p => p.id === playlistId);
     if (!playlist) {
         showNotification('Playlist not found', 'error');
         return;
     }
-    
+
     if (confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
         try {
             const response = await fetch(`backend/api/playlists.php?id=${playlistId}`, {
                 method: 'DELETE'
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 // Remove from local array
                 const index = userPlaylists.findIndex(p => p.id === playlistId);
                 if (index !== -1) {
                     userPlaylists.splice(index, 1);
                 }
-                
+
                 showNotification(`Deleted playlist "${playlist.name}"`, 'info');
-                
+
                 // Refresh views
                 if (document.getElementById('playlists-view')?.classList.contains('active')) {
                     loadPlaylistsView();
@@ -2649,10 +2706,10 @@ async function deletePlaylist(playlistId) {
 function sharePlaylist(playlistId) {
     const playlist = [...userPlaylists, ...samplePlaylists].find(p => p.id === playlistId);
     if (!playlist) return;
-    
+
     // Create shareable link
     const shareUrl = `${window.location.origin}/playlist/${playlistId}`;
-    
+
     // Create share modal
     const modalOverlay = document.createElement('div');
     modalOverlay.className = 'modal-overlay';
@@ -2669,7 +2726,7 @@ function sharePlaylist(playlistId) {
         z-index: 2000;
         backdrop-filter: blur(5px);
     `;
-    
+
     modalOverlay.innerHTML = `
         <div class="settings-modal" style="background: var(--bg-secondary); border-radius: var(--radius-xl); padding: var(--spacing-xl); max-width: 400px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
@@ -2707,13 +2764,13 @@ function sharePlaylist(playlistId) {
             </div>
         </div>
     `;
-    
-    modalOverlay.addEventListener('click', function(e) {
+
+    modalOverlay.addEventListener('click', function (e) {
         if (e.target === modalOverlay) {
             document.body.removeChild(modalOverlay);
         }
     });
-    
+
     document.body.appendChild(modalOverlay);
 }
 
@@ -2728,7 +2785,7 @@ function copyToClipboard(text) {
 
 function shareToSocial(platform, title, url) {
     let shareUrl;
-    switch(platform) {
+    switch (platform) {
         case 'twitter':
             shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out "${title}" on AfroRhythm!`)}&url=${encodeURIComponent(url)}`;
             break;
@@ -2738,7 +2795,7 @@ function shareToSocial(platform, title, url) {
         default:
             return;
     }
-    
+
     window.open(shareUrl, '_blank', 'width=600,height=400');
     showNotification(`Shared on ${platform}`, 'success');
 }
@@ -2748,12 +2805,12 @@ async function clearListeningHistory() {
         showNotification('Please log in to clear history', 'warning');
         return;
     }
-    
+
     if (listeningHistory.length === 0) {
         showNotification('Your listening history is already empty', 'info');
         return;
     }
-    
+
     if (confirm('Are you sure you want to clear your listening history?')) {
         try {
             const response = await fetch('backend/api/history.php', {
@@ -2763,17 +2820,17 @@ async function clearListeningHistory() {
                     user_id: currentUser.id
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 listeningHistory = [];
                 showNotification('Listening history cleared', 'info');
-                
+
                 if (document.getElementById('history-view')?.classList.contains('active')) {
                     loadHistoryView();
                 }
-                
+
                 updateQuickStats();
             } else {
                 showNotification(data.message || 'Failed to clear history', 'error');
@@ -2788,19 +2845,19 @@ async function clearListeningHistory() {
 // ========== NOTIFICATION SYSTEM ==========
 function setupNotifications() {
     const notificationBtn = document.getElementById('notificationBtn');
-    
+
     if (notificationBtn) {
-        notificationBtn.addEventListener('click', function(e) {
+        notificationBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             showNotificationDropdown();
         });
     }
-    
+
     // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         const dropdown = document.getElementById('notificationDropdown');
-        if (dropdown && dropdown.classList.contains('show') && 
-            !e.target.closest('#notificationBtn') && 
+        if (dropdown && dropdown.classList.contains('show') &&
+            !e.target.closest('#notificationBtn') &&
             !e.target.closest('#notificationDropdown')) {
             dropdown.classList.remove('show');
         }
@@ -2810,9 +2867,9 @@ function setupNotifications() {
 function showNotificationDropdown() {
     const dropdown = document.getElementById('notificationDropdown');
     if (!dropdown) return;
-    
+
     dropdown.classList.toggle('show');
-    
+
     if (dropdown.classList.contains('show')) {
         loadNotificationDropdown();
     }
@@ -2821,10 +2878,10 @@ function showNotificationDropdown() {
 function loadNotificationDropdown() {
     const notificationList = document.getElementById('notificationList');
     if (!notificationList) return;
-    
+
     // Get unread notifications
     const unreadNotifications = notifications.filter(n => !n.read).slice(0, 5);
-    
+
     if (unreadNotifications.length === 0) {
         notificationList.innerHTML = `
             <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
@@ -2834,7 +2891,7 @@ function loadNotificationDropdown() {
         `;
         return;
     }
-    
+
     notificationList.innerHTML = unreadNotifications.map(notification => `
         <div class="notification-item unread" onclick="handleNotificationClick(${notification.id})">
             <div class="notification-icon">
@@ -2851,14 +2908,14 @@ function loadNotificationDropdown() {
 function handleNotificationClick(notificationId) {
     const notification = notifications.find(n => n.id === notificationId);
     if (!notification) return;
-    
+
     // Mark as read
     notification.read = true;
     saveUserData();
     updateNotificationsBadge();
-    
+
     // Handle notification action
-    switch(notification.type) {
+    switch (notification.type) {
         case 'new_release':
             if (notification.songId) {
                 playSong(notification.songId);
@@ -2875,13 +2932,13 @@ function handleNotificationClick(notificationId) {
             }
             break;
     }
-    
+
     // Close dropdown
     const dropdown = document.getElementById('notificationDropdown');
     if (dropdown) {
         dropdown.classList.remove('show');
     }
-    
+
     // Refresh notifications view if active
     if (document.getElementById('notifications-view')?.classList.contains('active')) {
         loadNotificationsView();
@@ -2893,7 +2950,7 @@ async function markAllNotificationsRead() {
         showNotification('Please log in to mark notifications as read', 'warning');
         return;
     }
-    
+
     try {
         const response = await fetch('backend/api/notifications.php', {
             method: 'PUT',
@@ -2903,18 +2960,18 @@ async function markAllNotificationsRead() {
                 user_id: currentUser.id
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Update local notifications
             notifications.forEach(notification => {
                 notification.read = true;
             });
-            
+
             updateNotificationsBadge();
             showNotification('All notifications marked as read', 'info');
-            
+
             if (document.getElementById('notifications-view')?.classList.contains('active')) {
                 loadNotificationsView();
             }
@@ -2931,7 +2988,7 @@ async function createNotification(message) {
     if (!currentUser || !currentUser.id) {
         return; // Skip if not logged in
     }
-    
+
     try {
         const response = await fetch('backend/api/notifications.php', {
             method: 'POST',
@@ -2941,9 +2998,9 @@ async function createNotification(message) {
                 message: message
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Add to local notifications
             notifications.unshift({
@@ -2952,7 +3009,7 @@ async function createNotification(message) {
                 read: false,
                 timestamp: new Date().toISOString()
             });
-            
+
             updateNotificationsBadge();
         }
     } catch (error) {
@@ -2965,7 +3022,7 @@ function addNotification(notification) {
     notification.id = Date.now();
     notifications.unshift(notification);
     updateNotificationsBadge();
-    
+
     // Also create in backend if user is logged in
     if (currentUser && currentUser.id) {
         createNotification(notification.message || notification.title);
@@ -2975,9 +3032,9 @@ function addNotification(notification) {
 // ========== SEARCH FUNCTIONALITY ==========
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
-    
+
     if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
+        searchInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
                 if (query) {
@@ -2992,7 +3049,7 @@ function setupSearch() {
 function performSearch(query) {
     // Switch to browse view for search results
     switchDashboardView('browse');
-    
+
     // Set search query and trigger filtering
     setTimeout(() => {
         const browseSearch = document.getElementById('browseSearch');
@@ -3000,7 +3057,7 @@ function performSearch(query) {
             browseSearch.value = query;
             filterSongsBySearch(query);
         }
-        
+
         showNotification(`Search results for "${query}"`, 'info');
     }, 100);
 }
@@ -3017,22 +3074,22 @@ function updateAvatarColor(color) {
     if (modalAvatar) {
         modalAvatar.style.background = color;
     }
-    
+
     // Update main avatar
     updateUserProfileUI();
-    
+
     showNotification('Avatar color updated', 'success');
 }
 
 function saveAccountSettings() {
     const displayName = document.getElementById('displayName')?.value;
     const email = document.getElementById('userEmailInput')?.value;
-    
+
     if (!displayName || !email) {
         showNotification('Please fill in all fields', 'warning');
         return;
     }
-    
+
     if (currentUser) {
         currentUser.name = displayName;
         currentUser.email = email;
@@ -3040,7 +3097,7 @@ function saveAccountSettings() {
 
         updateUserProfileUI();
         showNotification('Account settings saved', 'success');
-        
+
         // Close modal
         const modal = document.querySelector('.modal-overlay');
         if (modal) {
@@ -3064,11 +3121,11 @@ function updateQuickStats() {
     const playlistCount = document.getElementById('playlistCount');
     const followingCount = document.getElementById('followingCount');
     const notificationCount = document.getElementById('notificationCount');
-    
+
     if (favoriteCount) favoriteCount.textContent = userFavorites.songs.length;
     if (playlistCount) playlistCount.textContent = userPlaylists.length;
     if (followingCount) followingCount.textContent = userFollowing.length;
-    
+
     const unreadNotifications = notifications.filter(n => !n.read).length;
     if (notificationCount) {
         notificationCount.textContent = unreadNotifications;
@@ -3082,21 +3139,21 @@ function updateQuickStats() {
             }
         }
     }
-    
+
     // Total stats
     const totalPlays = document.getElementById('totalPlays');
     const totalLikes = document.getElementById('totalLikes');
     const totalHours = document.getElementById('totalHours');
-    
+
     if (totalPlays) totalPlays.textContent = (listeningHistory.length * 3).toLocaleString();
     if (totalLikes) totalLikes.textContent = userFavorites.songs.length;
     if (totalHours) totalHours.textContent = Math.floor(listeningHistory.length * 0.2);
-    
+
     // Hero stats
     const dailyPlays = document.getElementById('dailyPlays');
     const newReleases = document.getElementById('newReleases');
     const trendingArtists = document.getElementById('trendingArtists');
-    
+
     if (dailyPlays) dailyPlays.textContent = Math.floor(Math.random() * 100) + 200;
     if (newReleases) newReleases.textContent = Math.floor(Math.random() * 10) + 5;
     if (trendingArtists) trendingArtists.textContent = Math.floor(Math.random() * 5) + 5;
@@ -3133,10 +3190,10 @@ async function logout() {
 }
 
 // ========== GLOBAL WINDOW FUNCTIONS ==========
-window.filterByGenre = function(genre) {
+window.filterByGenre = function (genre) {
     showNotification(`Showing ${genre} music`, 'info');
     switchDashboardView('browse');
-    
+
     setTimeout(() => {
         const browseSearch = document.getElementById('browseSearch');
         if (browseSearch) {
@@ -3146,11 +3203,11 @@ window.filterByGenre = function(genre) {
     }, 100);
 };
 
-window.exploreGenre = function(genre) {
+window.exploreGenre = function (genre) {
     filterByGenre(genre);
 };
 
-window.removeFromHistory = function(songId) {
+window.removeFromHistory = function (songId) {
     const index = listeningHistory.findIndex(item => item.songId === songId);
     if (index !== -1) {
         listeningHistory.splice(index, 1);
@@ -3163,12 +3220,131 @@ window.removeFromHistory = function(songId) {
     }
 };
 
-window.viewArtist = function(artistId) {
+window.viewArtist = function (artistId) {
     // In a real app, this would show artist details
     showNotification(`Viewing artist details`, 'info');
     // For now, just show a notification
 };
 
 window.logout = logout;
+
+
+// ========== HELPER FUNCTIONS ==========
+function showNotification(message, type = 'info') {
+    const notificationContainer = document.getElementById('notificationContainer') || createNotificationContainer();
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerText = message;
+
+    // Styling for notification (if not in CSS)
+    notification.style.cssText = `
+        background: var(--bg-secondary, #333);
+        color: white;
+        padding: 12px 20px;
+        margin-top: 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        border-left: 4px solid ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : type === 'warning' ? '#ff9800' : '#2196F3'};
+        animation: slideInRight 0.3s ease forwards;
+        display: flex;
+        align-items: center;
+        min-width: 300px;
+    `;
+
+    notificationContainer.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function createNotificationContainer() {
+    const container = document.createElement('div');
+    container.id = 'notificationContainer';
+    container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    `;
+    document.body.appendChild(container);
+    return container;
+}
+
+// ========== MISSING SETTINGS MODALS ==========
+function createNotificationSettingsModal() {
+    return `
+        <div class="settings-modal" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
+             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h3>Notification Settings</h3>
+                <button onclick="document.querySelector('.modal-overlay').remove()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--primary-color);"> Email Notifications
+                </label>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--primary-color);"> Push Notifications
+                </label>
+            </div>
+            <button onclick="showNotification('Settings saved', 'success'); document.querySelector('.modal-overlay').remove()" style="background:var(--primary-color); color:white; border:none; padding:10px 20px; border-radius:6px; width:100%; margin-top:10px; cursor:pointer;">Save Preferences</button>
+        </div>
+    `;
+}
+
+function createPlaybackSettingsModal() {
+    return `
+        <div class="settings-modal" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
+             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h3>Playback Settings</h3>
+                 <button onclick="document.querySelector('.modal-overlay').remove()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; margin-bottom:5px;">Quality</label>
+                <select style="width:100%; padding:8px; background:var(--bg-tertiary); color:white; border:none; border-radius:4px;">
+                    <option>High (320kbps)</option>
+                    <option>Normal (128kbps)</option>
+                    <option>Low (Data Saver)</option>
+                </select>
+            </div>
+             <button onclick="showNotification('Playback settings saved', 'success'); document.querySelector('.modal-overlay').remove()" style="background:var(--primary-color); color:white; border:none; padding:10px 20px; border-radius:6px; width:100%; margin-top:10px; cursor:pointer;">Save</button>
+        </div>
+    `;
+}
+
+function createPrivacySettingsModal() {
+    return `
+        <div class="settings-modal" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
+             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h3>Privacy & Security</h3>
+                 <button onclick="document.querySelector('.modal-overlay').remove()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" checked style="accent-color: var(--primary-color);"> Public Profile
+                </label>
+            </div>
+             <button onclick="showNotification('Privacy settings updated', 'success'); document.querySelector('.modal-overlay').remove()" style="background:var(--primary-color); color:white; border:none; padding:10px 20px; border-radius:6px; width:100%; margin-top:10px; cursor:pointer;">Save</button>
+        </div>
+    `;
+}
+
+function createDefaultSettingsModal(title) {
+    return `
+        <div class="settings-modal" style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
+             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h3>${title}</h3>
+                 <button onclick="document.querySelector('.modal-overlay').remove()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <p>Settings for ${title} coming soon.</p>
+        </div>
+    `;
+}
 
 console.log("✅ fan.js loaded successfully with complete functionality!");

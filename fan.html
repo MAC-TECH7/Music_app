@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +10,10 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+
     <style>
         :root {
             --primary-color: #FF6B35;
@@ -351,8 +354,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         /* Hero Welcome */
@@ -1207,7 +1215,7 @@
             padding: 12px 24px;
             border-radius: 8px;
             z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             animation: slideIn 0.3s ease;
             display: flex;
             align-items: center;
@@ -1230,13 +1238,27 @@
         }
 
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
 
         /* Menu Toggle for Mobile */
@@ -1259,15 +1281,15 @@
             .sidebar {
                 width: 240px;
             }
-            
+
             .main-content {
                 margin-left: 240px;
             }
-            
+
             .now-playing {
                 left: 240px;
             }
-            
+
             .search-container {
                 width: 300px;
             }
@@ -1277,27 +1299,27 @@
             .sidebar {
                 transform: translateX(-100%);
             }
-            
+
             .sidebar.active {
                 transform: translateX(0);
             }
-            
+
             .main-content {
                 margin-left: 0;
             }
-            
+
             .now-playing {
                 left: 0;
             }
-            
+
             .menu-toggle {
                 display: block;
             }
-            
+
             .search-container {
                 width: 250px;
             }
-            
+
             .top-bar {
                 padding-left: 60px;
             }
@@ -1307,37 +1329,38 @@
             .hero-welcome {
                 padding: var(--spacing-xl);
             }
-            
+
             .hero-content h1 {
                 font-size: 2rem;
             }
-            
+
             .cards-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
-            
+
             .top-bar {
                 flex-direction: column;
                 gap: var(--spacing-md);
                 padding: var(--spacing-md);
             }
-            
+
             .search-container {
                 width: 100%;
             }
-            
+
             .now-playing {
                 flex-direction: column;
                 gap: var(--spacing-md);
                 padding: var(--spacing-md);
             }
-            
+
             .progress-container {
                 width: 100%;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="app">
         <!-- Sidebar -->
@@ -1345,12 +1368,12 @@
             <button class="menu-toggle" id="menuToggle">
                 <i class="fas fa-bars"></i>
             </button>
-            
+
             <div class="sidebar-header">
                 <h1><i class="fas fa-drum"></i> AfroRhythm</h1>
                 <p>Discover Cameroonian Music</p>
             </div>
-            
+
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <div class="nav-section-title">DISCOVER</div>
@@ -1367,7 +1390,7 @@
                         <span>Genres</span>
                     </button>
                 </div>
-                
+
                 <div class="nav-section">
                     <div class="nav-section-title">MY MUSIC</div>
                     <button class="nav-item" data-view="mymusic">
@@ -1385,7 +1408,7 @@
                         <span>History</span>
                     </button>
                 </div>
-                
+
                 <div class="nav-section">
                     <div class="nav-section-title">FOLLOWING</div>
                     <button class="nav-item" data-view="following">
@@ -1399,7 +1422,7 @@
                         <span class="nav-badge" id="notificationCount">2</span>
                     </button>
                 </div>
-                
+
                 <div class="nav-section">
                     <div class="nav-section-title">ACCOUNT</div>
                     <button class="nav-item" data-view="profile">
@@ -1416,8 +1439,19 @@
                     </button>
                 </div>
             </nav>
-            
-            <div class="quick-stats">
+
+            <!-- Stats Toggle (Collapsible) -->
+            <button class="nav-item" id="statsToggleBtn"
+                style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); border-radius: 0;">
+                <div style="display:flex; align-items:center;">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Quick Stats</span>
+                </div>
+                <i class="fas fa-chevron-up" id="statsToggleIcon"
+                    style="margin-left: auto; font-size: 12px; transition: transform 0.3s;"></i>
+            </button>
+
+            <div class="quick-stats" id="quickStatsContent" style="display: none; border-top: none;">
                 <div class="stat-item">
                     <div class="stat-icon">
                         <i class="fas fa-headphones"></i>
@@ -1458,16 +1492,17 @@
                     </button>
                     <div class="search-container">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" id="searchInput" placeholder="Search songs, artists, playlists...">
+                        <input type="text" class="search-input" id="searchInput"
+                            placeholder="Search songs, artists, playlists...">
                     </div>
                 </div>
-                
+
                 <div class="top-bar-right">
                     <button class="notification-btn" id="notificationBtn">
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge" id="notificationBadge">2</span>
                     </button>
-                    
+
                     <div class="user-profile" id="userProfile">
                         <div class="user-avatar" id="userAvatar">JD</div>
                         <div class="user-info">
@@ -1602,7 +1637,7 @@
                         <div class="section-header">
                             <h2>My Music Library</h2>
                         </div>
-                        
+
                         <!-- Favorites -->
                         <div class="section">
                             <div class="section-header">
@@ -1707,16 +1742,18 @@
                                 <i class="fas fa-edit"></i> Edit Profile
                             </button>
                         </div>
-                        
+
                         <!-- Profile Info -->
                         <div class="hero-welcome" style="background: var(--bg-secondary);">
                             <div class="hero-content">
                                 <div style="display: flex; align-items: center; gap: var(--spacing-xl);">
-                                    <div class="user-avatar" style="width: 100px; height: 100px; font-size: 36px;" id="profileAvatar">JD</div>
+                                    <div class="user-avatar" style="width: 100px; height: 100px; font-size: 36px;"
+                                        id="profileAvatar">JD</div>
                                     <div>
                                         <h1 id="profileName">John Doe</h1>
                                         <p id="profileEmail">john@example.com</p>
-                                        <p><i class="fas fa-calendar"></i> Member since <span id="memberSince">2023</span></p>
+                                        <p><i class="fas fa-calendar"></i> Member since <span
+                                                id="memberSince">2023</span></p>
                                     </div>
                                 </div>
                             </div>
@@ -1767,7 +1804,7 @@
                         <div class="section-header">
                             <h2>Settings</h2>
                         </div>
-                        
+
                         <!-- Settings Cards -->
                         <div class="cards-grid">
                             <div class="song-card">
@@ -1814,7 +1851,7 @@
                         <p id="nowPlayingArtist">Select a song to play</p>
                     </div>
                 </div>
-                
+
                 <div class="now-playing-controls">
                     <button class="control-btn">
                         <i class="fas fa-step-backward"></i>
@@ -1826,7 +1863,7 @@
                         <i class="fas fa-step-forward"></i>
                     </button>
                 </div>
-                
+
                 <div class="progress-container">
                     <span class="time" id="currentTime">0:00</span>
                     <div class="progress-bar" id="progressBar">
@@ -1834,7 +1871,7 @@
                     </div>
                     <span class="time" id="totalTime">0:00</span>
                 </div>
-                
+
                 <div class="volume-control">
                     <button class="volume-btn">
                         <i class="fas fa-volume-up"></i>
@@ -1852,4 +1889,5 @@
     <!-- Custom JS -->
     <script src="Js/fan.js"></script>
 </body>
+
 </html>

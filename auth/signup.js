@@ -349,9 +349,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setTimeout(() => {
                 window.location.href = 'login.html';
-                } else {
-                    window.location.href = '../fan.html';
-                }
             }, 1500);
         })
         .catch(err => {

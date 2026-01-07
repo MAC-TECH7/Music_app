@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+
 
 // Create database if it doesn't exist
 try {
@@ -141,7 +141,7 @@ $tables = [
         status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         reviewed_by INT,
-        reviewed_at TIMESTAMP,
+        reviewed_at TIMESTAMP NULL,
         FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (reported_song_id) REFERENCES songs(id) ON DELETE CASCADE,
@@ -182,7 +182,7 @@ $tables = [
         period_end DATE,
         plays_count INT,
         calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        paid_at TIMESTAMP,
+        paid_at TIMESTAMP NULL,
         status ENUM('pending', 'paid') DEFAULT 'pending',
         FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE,
         FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
