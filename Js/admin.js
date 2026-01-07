@@ -5,7 +5,7 @@ async function checkAuth() {
     console.log("🔐 Checking admin authentication...");
 
     try {
-        const response = await fetch('../backend/api/session.php', {
+        const response = await fetch('backend/api/session.php', {
             method: 'GET',
             credentials: 'include' // Include cookies for session
         });
@@ -20,19 +20,19 @@ async function checkAuth() {
 
         // If we get here, user is not authenticated or not an admin
         console.log("⚠️ Admin authentication failed, redirecting to login...");
-        window.location.href = '../auth/login.html';
+        window.location.href = 'auth/login.html';
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
         console.log("⚠️ Auth check failed, redirecting to login...");
-        window.location.href = '../auth/login.html';
+        window.location.href = 'auth/login.html';
         return false;
     }
 }
 
 // Admin Dashboard JavaScript
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
     console.log('Admin dashboard loaded');
 
     // Check authentication first
@@ -54,18 +54,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 function initializeDataTables() {
     console.log('Initializing DataTables...');
-    
+
     // Destroy existing tables if they exist
-    const tables = ['#usersTable', '#allUsersTable', '#artistsTable', '#songsTable', 
-                   '#subscriptionPlansTable', '#recentSubscriptionsTable', '#topSongsTable', 
-                   '#topArtistsTable', '#recentSongsTable'];
-    
+    const tables = ['#usersTable', '#allUsersTable', '#artistsTable', '#songsTable',
+        '#subscriptionPlansTable', '#recentSubscriptionsTable', '#topSongsTable',
+        '#topArtistsTable', '#recentSongsTable'];
+
     tables.forEach(tableId => {
         if ($.fn.DataTable.isDataTable(tableId)) {
             $(tableId).DataTable().destroy();
         }
     });
-    
+
     // Initialize tables with consistent options
     const tableOptions = {
         "pageLength": 10,
@@ -84,9 +84,9 @@ function initializeDataTables() {
             "zeroRecords": "No matching records found"
         }
     };
-    
+
     // Apply to all tables
-    $('table').each(function() {
+    $('table').each(function () {
         if (!$.fn.DataTable.isDataTable(this)) {
             $(this).DataTable(tableOptions);
         }
@@ -95,7 +95,7 @@ function initializeDataTables() {
 
 function initializeCharts() {
     console.log('Initializing charts...');
-    
+
     // User Growth Chart
     const userGrowthCanvas = document.getElementById('userGrowthChart');
     if (userGrowthCanvas) {
@@ -149,7 +149,7 @@ function initializeCharts() {
             }
         });
     }
-    
+
     // Artist Distribution Chart
     const artistDistCanvas = document.getElementById('artistDistributionChart');
     if (artistDistCanvas) {
@@ -187,7 +187,7 @@ function initializeCharts() {
             }
         });
     }
-    
+
     // Analytics Chart
     const analyticsCanvas = document.getElementById('analyticsChart');
     if (analyticsCanvas) {
@@ -230,7 +230,7 @@ function initializeCharts() {
                         },
                         ticks: {
                             color: '#b3b3b3',
-                            callback: function(value) {
+                            callback: function (value) {
                                 if (value >= 1000000) {
                                     return (value / 1000000).toFixed(1) + 'M';
                                 } else if (value >= 1000) {
@@ -252,7 +252,7 @@ function initializeCharts() {
             }
         });
     }
-    
+
     // Genre Chart
     const genreCanvas = document.getElementById('genreChart');
     if (genreCanvas) {
@@ -292,7 +292,7 @@ function initializeCharts() {
             }
         });
     }
-    
+
     // Revenue Chart
     const revenueCanvas = document.getElementById('revenueChart');
     if (revenueCanvas) {
@@ -330,7 +330,7 @@ function initializeCharts() {
             }
         });
     }
-    
+
     // Artist Verification Chart
     const artistVerificationCanvas = document.getElementById('artistVerificationChart');
     if (artistVerificationCanvas) {
@@ -370,15 +370,15 @@ function initializeCharts() {
 
 async function loadSampleData() {
     console.log('Loading data from API...');
-    
+
     try {
         // Fetch users
         const usersResponse = await fetch('../backend/api/users.php');
         const usersData = await usersResponse.json();
         let users = usersData.success ? usersData.data : [];
-        
+
         // No longer merging with localStorage - using API data only
-        
+
         // Fetch artists
         const artistsResponse = await fetch('backend/api/artists.php');
         const artistsData = await artistsResponse.json();
@@ -391,9 +391,9 @@ async function loadSampleData() {
             status: artist.status,
             verification: artist.verification
         })) : [];
-        
+
         // No longer merging with localStorage - using API data only
-        
+
         // Fetch songs
         const songsResponse = await fetch('backend/api/songs.php');
         const songsData = await songsResponse.json();
@@ -407,29 +407,29 @@ async function loadSampleData() {
             date: song.uploaded_at.split(' ')[0],
             status: song.status === 'active' ? 'published' : song.status
         })) : [];
-        
+
         // No longer merging with localStorage - using API data only
-        
+
         // Fetch subscriptions
         const subsResponse = await fetch('backend/api/subscriptions.php');
         const subsData = await subsResponse.json();
         let subscriptions = subsData.success ? subsData.data : [];
-        
+
         // No longer merging with localStorage - using API data only
-        
+
         // Fetch admin data
         const adminAnalyticsResponse = await fetch('backend/api/admin.php?action=analytics');
         const adminAnalyticsData = await adminAnalyticsResponse.json();
         const analytics = adminAnalyticsData.success ? adminAnalyticsData.data : {};
-        
+
         const adminRevenueResponse = await fetch('backend/api/admin.php?action=revenue');
         const adminRevenueData = await adminRevenueResponse.json();
         const revenue = adminRevenueData.success ? adminRevenueData.data : {};
-        
+
         const adminReportsResponse = await fetch('backend/api/admin.php?action=reports');
         const adminReportsData = await adminReportsResponse.json();
         const reports = adminReportsData.success ? adminReportsData.data : [];
-        
+
         // Populate all tables
         populateUsersTable(users);
         populateAllUsersTable(users);
@@ -440,15 +440,15 @@ async function loadSampleData() {
         populateTopSongsTable(songs.slice(0, 5));
         populateTopArtistsList(artists);
         populateRecentSongsTable(songs.slice(0, 5));
-        
+
         // Populate admin-specific data
         populateAnalyticsStats(analytics);
         populateRevenueStats(revenue);
         populateReportsTable(reports);
-        
+
         // Store data globally
         window.sampleData = { users, artists, songs, subscriptions, analytics, revenue, reports };
-        
+
         console.log('Data loaded successfully from API');
     } catch (error) {
         console.error('Error loading data:', error);
@@ -460,9 +460,9 @@ async function loadSampleData() {
 function populateUsersTable(users) {
     const tbody = document.getElementById('usersTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     users.slice(0, 5).forEach(user => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -497,9 +497,9 @@ function populateUsersTable(users) {
 function populateAllUsersTable(users) {
     const tbody = document.getElementById('allUsersTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     users.forEach(user => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -551,9 +551,9 @@ function populateAllUsersTable(users) {
 function populateArtistsTable(artists) {
     const tbody = document.getElementById('artistsTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     artists.forEach(artist => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -604,9 +604,9 @@ function populateArtistsTable(artists) {
 function populateSongsTable(songs) {
     const tbody = document.getElementById('songsTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     songs.forEach(song => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -649,9 +649,9 @@ function populateSongsTable(songs) {
 function populateRecentSongsTable(songs) {
     const tbody = document.getElementById('recentSongsTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     songs.forEach(song => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -678,16 +678,16 @@ function populateRecentSongsTable(songs) {
 function populateTopArtistsList(artists) {
     const container = document.getElementById('topArtistsList');
     if (!container) return;
-    
+
     // Sort by followers (convert "150K" to number for sorting)
     const sortedArtists = [...artists].sort((a, b) => {
         const aFollowers = parseFloat(a.followers) * (a.followers.includes('K') ? 1000 : 1);
         const bFollowers = parseFloat(b.followers) * (b.followers.includes('K') ? 1000 : 1);
         return bFollowers - aFollowers;
     }).slice(0, 5);
-    
+
     container.innerHTML = '';
-    
+
     sortedArtists.forEach((artist, index) => {
         const artistDiv = document.createElement('div');
         artistDiv.className = 'top-artist-item';
@@ -698,7 +698,7 @@ function populateTopArtistsList(artists) {
             padding: 12px;
             border-bottom: 1px solid #333;
         `;
-        
+
         artistDiv.innerHTML = `
             <div style="display: flex; align-items: center; gap: 12px;">
                 <span style="color: #b3b3b3; font-weight: bold;">${index + 1}</span>
@@ -713,7 +713,7 @@ function populateTopArtistsList(artists) {
                 <div style="color: #b3b3b3; font-size: 12px;">followers</div>
             </div>
         `;
-        
+
         container.appendChild(artistDiv);
     });
 }
@@ -752,143 +752,143 @@ function getVerificationColor(status) {
 
 function setupEventListeners() {
     console.log('Setting up event listeners...');
-    
+
     // Global search
     const searchInput = document.getElementById('globalSearch');
     if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
+        searchInput.addEventListener('input', function (e) {
             const searchTerm = e.target.value.toLowerCase();
             console.log('Searching for:', searchTerm);
             // Implement search across all tables
             $('table').DataTable().search(searchTerm).draw();
         });
     }
-    
+
     // Add user button
-    document.getElementById('addUserBtn')?.addEventListener('click', function() {
+    document.getElementById('addUserBtn')?.addEventListener('click', function () {
         const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
         modal.show();
     });
-    
+
     // Add artist button
-    document.getElementById('addArtistBtn')?.addEventListener('click', function() {
+    document.getElementById('addArtistBtn')?.addEventListener('click', function () {
         populateUserDropdown('artistUserId');
         const modal = new bootstrap.Modal(document.getElementById('addArtistModal'));
         modal.show();
     });
-    
+
     // Add song button
-    document.getElementById('addSongBtn')?.addEventListener('click', function() {
+    document.getElementById('addSongBtn')?.addEventListener('click', function () {
         populateArtistDropdown('songArtist');
         const modal = new bootstrap.Modal(document.getElementById('addSongModal'));
         modal.show();
     });
-    
+
     // Add subscription plan button
-    document.getElementById('addSubscriptionPlanBtn')?.addEventListener('click', function() {
+    document.getElementById('addSubscriptionPlanBtn')?.addEventListener('click', function () {
         populateUserDropdown('planUser');
         const modal = new bootstrap.Modal(document.getElementById('addSubscriptionModal'));
         modal.show();
     });
-    
+
     // Export buttons
-    document.getElementById('exportUsersBtn')?.addEventListener('click', function() {
+    document.getElementById('exportUsersBtn')?.addEventListener('click', function () {
         alert('Exporting users data...');
     });
-    
-    document.getElementById('exportAllUsersBtn')?.addEventListener('click', function() {
+
+    document.getElementById('exportAllUsersBtn')?.addEventListener('click', function () {
         alert('Exporting all users data...');
     });
-    
-    document.getElementById('exportArtistsBtn')?.addEventListener('click', function() {
+
+    document.getElementById('exportArtistsBtn')?.addEventListener('click', function () {
         alert('Exporting artists data...');
     });
-    
-    document.getElementById('exportSongsBtn')?.addEventListener('click', function() {
+
+    document.getElementById('exportSongsBtn')?.addEventListener('click', function () {
         alert('Exporting songs data...');
     });
-    
-    document.getElementById('exportReportBtn')?.addEventListener('click', function() {
+
+    document.getElementById('exportReportBtn')?.addEventListener('click', function () {
         alert('Exporting report data...');
     });
-    
+
     // Generate report button
-    document.getElementById('generateReportBtn')?.addEventListener('click', function() {
+    document.getElementById('generateReportBtn')?.addEventListener('click', function () {
         alert('Generating report... This would create a comprehensive report');
     });
-    
+
     // Save settings button
-    document.getElementById('saveSettingsBtn')?.addEventListener('click', function() {
+    document.getElementById('saveSettingsBtn')?.addEventListener('click', function () {
         alert('Settings saved successfully!');
     });
-    
+
     // Refresh buttons
-    document.getElementById('refreshSongsBtn')?.addEventListener('click', function() {
+    document.getElementById('refreshSongsBtn')?.addEventListener('click', function () {
         refreshDashboardData();
     });
-    
-    document.getElementById('refreshSubscriptionsBtn')?.addEventListener('click', function() {
+
+    document.getElementById('refreshSubscriptionsBtn')?.addEventListener('click', function () {
         alert('Refreshing subscriptions data...');
     });
-    
+
     // Notifications button
-    document.getElementById('notificationsBtn')?.addEventListener('click', function() {
+    document.getElementById('notificationsBtn')?.addEventListener('click', function () {
         const modal = new bootstrap.Modal(document.getElementById('notificationsModal'));
         modal.show();
     });
-    
+
     // Admin avatar button
-    document.getElementById('adminAvatar')?.addEventListener('click', function() {
+    document.getElementById('adminAvatar')?.addEventListener('click', function () {
         const modal = new bootstrap.Modal(document.getElementById('adminProfileModal'));
         modal.show();
     });
-    
+
     // Reset add user form when modal is hidden
-    document.getElementById('addUserModal')?.addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addUserModal')?.addEventListener('hidden.bs.modal', function () {
         document.getElementById('addUserForm').reset();
     });
-    
+
     // Reset add artist form when modal is hidden
-    document.getElementById('addArtistModal')?.addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addArtistModal')?.addEventListener('hidden.bs.modal', function () {
         document.getElementById('addArtistForm').reset();
     });
-    
+
     // Reset add song form when modal is hidden
-    document.getElementById('addSongModal')?.addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addSongModal')?.addEventListener('hidden.bs.modal', function () {
         document.getElementById('addSongForm').reset();
     });
-    
+
     // Reset add subscription form when modal is hidden
-    document.getElementById('addSubscriptionModal')?.addEventListener('hidden.bs.modal', function() {
+    document.getElementById('addSubscriptionModal')?.addEventListener('hidden.bs.modal', function () {
         document.getElementById('addSubscriptionForm').reset();
     });
-    
+
     // Action buttons delegation
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         // View buttons
         if (e.target.closest('.btn-action.view')) {
             const button = e.target.closest('.btn-action.view');
             const id = button.dataset.id;
-            const type = button.closest('tr').querySelector('td:nth-child(2)')?.textContent.includes('@') ? 'user' : 
-                        button.closest('tr').querySelector('td:nth-child(3)')?.textContent.includes('K') ? 'artist' : 'song';
+            const type = button.closest('tr').querySelector('td:nth-child(2)')?.textContent.includes('@') ? 'user' :
+                button.closest('tr').querySelector('td:nth-child(3)')?.textContent.includes('K') ? 'artist' : 'song';
             alert(`View ${type} details for ID: ${id}`);
         }
-        
+
         // Edit buttons
         if (e.target.closest('.btn-action.edit')) {
             const button = e.target.closest('.btn-action.edit');
             const id = button.dataset.id;
             alert(`Edit item with ID: ${id}`);
         }
-        
+
         // Delete buttons
         if (e.target.closest('.btn-action.delete')) {
             const button = e.target.closest('.btn-action.delete');
             const id = button.dataset.id;
             const row = button.closest('tr');
-            const itemName = row.querySelector('td:nth-child(2) strong')?.textContent || 
-                           row.querySelector('td:nth-child(2)')?.textContent;
-            
+            const itemName = row.querySelector('td:nth-child(2) strong')?.textContent ||
+                row.querySelector('td:nth-child(2)')?.textContent;
+
             if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
                 row.style.opacity = '0.5';
                 setTimeout(() => {
@@ -898,63 +898,63 @@ function setupEventListeners() {
             }
         }
     });
-    
+
     // Search inputs for specific sections
-    document.getElementById('userSearch')?.addEventListener('input', function(e) {
+    document.getElementById('userSearch')?.addEventListener('input', function (e) {
         $('#allUsersTable').DataTable().search(e.target.value).draw();
     });
-    
-    document.getElementById('artistSearch')?.addEventListener('input', function(e) {
+
+    document.getElementById('artistSearch')?.addEventListener('input', function (e) {
         $('#artistsTable').DataTable().search(e.target.value).draw();
     });
-    
-    document.getElementById('songSearch')?.addEventListener('input', function(e) {
+
+    document.getElementById('songSearch')?.addEventListener('input', function (e) {
         $('#songsTable').DataTable().search(e.target.value).draw();
     });
 }
 
 function setupNavigation() {
     console.log('Setting up navigation...');
-    
+
     const navLinks = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.dashboard-view');
-    
+
     // Hide all sections except dashboard initially
     sections.forEach(section => {
         if (!section.classList.contains('active')) {
             section.style.display = 'none';
         }
     });
-    
+
     navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function (e) {
             e.preventDefault();
-            
+
             const view = this.dataset.view;
             console.log('Navigating to:', view);
-            
+
             // Remove active class from all links
             navLinks.forEach(l => l.classList.remove('active'));
-            
+
             // Add active class to clicked link
             this.classList.add('active');
-            
+
             // Hide all sections
             sections.forEach(section => {
                 section.style.display = 'none';
                 section.classList.remove('active');
             });
-            
+
             // Show selected section
             const sectionId = view + 'Section';
             const targetSection = document.getElementById(sectionId);
             if (targetSection) {
                 targetSection.style.display = 'block';
                 targetSection.classList.add('active');
-                
+
                 // Update page title
                 updatePageTitle(view);
-                
+
                 // Refresh DataTables when switching to a section
                 setTimeout(() => {
                     $('table').DataTable().draw();
@@ -975,7 +975,7 @@ function updatePageTitle(view) {
         'reports': 'Reports & Analytics',
         'settings': 'Settings'
     };
-    
+
     if (titleElement && titles[view]) {
         titleElement.textContent = titles[view];
     }
@@ -983,7 +983,7 @@ function updatePageTitle(view) {
 
 function animateStats() {
     console.log('Animating stats...');
-    
+
     const stats = [
         { id: 'totalUsers', target: 15200, duration: 2000 },
         { id: 'totalArtists', target: 850, duration: 1500 },
@@ -998,23 +998,23 @@ function animateStats() {
         { id: 'pendingSongs', target: 44, duration: 1500 },
         { id: 'rejectedSongs', target: 12, duration: 1000 }
     ];
-    
+
     stats.forEach(stat => {
         const element = document.getElementById(stat.id);
         if (!element) return;
-        
+
         const start = 0;
         const end = stat.target;
         const duration = stat.duration;
         const startTime = Date.now();
-        
+
         const updateCounter = () => {
             const now = Date.now();
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
+
             let currentValue = Math.floor(progress * end);
-            
+
             if (stat.isLargeNumber) {
                 if (currentValue >= 1000000) {
                     element.textContent = (currentValue / 1000000).toFixed(1) + 'M';
@@ -1028,12 +1028,12 @@ function animateStats() {
             } else {
                 element.textContent = formatNumber(currentValue);
             }
-            
+
             if (progress < 1) {
                 requestAnimationFrame(updateCounter);
             }
         };
-        
+
         requestAnimationFrame(updateCounter);
     });
 }
@@ -1044,10 +1044,10 @@ function formatNumber(num) {
 
 function refreshDashboardData() {
     console.log('Refreshing dashboard data...');
-    
+
     // Show loading state
     showNotification('Refreshing dashboard data...', 'info');
-    
+
     // Simulate API call delay
     setTimeout(() => {
         // Update random stats
@@ -1055,31 +1055,31 @@ function refreshDashboardData() {
         const newArtistCount = Math.floor(Math.random() * 50) + 850;
         const newSongCount = Math.floor(Math.random() * 100) + 4200;
         const newRevenue = Math.floor(Math.random() * 1000) + 12500;
-        
+
         document.getElementById('totalUsers').textContent = formatNumber(newUserCount);
         document.getElementById('totalArtists').textContent = formatNumber(newArtistCount);
         document.getElementById('totalSongs').textContent = formatNumber(newSongCount);
         document.getElementById('totalRevenue').textContent = '$' + formatNumber(newRevenue);
-        
+
         // Update charts
         if (window.userGrowthChart) {
             const chart = window.userGrowthChart;
             const newDataPoint = newUserCount;
             chart.data.datasets[0].data.push(newDataPoint);
             chart.data.labels.push('Now');
-            
+
             // Keep only last 12 points
             if (chart.data.datasets[0].data.length > 12) {
                 chart.data.datasets[0].data.shift();
                 chart.data.labels.shift();
             }
-            
+
             chart.update();
         }
-        
+
         // Refresh all DataTables
         $('table').DataTable().ajax.reload();
-        
+
         showNotification('Dashboard data refreshed successfully!', 'success');
     }, 1500);
 }
@@ -1094,17 +1094,17 @@ function addRefreshButton() {
         refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
         refreshBtn.title = 'Refresh Dashboard';
         refreshBtn.style.marginRight = '10px';
-        
-        refreshBtn.addEventListener('click', function() {
+
+        refreshBtn.addEventListener('click', function () {
             this.classList.add('rotating');
             refreshDashboardData();
             setTimeout(() => {
                 this.classList.remove('rotating');
             }, 2000);
         });
-        
+
         topBarRight.insertBefore(refreshBtn, topBarRight.firstChild);
-        
+
         // Add CSS for rotation animation
         const style = document.createElement('style');
         style.textContent = `
@@ -1124,7 +1124,7 @@ function showNotification(message, type = 'info') {
     // Remove any existing notifications
     const existingNotifications = document.querySelectorAll('.custom-notification');
     existingNotifications.forEach(notification => notification.remove());
-    
+
     const notification = document.createElement('div');
     notification.className = `custom-notification alert-${type}`;
     notification.style.cssText = `
@@ -1139,9 +1139,9 @@ function showNotification(message, type = 'info') {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         animation: slideIn 0.3s ease;
     `;
-    
+
     // Set background color based on type
-    switch(type) {
+    switch (type) {
         case 'success':
             notification.style.backgroundColor = '#16a34a';
             break;
@@ -1154,11 +1154,11 @@ function showNotification(message, type = 'info') {
         default:
             notification.style.backgroundColor = '#2563eb';
     }
-    
+
     notification.textContent = message;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto remove after 3 seconds
     setTimeout(() => {
         if (notification.parentNode) {
@@ -1170,7 +1170,7 @@ function showNotification(message, type = 'info') {
             }, 300);
         }
     }, 3000);
-    
+
     // Add CSS for animations
     if (!document.getElementById('notification-styles')) {
         const style = document.createElement('style');
@@ -1229,7 +1229,7 @@ function saveAdminProfile() {
     const emailNotifications = document.getElementById('emailNotifications').checked;
     const twoFactorAuth = document.getElementById('twoFactorAuth').checked;
     const autoLogout = document.getElementById('autoLogout').checked;
-    
+
     // Here you would typically send this data to the server
     console.log('Saving admin profile:', {
         name,
@@ -1238,11 +1238,11 @@ function saveAdminProfile() {
         twoFactorAuth,
         autoLogout
     });
-    
+
     // Close modal and show success message
     const modal = bootstrap.Modal.getInstance(document.getElementById('adminProfileModal'));
     modal.hide();
-    
+
     showNotification('Admin profile updated successfully', 'success');
 }
 
@@ -1250,9 +1250,9 @@ function saveAdminProfile() {
 function populateSubscriptionPlansTable(subscriptions) {
     const tbody = document.getElementById('subscriptionPlansTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     subscriptions.forEach(sub => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1278,9 +1278,9 @@ function populateSubscriptionPlansTable(subscriptions) {
 function populateRecentSubscriptionsTable(subscriptions) {
     const tbody = document.getElementById('recentSubscriptionsTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     subscriptions.forEach(sub => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1297,9 +1297,9 @@ function populateRecentSubscriptionsTable(subscriptions) {
 function populateTopSongsTable(songs) {
     const tbody = document.getElementById('topSongsTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     songs.forEach((song, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1335,9 +1335,9 @@ function populateRevenueStats(revenue) {
 function populateReportsTable(reports) {
     const tbody = document.getElementById('reportsTableBody');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
-    
+
     reports.forEach(report => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1499,7 +1499,7 @@ async function resolveReport(reportId) {
 
 function loadFallbackData() {
     console.log('Loading fallback sample data...');
-    
+
     // Fallback to original sample data if API fails
     const users = [
         {
@@ -1514,26 +1514,26 @@ function loadFallbackData() {
         },
         // ... add the rest as in original
     ];
-    
+
     // No longer merging with localStorage - using fallback data only
-    
+
     // Similar for artists and songs
     // For brevity, I'll assume it's implemented
-    
+
     // Populate tables with data
     populateUsersTable(users);
     populateAllUsersTable(users);
-    
+
     // Store data globally
     window.sampleData = { users: users, artists: [], songs: [], subscriptions: [], analytics: {}, revenue: {}, reports: [] };
-    
+
     console.log('Fallback data loaded');
 }
 
 // Add New User Function
 function addNewUser() {
     const form = document.getElementById('addUserForm');
-    
+
     // Get form values
     const firstName = document.getElementById('userFirstName').value.trim();
     const lastName = document.getElementById('userLastName').value.trim();
@@ -1544,30 +1544,30 @@ function addNewUser() {
     const confirmPassword = document.getElementById('userConfirmPassword').value;
     const isActive = document.getElementById('userActive').checked;
     const sendEmail = document.getElementById('userEmailNotifications').checked;
-    
+
     // Validation
     if (!firstName || !lastName || !email || !userType || !password) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
-    
+
     if (password !== confirmPassword) {
         showNotification('Passwords do not match', 'error');
         return;
     }
-    
+
     if (password.length < 6) {
         showNotification('Password must be at least 6 characters long', 'error');
         return;
     }
-    
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showNotification('Please enter a valid email address', 'error');
         return;
     }
-    
+
     // Create user object (format for backend API)
     const fullName = `${firstName} ${lastName}`;
     const newUser = {
@@ -1578,13 +1578,13 @@ function addNewUser() {
         type: userType,
         status: isActive ? 'active' : 'pending'
     };
-    
+
     // Show loading state
     const submitBtn = document.querySelector('#addUserModal .btn-primary');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
     submitBtn.disabled = true;
-    
+
     // Make actual API call to create user
     fetch('backend/api/users.php', {
         method: 'POST',
@@ -1593,72 +1593,72 @@ function addNewUser() {
         },
         body: JSON.stringify(newUser)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reset form and close modal
+                form.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+                modal.hide();
+
+                // Show success message
+                showNotification(`User "${fullName}" has been created successfully!`, 'success');
+
+                // Refresh the users table
+                refreshDashboardData();
+            } else {
+                // Show error message
+                showNotification(data.message || 'Error creating user', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('API Error:', error);
+            // Fallback: Add user to local sample data for demonstration
+            console.log('API not available, adding user to local data for demonstration');
+
+            // Add user to sample data if it exists
+            if (window.sampleData && window.sampleData.users) {
+                const newUserId = Math.max(...window.sampleData.users.map(u => u.id)) + 1;
+                const localUser = {
+                    id: newUserId,
+                    name: fullName,
+                    email: email,
+                    phone: phone || '',
+                    type: userType,
+                    status: isActive ? 'active' : 'pending',
+                    joined: new Date().toISOString().split('T')[0],
+                    avatar: fullName.split(' ').map(n => n[0]).join('').toUpperCase()
+                };
+                window.sampleData.users.unshift(localUser);
+
+                // Note: Data persistence is now handled server-side
+            }
+
             // Reset form and close modal
             form.reset();
             const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
             modal.hide();
-            
+
             // Show success message
             showNotification(`User "${fullName}" has been created successfully!`, 'success');
-            
+
             // Refresh the users table
             refreshDashboardData();
-        } else {
-            // Show error message
-            showNotification(data.message || 'Error creating user', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('API Error:', error);
-        // Fallback: Add user to local sample data for demonstration
-        console.log('API not available, adding user to local data for demonstration');
-        
-        // Add user to sample data if it exists
-        if (window.sampleData && window.sampleData.users) {
-            const newUserId = Math.max(...window.sampleData.users.map(u => u.id)) + 1;
-            const localUser = {
-                id: newUserId,
-                name: fullName,
-                email: email,
-                phone: phone || '',
-                type: userType,
-                status: isActive ? 'active' : 'pending',
-                joined: new Date().toISOString().split('T')[0],
-                avatar: fullName.split(' ').map(n => n[0]).join('').toUpperCase()
-            };
-            window.sampleData.users.unshift(localUser);
-            
-            // Note: Data persistence is now handled server-side
-        }
-        
-        // Reset form and close modal
-        form.reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
-        modal.hide();
-        
-        // Show success message
-        showNotification(`User "${fullName}" has been created successfully!`, 'success');
-        
-        // Refresh the users table
-        refreshDashboardData();
-    })
-    .finally(() => {
-        // Reset button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
 }
 
 // Helper Functions for Dropdowns
 function populateUserDropdown(dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
-    
+
     dropdown.innerHTML = '<option value="">Select User</option>';
-    
+
     // Get users from sample data or API
     const users = window.sampleData?.users || [];
     users.forEach(user => {
@@ -1672,9 +1672,9 @@ function populateUserDropdown(dropdownId) {
 function populateArtistDropdown(dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
-    
+
     dropdown.innerHTML = '<option value="">Select Artist</option>';
-    
+
     // Get artists from sample data or API
     const artists = window.sampleData?.artists || [];
     artists.forEach(artist => {
@@ -1688,7 +1688,7 @@ function populateArtistDropdown(dropdownId) {
 // Add New Artist Function
 function addNewArtist() {
     const form = document.getElementById('addArtistForm');
-    
+
     // Get form values
     const name = document.getElementById('artistName').value.trim();
     const genre = document.getElementById('artistGenre').value;
@@ -1697,13 +1697,13 @@ function addNewArtist() {
     const followers = parseInt(document.getElementById('artistFollowers').value) || 0;
     const songsCount = parseInt(document.getElementById('artistSongsCount').value) || 0;
     const isVerified = document.getElementById('artistVerified').checked;
-    
+
     // Validation
     if (!name || !genre) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
-    
+
     // Create artist object
     const newArtist = {
         user_id: userId || null,
@@ -1715,13 +1715,13 @@ function addNewArtist() {
         verification: isVerified ? 'approved' : 'pending',
         bio: bio
     };
-    
+
     // Show loading state
     const submitBtn = document.querySelector('#addArtistModal .btn-primary');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
     submitBtn.disabled = true;
-    
+
     // Make API call
     fetch('backend/api/artists.php', {
         method: 'POST',
@@ -1730,65 +1730,65 @@ function addNewArtist() {
         },
         body: JSON.stringify(newArtist)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reset form and close modal
+                form.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addArtistModal'));
+                modal.hide();
+
+                // Show success message
+                showNotification(`Artist "${name}" has been created successfully!`, 'success');
+
+                // Refresh the dashboard
+                refreshDashboardData();
+            } else {
+                showNotification(data.message || 'Error creating artist', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('API Error:', error);
+            // Fallback: Add artist to local sample data
+            if (window.sampleData && window.sampleData.artists) {
+                const newArtistId = Math.max(...window.sampleData.artists.map(a => a.id)) + 1;
+                const localArtist = {
+                    id: newArtistId,
+                    user_id: userId || null,
+                    name: name,
+                    genre: genre,
+                    followers: followers,
+                    songs_count: songsCount,
+                    status: 'pending',
+                    verification: isVerified ? 'approved' : 'pending',
+                    bio: bio
+                };
+                window.sampleData.artists.unshift(localArtist);
+                // Note: Data persistence is now handled server-side
+            }
+
             // Reset form and close modal
             form.reset();
             const modal = bootstrap.Modal.getInstance(document.getElementById('addArtistModal'));
             modal.hide();
-            
+
             // Show success message
             showNotification(`Artist "${name}" has been created successfully!`, 'success');
-            
+
             // Refresh the dashboard
             refreshDashboardData();
-        } else {
-            showNotification(data.message || 'Error creating artist', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('API Error:', error);
-        // Fallback: Add artist to local sample data
-        if (window.sampleData && window.sampleData.artists) {
-            const newArtistId = Math.max(...window.sampleData.artists.map(a => a.id)) + 1;
-            const localArtist = {
-                id: newArtistId,
-                user_id: userId || null,
-                name: name,
-                genre: genre,
-                followers: followers,
-                songs_count: songsCount,
-                status: 'pending',
-                verification: isVerified ? 'approved' : 'pending',
-                bio: bio
-            };
-            window.sampleData.artists.unshift(localArtist);
-            // Note: Data persistence is now handled server-side
-        }
-        
-        // Reset form and close modal
-        form.reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addArtistModal'));
-        modal.hide();
-        
-        // Show success message
-        showNotification(`Artist "${name}" has been created successfully!`, 'success');
-        
-        // Refresh the dashboard
-        refreshDashboardData();
-    })
-    .finally(() => {
-        // Reset button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
 }
 
 // Add New Song Function
 function addNewSong() {
     const form = document.getElementById('addSongForm');
-    
+
     // Get form values
     const title = document.getElementById('songTitle').value.trim();
     const artistId = document.getElementById('songArtist').value;
@@ -1798,20 +1798,20 @@ function addNewSong() {
     const filePath = document.getElementById('songFilePath').value.trim();
     const coverArt = document.getElementById('songCoverArt').value.trim();
     const isActive = document.getElementById('songActive').checked;
-    
+
     // Validation
     if (!title || !artistId || !genre || !duration) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
-    
+
     // Validate duration format (MM:SS)
     const durationRegex = /^\d{1,2}:\d{2}$/;
     if (!durationRegex.test(duration)) {
         showNotification('Duration must be in MM:SS format (e.g., 03:45)', 'error');
         return;
     }
-    
+
     // Create song object
     const newSong = {
         title: title,
@@ -1824,13 +1824,13 @@ function addNewSong() {
         cover_art: coverArt,
         status: isActive ? 'active' : 'pending'
     };
-    
+
     // Show loading state
     const submitBtn = document.querySelector('#addSongModal .btn-primary');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
     submitBtn.disabled = true;
-    
+
     // Make API call
     fetch('backend/api/songs.php', {
         method: 'POST',
@@ -1839,66 +1839,66 @@ function addNewSong() {
         },
         body: JSON.stringify(newSong)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reset form and close modal
+                form.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addSongModal'));
+                modal.hide();
+
+                // Show success message
+                showNotification(`Song "${title}" has been created successfully!`, 'success');
+
+                // Refresh the dashboard
+                refreshDashboardData();
+            } else {
+                showNotification(data.message || 'Error creating song', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('API Error:', error);
+            // Fallback: Add song to local sample data
+            if (window.sampleData && window.sampleData.songs) {
+                const newSongId = Math.max(...window.sampleData.songs.map(s => s.id)) + 1;
+                const localSong = {
+                    id: newSongId,
+                    title: title,
+                    artist_id: artistId,
+                    genre: genre,
+                    duration: duration,
+                    plays: plays,
+                    likes: 0,
+                    file_path: filePath,
+                    cover_art: coverArt,
+                    status: isActive ? 'active' : 'pending'
+                };
+                window.sampleData.songs.unshift(localSong);
+                // Note: Data persistence is now handled server-side
+            }
+
             // Reset form and close modal
             form.reset();
             const modal = bootstrap.Modal.getInstance(document.getElementById('addSongModal'));
             modal.hide();
-            
+
             // Show success message
             showNotification(`Song "${title}" has been created successfully!`, 'success');
-            
+
             // Refresh the dashboard
             refreshDashboardData();
-        } else {
-            showNotification(data.message || 'Error creating song', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('API Error:', error);
-        // Fallback: Add song to local sample data
-        if (window.sampleData && window.sampleData.songs) {
-            const newSongId = Math.max(...window.sampleData.songs.map(s => s.id)) + 1;
-            const localSong = {
-                id: newSongId,
-                title: title,
-                artist_id: artistId,
-                genre: genre,
-                duration: duration,
-                plays: plays,
-                likes: 0,
-                file_path: filePath,
-                cover_art: coverArt,
-                status: isActive ? 'active' : 'pending'
-            };
-            window.sampleData.songs.unshift(localSong);
-            // Note: Data persistence is now handled server-side
-        }
-        
-        // Reset form and close modal
-        form.reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addSongModal'));
-        modal.hide();
-        
-        // Show success message
-        showNotification(`Song "${title}" has been created successfully!`, 'success');
-        
-        // Refresh the dashboard
-        refreshDashboardData();
-    })
-    .finally(() => {
-        // Reset button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
 }
 
 // Add New Subscription Function
 function addNewSubscription() {
     const form = document.getElementById('addSubscriptionForm');
-    
+
     // Get form values
     const planName = document.getElementById('planName').value.trim();
     const amount = parseFloat(document.getElementById('planAmount').value);
@@ -1906,18 +1906,18 @@ function addNewSubscription() {
     const startDate = document.getElementById('planStartDate').value;
     const endDate = document.getElementById('planEndDate').value;
     const isActive = document.getElementById('planActive').checked;
-    
+
     // Validation
     if (!planName || !amount || !userId || !startDate || !endDate) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
-    
+
     if (new Date(endDate) <= new Date(startDate)) {
         showNotification('End date must be after start date', 'error');
         return;
     }
-    
+
     // Create subscription object
     const newSubscription = {
         user_id: userId,
@@ -1927,13 +1927,13 @@ function addNewSubscription() {
         start_date: startDate,
         end_date: endDate
     };
-    
+
     // Show loading state
     const submitBtn = document.querySelector('#addSubscriptionModal .btn-primary');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
     submitBtn.disabled = true;
-    
+
     // Make API call
     fetch('backend/api/subscriptions.php', {
         method: 'POST',
@@ -1942,55 +1942,55 @@ function addNewSubscription() {
         },
         body: JSON.stringify(newSubscription)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reset form and close modal
+                form.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addSubscriptionModal'));
+                modal.hide();
+
+                // Show success message
+                showNotification(`Subscription "${planName}" has been created successfully!`, 'success');
+
+                // Refresh the dashboard
+                refreshDashboardData();
+            } else {
+                showNotification(data.message || 'Error creating subscription', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('API Error:', error);
+            // Fallback: Add subscription to local sample data
+            if (window.sampleData && window.sampleData.subscriptions) {
+                const newSubId = Math.max(...window.sampleData.subscriptions.map(s => s.id)) + 1;
+                const localSubscription = {
+                    id: newSubId,
+                    user_id: userId,
+                    plan_name: planName,
+                    amount: amount,
+                    status: isActive ? 'active' : 'pending',
+                    start_date: startDate,
+                    end_date: endDate
+                };
+                window.sampleData.subscriptions.unshift(localSubscription);
+                // Note: Data persistence is now handled server-side
+            }
+
             // Reset form and close modal
             form.reset();
             const modal = bootstrap.Modal.getInstance(document.getElementById('addSubscriptionModal'));
             modal.hide();
-            
+
             // Show success message
             showNotification(`Subscription "${planName}" has been created successfully!`, 'success');
-            
+
             // Refresh the dashboard
             refreshDashboardData();
-        } else {
-            showNotification(data.message || 'Error creating subscription', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('API Error:', error);
-        // Fallback: Add subscription to local sample data
-        if (window.sampleData && window.sampleData.subscriptions) {
-            const newSubId = Math.max(...window.sampleData.subscriptions.map(s => s.id)) + 1;
-            const localSubscription = {
-                id: newSubId,
-                user_id: userId,
-                plan_name: planName,
-                amount: amount,
-                status: isActive ? 'active' : 'pending',
-                start_date: startDate,
-                end_date: endDate
-            };
-            window.sampleData.subscriptions.unshift(localSubscription);
-            // Note: Data persistence is now handled server-side
-        }
-        
-        // Reset form and close modal
-        form.reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addSubscriptionModal'));
-        modal.hide();
-        
-        // Show success message
-        showNotification(`Subscription "${planName}" has been created successfully!`, 'success');
-        
-        // Refresh the dashboard
-        refreshDashboardData();
-    })
-    .finally(() => {
-        // Reset button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
 }

@@ -38,7 +38,7 @@ async function checkAuth() {
     console.log("🔐 Checking authentication...");
 
     try {
-        const response = await fetch('../backend/api/session.php', {
+        const response = await fetch('backend/api/session.php', {
             method: 'GET',
             credentials: 'include' // Include cookies for session
         });
@@ -53,13 +53,13 @@ async function checkAuth() {
 
         // If we get here, user is not authenticated or not an artist
         console.log("⚠️ Artist authentication failed, redirecting to login...");
-        window.location.href = '../auth/login.html';
+        window.location.href = 'auth/login.html';
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
         console.log("⚠️ Auth check failed, redirecting to login...");
-        window.location.href = '../auth/login.html';
+        window.location.href = 'auth/login.html';
         return false;
     }
 }
