@@ -1,7 +1,45 @@
 // Admin Dashboard JavaScript
-document.addEventListener('DOMContentLoaded', function() {
+
+// Authentication check
+async function checkAuth() {
+    console.log("🔐 Checking admin authentication...");
+
+    try {
+        const response = await fetch('../backend/api/session.php', {
+            method: 'GET',
+            credentials: 'include' // Include cookies for session
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && (data.data.user.type === 'admin' || data.data.user.type === 'moderator')) {
+                console.log(`✅ Admin authenticated: ${data.data.user.name}`);
+                return true;
+            }
+        }
+
+        // If we get here, user is not authenticated or not an admin
+        console.log("⚠️ Admin authentication failed, redirecting to login...");
+        window.location.href = '../auth/login.html';
+        return false;
+
+    } catch (error) {
+        console.error("❌ Authentication check failed:", error);
+        console.log("⚠️ Auth check failed, redirecting to login...");
+        window.location.href = '../auth/login.html';
+        return false;
+    }
+}
+
+// Admin Dashboard JavaScript
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('Admin dashboard loaded');
-    
+
+    // Check authentication first
+    if (!(await checkAuth())) {
+        return; // checkAuth will redirect if not authenticated
+    }
+
     // Initialize everything
     initializeDataTables();
     initializeCharts();
@@ -9,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     setupNavigation();
     animateStats();
-    
+
     // Add refresh button functionality
     addRefreshButton();
 });
@@ -335,12 +373,11 @@ async function loadSampleData() {
     
     try {
         // Fetch users
-        const usersResponse = await fetch('backend/api/users.php');
+        const usersResponse = await fetch('../backend/api/users.php');
         const usersData = await usersResponse.json();
         let users = usersData.success ? usersData.data : [];
         
-        // Merge with localStorage users (for persistence when API is down)
-        users = mergeUsersWithLocalStorage(users);
+        // No longer merging with localStorage - using API data only
         
         // Fetch artists
         const artistsResponse = await fetch('backend/api/artists.php');
@@ -355,24 +392,7 @@ async function loadSampleData() {
             verification: artist.verification
         })) : [];
         
-        // Merge with localStorage artists
-        const localArtists = loadArtistsFromLocalStorage();
-        if (localArtists) {
-            localArtists.forEach(localArtist => {
-                const existingIndex = artists.findIndex(artist => artist.name === localArtist.name);
-                if (existingIndex === -1) {
-                    artists.unshift({
-                        id: localArtist.id,
-                        name: localArtist.name,
-                        genre: localArtist.genre,
-                        followers: localArtist.followers >= 1000 ? (localArtist.followers / 1000).toFixed(0) + 'K' : localArtist.followers.toString(),
-                        songs: localArtist.songs_count,
-                        status: localArtist.status,
-                        verification: localArtist.verification
-                    });
-                }
-            });
-        }
+        // No longer merging with localStorage - using API data only
         
         // Fetch songs
         const songsResponse = await fetch('backend/api/songs.php');
@@ -388,43 +408,14 @@ async function loadSampleData() {
             status: song.status === 'active' ? 'published' : song.status
         })) : [];
         
-        // Merge with localStorage songs
-        const localSongs = loadSongsFromLocalStorage();
-        if (localSongs) {
-            localSongs.forEach(localSong => {
-                const existingIndex = songs.findIndex(song => song.title === localSong.title && song.artist_id === localSong.artist_id);
-                if (existingIndex === -1) {
-                    // Find artist name for local song
-                    const artist = artists.find(a => a.id == localSong.artist_id);
-                    songs.unshift({
-                        id: localSong.id,
-                        title: localSong.title,
-                        artist: artist ? artist.name : 'Unknown Artist',
-                        genre: localSong.genre,
-                        plays: localSong.plays >= 1000000 ? (localSong.plays / 1000000).toFixed(1) + 'M' : localSong.plays >= 1000 ? (localSong.plays / 1000).toFixed(0) + 'K' : localSong.plays.toString(),
-                        duration: localSong.duration,
-                        date: new Date().toISOString().split('T')[0],
-                        status: localSong.status === 'active' ? 'published' : localSong.status
-                    });
-                }
-            });
-        }
+        // No longer merging with localStorage - using API data only
         
         // Fetch subscriptions
         const subsResponse = await fetch('backend/api/subscriptions.php');
         const subsData = await subsResponse.json();
         let subscriptions = subsData.success ? subsData.data : [];
         
-        // Merge with localStorage subscriptions
-        const localSubscriptions = loadSubscriptionsFromLocalStorage();
-        if (localSubscriptions) {
-            localSubscriptions.forEach(localSub => {
-                const existingIndex = subscriptions.findIndex(sub => sub.plan_name === localSub.plan_name && sub.user_id === localSub.user_id);
-                if (existingIndex === -1) {
-                    subscriptions.unshift(localSub);
-                }
-            });
-        }
+        // No longer merging with localStorage - using API data only
         
         // Fetch admin data
         const adminAnalyticsResponse = await fetch('backend/api/admin.php?action=analytics');
@@ -1524,109 +1515,19 @@ function loadFallbackData() {
         // ... add the rest as in original
     ];
     
-    // Merge with localStorage users
-    const mergedUsers = mergeUsersWithLocalStorage(users);
+    // No longer merging with localStorage - using fallback data only
     
     // Similar for artists and songs
     // For brevity, I'll assume it's implemented
     
-    // Populate tables with merged data
-    populateUsersTable(mergedUsers);
-    populateAllUsersTable(mergedUsers);
+    // Populate tables with data
+    populateUsersTable(users);
+    populateAllUsersTable(users);
     
-    // Store merged data globally
-    window.sampleData = { users: mergedUsers, artists: [], songs: [], subscriptions: [], analytics: {}, revenue: {}, reports: [] };
+    // Store data globally
+    window.sampleData = { users: users, artists: [], songs: [], subscriptions: [], analytics: {}, revenue: {}, reports: [] };
     
-    console.log('Fallback data loaded with localStorage users');
-}
-
-// Local Storage Functions for User Persistence
-function saveUsersToLocalStorage(users) {
-    try {
-        localStorage.setItem('admin_users', JSON.stringify(users));
-    } catch (error) {
-        console.error('Error saving users to localStorage:', error);
-    }
-}
-
-function loadUsersFromLocalStorage() {
-    try {
-        const savedUsers = localStorage.getItem('admin_users');
-        return savedUsers ? JSON.parse(savedUsers) : null;
-    } catch (error) {
-        console.error('Error loading users from localStorage:', error);
-        return null;
-    }
-}
-
-function saveArtistsToLocalStorage(artists) {
-    try {
-        localStorage.setItem('admin_artists', JSON.stringify(artists));
-    } catch (error) {
-        console.error('Error saving artists to localStorage:', error);
-    }
-}
-
-function loadArtistsFromLocalStorage() {
-    try {
-        const savedArtists = localStorage.getItem('admin_artists');
-        return savedArtists ? JSON.parse(savedArtists) : null;
-    } catch (error) {
-        console.error('Error loading artists from localStorage:', error);
-        return null;
-    }
-}
-
-function saveSongsToLocalStorage(songs) {
-    try {
-        localStorage.setItem('admin_songs', JSON.stringify(songs));
-    } catch (error) {
-        console.error('Error saving songs to localStorage:', error);
-    }
-}
-
-function loadSongsFromLocalStorage() {
-    try {
-        const savedSongs = localStorage.getItem('admin_songs');
-        return savedSongs ? JSON.parse(savedSongs) : null;
-    } catch (error) {
-        console.error('Error loading songs from localStorage:', error);
-        return null;
-    }
-}
-
-function saveSubscriptionsToLocalStorage(subscriptions) {
-    try {
-        localStorage.setItem('admin_subscriptions', JSON.stringify(subscriptions));
-    } catch (error) {
-        console.error('Error saving subscriptions to localStorage:', error);
-    }
-}
-
-function loadSubscriptionsFromLocalStorage() {
-    try {
-        const savedSubscriptions = localStorage.getItem('admin_subscriptions');
-        return savedSubscriptions ? JSON.parse(savedSubscriptions) : null;
-    } catch (error) {
-        console.error('Error loading subscriptions from localStorage:', error);
-        return null;
-    }
-}
-
-function mergeUsersWithLocalStorage(apiUsers) {
-    const localUsers = loadUsersFromLocalStorage();
-    if (!localUsers) return apiUsers;
-    
-    // Merge local users with API users, preferring local users for duplicates
-    const mergedUsers = [...apiUsers];
-    localUsers.forEach(localUser => {
-        const existingIndex = mergedUsers.findIndex(user => user.email === localUser.email);
-        if (existingIndex === -1) {
-            mergedUsers.unshift(localUser);
-        }
-    });
-    
-    return mergedUsers;
+    console.log('Fallback data loaded');
 }
 
 // Add New User Function
@@ -1730,8 +1631,7 @@ function addNewUser() {
             };
             window.sampleData.users.unshift(localUser);
             
-            // Save to localStorage to persist across page refreshes
-            saveUsersToLocalStorage(window.sampleData.users);
+            // Note: Data persistence is now handled server-side
         }
         
         // Reset form and close modal
@@ -1864,7 +1764,7 @@ function addNewArtist() {
                 bio: bio
             };
             window.sampleData.artists.unshift(localArtist);
-            saveArtistsToLocalStorage(window.sampleData.artists);
+            // Note: Data persistence is now handled server-side
         }
         
         // Reset form and close modal
@@ -1974,7 +1874,7 @@ function addNewSong() {
                 status: isActive ? 'active' : 'pending'
             };
             window.sampleData.songs.unshift(localSong);
-            saveSongsToLocalStorage(window.sampleData.songs);
+            // Note: Data persistence is now handled server-side
         }
         
         // Reset form and close modal
@@ -2074,7 +1974,7 @@ function addNewSubscription() {
                 end_date: endDate
             };
             window.sampleData.subscriptions.unshift(localSubscription);
-            saveSubscriptionsToLocalStorage(window.sampleData.subscriptions);
+            // Note: Data persistence is now handled server-side
         }
         
         // Reset form and close modal

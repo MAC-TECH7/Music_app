@@ -124,19 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showSuccess('Login successful! Redirecting to dashboard...');
 
-            // Store minimal user data in localStorage for frontend routing
-            localStorage.setItem('afroUser', JSON.stringify({
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                phone: user.phone,
-                role: user.type,
-                status: user.status,
-                joined: user.joined,
-                avatar: user.avatar,
-                isLoggedIn: true,
-                loginTime: new Date().toISOString()
-            }));
+            // Session is now handled server-side, no need for localStorage
+            // The session_id is available in body.data.session_id if needed
 
             setTimeout(() => {
                 if (user.type === 'artist') {

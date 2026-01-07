@@ -344,20 +344,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(body.message || 'Failed to create account');
             }
 
-            // Also set as current user (minimal info, no password)
-            localStorage.setItem('afroUser', JSON.stringify({
-                email: email,
-                name: fullName,
-                isLoggedIn: true,
-                loginTime: new Date().toISOString(),
-                role: payload.type
-            }));
-
-            showSuccess('Account created successfully! Redirecting to dashboard...');
+            // Account created successfully - redirect to login
+            showSuccess('Account created successfully! Please log in with your credentials...');
 
             setTimeout(() => {
-                if (userRole === 'artist') {
-                    window.location.href = '../artist.html';
+                window.location.href = 'login.html';
                 } else {
                     window.location.href = '../fan.html';
                 }

@@ -170,41 +170,35 @@ async function loadBackendData() {
 }
 
 // ========== AUTHENTICATION ==========
-function checkAuth() {
+async function checkAuth() {
     console.log("🔐 Checking authentication...");
-    const user = JSON.parse(localStorage.getItem('afroUser') || 'null');
-    
-    if (!user || !user.isLoggedIn) {
-        console.log("⚠️ No user found, creating demo user...");
-        // Create a demo user
-        const demoUser = {
-            email: 'fan@example.com',
-            name: 'Music Fan',
-            isLoggedIn: true,
-            loginTime: new Date().toISOString(),
-            memberSince: '2023',
-            avatarColor: '#FF6B35',
-            subscription: 'Premium',
-            country: 'Cameroon'
-        };
-        localStorage.setItem('afroUser', JSON.stringify(demoUser));
-        currentUser = demoUser;
-        return true;
+
+    try {
+        const response = await fetch('backend/api/session.php', {
+            method: 'GET',
+            credentials: 'include' // Include cookies for session
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                currentUser = data.data.user;
+                console.log(`✅ User authenticated: ${currentUser.name}`);
+                return true;
+            }
+        }
+
+        // If we get here, user is not authenticated
+        console.log("⚠️ User not authenticated, redirecting to login...");
+        window.location.href = 'auth/login.html';
+        return false;
+
+    } catch (error) {
+        console.error("❌ Authentication check failed:", error);
+        console.log("⚠️ Auth check failed, redirecting to login...");
+        window.location.href = 'auth/login.html';
+        return false;
     }
-    
-    currentUser = user;
-    console.log(`✅ User authenticated: ${user.name}`);
-    
-    // Update welcome message
-    const welcomeElement = document.getElementById('welcomeMessage');
-    if (welcomeElement && user.name) {
-        const firstName = user.name.split(' ')[0];
-        const greetings = ['Welcome back', 'Hello', 'Hi', 'Great to see you'];
-        const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
-        welcomeElement.textContent = `${randomGreeting}, ${firstName}!`;
-    }
-    
-    return true;
 }
 
 function updateUserProfileUI() {
@@ -246,12 +240,12 @@ function updateUserProfileUI() {
 // ========== USER DATA MANAGEMENT ==========
 async function loadUserData() {
     console.log("💾 Loading user data from backend...");
-    
+
     if (!currentUser || !currentUser.id) {
         console.warn("⚠️ No user ID found, skipping backend data load");
         return;
     }
-    
+
     const userId = currentUser.id;
     
     try {
@@ -1698,23 +1692,121 @@ function togglePlayPause() {
         const icon = playBtn.querySelector('i');
         if (isPlaying) {
             icon.className = 'fas fa-pause';
-            simulatePlayback();
+            // Start or resume real audio playback
+            if (audioElement.paused) {
+                audioElement.play().catch(error => {
+                    console.error('Playback failed:', error);
+                    showNotification('Playback failed. Please try again.', 'danger');
+                    isPlaying = false;
+                    icon.className = 'fas fa-play';
+                });
+            }
         } else {
             icon.className = 'fas fa-play';
+            // Pause real audio playback
+            audioElement.pause();
         }
+    }
+}
+
+function startRealPlayback(song) {
+    if (!audioElement) {
+        console.error('Audio element not initialized');
+        return;
+    }
+
+    // Stop any current playback
+    audioElement.pause();
+    audioElement.currentTime = 0;
+
+    // Set the audio source
+    if (song.audioUrl && song.audioUrl !== '#') {
+        audioElement.src = song.audioUrl;
+        audioElement.load();
+
+        // Set up event listeners
+        audioElement.onloadedmetadata = function() {
+            console.log('Audio loaded, duration:', audioElement.duration);
+            updateTotalTime(audioElement.duration);
+        };
+
+        audioElement.ontimeupdate = function() {
+            if (!isNaN(audioElement.duration)) {
+                const progress = (audioElement.currentTime / audioElement.duration) * 100;
+                updateProgressBar(progress);
+                updateCurrentTime(audioElement.currentTime);
+            }
+        };
+
+        audioElement.onended = function() {
+            isPlaying = false;
+            const playBtn = document.getElementById('playPauseBtn');
+            if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+
+            // Auto-play next song
+            if (currentPlaylist) {
+                playNextInPlaylist();
+            } else {
+                playNextSong();
+            }
+        };
+
+        audioElement.onerror = function() {
+            console.error('Audio playback error');
+            showNotification('Unable to play this song. File may be corrupted or missing.', 'danger');
+            isPlaying = false;
+            const playBtn = document.getElementById('playPauseBtn');
+            if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        };
+
+        // Start playback
+        audioElement.play().catch(error => {
+            console.error('Playback failed:', error);
+            showNotification('Playback failed. Please try again.', 'danger');
+        });
+
+    } else {
+        // Fallback to simulation if no audio file
+        console.warn('No audio file available, using simulation');
+        simulatePlayback();
+    }
+}
+
+function updateProgressBar(percent) {
+    const progressFill = document.getElementById('progressFill');
+    if (progressFill) {
+        progressFill.style.width = `${percent}%`;
+    }
+}
+
+function updateCurrentTime(currentSeconds) {
+    const currentTimeEl = document.getElementById('currentTime');
+    if (currentTimeEl) {
+        const minutes = Math.floor(currentSeconds / 60);
+        const seconds = Math.floor(currentSeconds % 60);
+        currentTimeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
+function updateTotalTime(totalSeconds) {
+    const totalTimeEl = document.getElementById('totalTime');
+    if (totalTimeEl && !isNaN(totalSeconds)) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+        totalTimeEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 }
 
 function simulatePlayback() {
     if (!isPlaying) return;
-    
+
     let progress = 0;
     const interval = setInterval(() => {
         if (!isPlaying) {
             clearInterval(interval);
             return;
         }
-        
+
         progress += 0.5;
         if (progress > 100) {
             progress = 0;
@@ -1722,7 +1814,7 @@ function simulatePlayback() {
             const playBtn = document.getElementById('playPauseBtn');
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
             clearInterval(interval);
-            
+
             // Auto-play next song if available
             if (currentPlaylist) {
                 playNextInPlaylist();
@@ -1730,12 +1822,12 @@ function simulatePlayback() {
                 playNextSong();
             }
         }
-        
+
         const progressFill = document.getElementById('progressFill');
         if (progressFill) {
             progressFill.style.width = `${progress}%`;
         }
-        
+
         updatePlaybackTime(progress / 100);
     }, 500);
 }
@@ -1916,18 +2008,18 @@ async function playSong(songId) {
     if (song) {
         // Add to history (async, but don't wait - fire and forget)
         addToHistory(songId).catch(err => console.error('Error adding to history:', err));
-        
+
         updateNowPlayingUI(song);
-        
+
         const playBtn = document.getElementById('playPauseBtn');
         if (playBtn) {
             isPlaying = true;
             playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            simulatePlayback();
+            startRealPlayback(song); // Use real playback instead of simulation
         }
-        
+
         showNotification(`Now playing: ${song.title}`, 'info');
-        
+
         // Reset playlist context
         currentPlaylist = null;
         currentSongIndex = sampleSongs.findIndex(s => s.id === songId);
@@ -2916,10 +3008,10 @@ function performSearch(query) {
 // ========== SETTINGS FUNCTIONS ==========
 function updateAvatarColor(color) {
     if (!currentUser) return;
-    
+
     currentUser.avatarColor = color;
-    localStorage.setItem('afroUser', JSON.stringify(currentUser));
-    
+    // Note: Avatar color changes are now stored server-side in session
+
     // Update avatar preview
     const modalAvatar = document.getElementById('modalAvatar');
     if (modalAvatar) {
@@ -2944,8 +3036,8 @@ function saveAccountSettings() {
     if (currentUser) {
         currentUser.name = displayName;
         currentUser.email = email;
-        localStorage.setItem('afroUser', JSON.stringify(currentUser));
-        
+        // Note: Account settings are now stored server-side in session
+
         updateUserProfileUI();
         showNotification('Account settings saved', 'success');
         
@@ -2959,8 +3051,8 @@ function saveAccountSettings() {
 
 function deleteAccount() {
     if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-        localStorage.removeItem('afroUser');
-        localStorage.removeItem('afroUserData');
+        // Note: Account deletion should call API in future implementation
+        // For now, just redirect to home
         window.location.href = 'index.html';
     }
 }
@@ -3011,9 +3103,31 @@ function updateQuickStats() {
 }
 
 // ========== LOGOUT ==========
-function logout() {
+async function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('afroUser');
+        try {
+            const response = await fetch('backend/api/session.php', {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                console.log("✅ Logged out successfully");
+            } else {
+                console.warn("⚠️ Logout API call failed, but proceeding with client-side cleanup");
+            }
+        } catch (error) {
+            console.error("❌ Logout API call error:", error);
+        }
+
+        // Clear client-side data
+        currentUser = null;
+        userFavorites = { songs: [], artists: [], playlists: [] };
+        userFollowing = [];
+        userPlaylists = [];
+        listeningHistory = [];
+
+        // Redirect to home page
         window.location.href = 'index.html';
     }
 }

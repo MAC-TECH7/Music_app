@@ -3,10 +3,14 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
+
+// Start session
+session_start();
 
 require_once '../db.php';
 
@@ -41,13 +45,28 @@ try {
         exit;
     }
 
+    // Store user data in session
+    $_SESSION['user'] = [
+        'id' => $user['id'],
+        'email' => $user['email'],
+        'name' => $user['name'],
+        'phone' => $user['phone'],
+        'type' => $user['type'],
+        'status' => $user['status'],
+        'joined' => $user['joined'],
+        'avatar' => $user['avatar'],
+        'isLoggedIn' => true,
+        'loginTime' => date('Y-m-d H:i:s')
+    ];
+
     // Never expose password hash to frontend
     unset($user['password']);
 
     echo json_encode([
         'success' => true,
         'data' => [
-            'user' => $user
+            'user' => $user,
+            'session_id' => session_id()
         ]
     ]);
 } catch (PDOException $e) {

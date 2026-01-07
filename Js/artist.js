@@ -8,7 +8,7 @@ function showNotification(message, type = 'info') {
         toastContainer.style.zIndex = '9999';
         document.body.appendChild(toastContainer);
     }
-    
+
     // Create toast
     const toast = document.createElement('div');
     toast.className = `toast align-items-center text-white bg-${type} border-0`;
@@ -19,23 +19,59 @@ function showNotification(message, type = 'info') {
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     `;
-    
+
     // Add to container
     toastContainer.appendChild(toast);
-    
+
     // Show toast
     const bsToast = new bootstrap.Toast(toast);
     bsToast.show();
-    
+
     // Remove after hide
     toast.addEventListener('hidden.bs.toast', () => {
         toast.remove();
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+// Authentication check
+async function checkAuth() {
+    console.log("🔐 Checking authentication...");
+
+    try {
+        const response = await fetch('../backend/api/session.php', {
+            method: 'GET',
+            credentials: 'include' // Include cookies for session
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data.user.type === 'artist') {
+                console.log(`✅ Artist authenticated: ${data.data.user.name}`);
+                return true;
+            }
+        }
+
+        // If we get here, user is not authenticated or not an artist
+        console.log("⚠️ Artist authentication failed, redirecting to login...");
+        window.location.href = '../auth/login.html';
+        return false;
+
+    } catch (error) {
+        console.error("❌ Authentication check failed:", error);
+        console.log("⚠️ Auth check failed, redirecting to login...");
+        window.location.href = '../auth/login.html';
+        return false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('Artist Dashboard JavaScript loaded successfully!');
-    
+
+    // Check authentication first
+    if (!(await checkAuth())) {
+        return; // checkAuth will redirect if not authenticated
+    }
+
     // State management
     let currentView = 'dashboard';
     let currentPlan = 'Pro'; // Current subscription plan
@@ -78,15 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     async function loadArtistSongsFromBackend() {
-        // Try to identify current user from localStorage
-        let currentUser = null;
-        try {
-            currentUser = JSON.parse(localStorage.getItem('afroUser') || 'null');
-        } catch (e) {
-            currentUser = null;
-        }
-
-        const res = await fetch('backend/api/songs.php');
+        // User authentication is now handled by session check
+        const res = await fetch('../backend/api/songs.php');
         const json = await res.json();
         if (!json.success) {
             throw new Error(json.message || 'Failed to load songs');
@@ -725,6 +754,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <label class="form-check-label" for="explicitContent">
                                         This song contains explicit content
                                     </label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="coverArtInput" class="form-label">Cover Art (Optional)</label>
+                                    <div class="upload-area border-dashed p-3 text-center" id="coverArtUploadArea" style="cursor: pointer; border: 2px dashed #dee2e6; border-radius: 8px;">
+                                        <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                                        <h6>Click to upload cover art</h6>
+                                        <p class="text-muted small">JPEG, PNG, GIF up to 5MB</p>
+                                        <input type="file" class="d-none" id="coverArtInput" accept="image/*">
+                                    </div>
+                                    <div id="coverArtPreview" class="mt-2" style="display: none;">
+                                        <img id="coverArtImg" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="removeCoverArt">Remove</button>
+                                    </div>
                                 </div>
                                 <div class="form-check mb-3">
                                     <input class="form-check-input" type="checkbox" id="rightsConfirm" required>
@@ -1996,56 +2038,113 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (audioFileInput) audioFileInput.click();
             });
         }
+
+        // Cover art upload area
+        const coverArtUploadArea = document.getElementById('coverArtUploadArea');
+        const coverArtInput = document.getElementById('coverArtInput');
+        const coverArtPreview = document.getElementById('coverArtPreview');
+        const coverArtImg = document.getElementById('coverArtImg');
+        const removeCoverArtBtn = document.getElementById('removeCoverArt');
+
+        if (coverArtUploadArea && coverArtInput) {
+            coverArtUploadArea.addEventListener('click', function() {
+                coverArtInput.click();
+            });
+
+            coverArtInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        coverArtImg.src = e.target.result;
+                        coverArtPreview.style.display = 'block';
+                        coverArtUploadArea.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        if (removeCoverArtBtn) {
+            removeCoverArtBtn.addEventListener('click', function() {
+                coverArtInput.value = '';
+                coverArtPreview.style.display = 'none';
+                coverArtUploadArea.style.display = 'block';
+            });
+        }
         
         // Song upload form
         const songUploadForm = document.getElementById('songUploadForm');
         if (songUploadForm) {
-            songUploadForm.addEventListener('submit', function(e) {
+            songUploadForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+
                 const songTitle = document.getElementById('songTitleInput')?.value;
                 const songGenre = document.getElementById('songGenreSelect')?.value;
-                
+                const audioFileInput = document.getElementById('audioFileInput');
+                const coverArtInput = document.getElementById('coverArtInput');
+
                 if (!songTitle || !songGenre) {
                     showNotification('Please fill in all required fields', 'danger');
                     return;
                 }
-                
+
+                if (!audioFileInput || !audioFileInput.files[0]) {
+                    showNotification('Please select a song file to upload', 'danger');
+                    return;
+                }
+
                 const submitBtn = document.getElementById('submitUploadBtn');
-                if (submitBtn) {
-                    const originalText = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
-                    submitBtn.disabled = true;
-                    
-                    setTimeout(() => {
-                        submitBtn.innerHTML = originalText;
-                        submitBtn.disabled = false;
-                        
-                        // Add new song to uploadedSongs
-                        const newSong = {
-                            id: uploadedSongs.length + 1,
-                            title: songTitle,
-                            genre: songGenre,
-                            date: new Date().toISOString().split('T')[0],
-                            plays: '0',
-                            likes: '0',
-                            downloads: '0',
-                            status: 'pending',
-                            audioFile: null
-                        };
-                        
-                        uploadedSongs.unshift(newSong);
-                        
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+                submitBtn.disabled = true;
+
+                try {
+                    // Create FormData for file upload
+                    const formData = new FormData();
+                    formData.append('upload_type', 'song');
+                    formData.append('title', songTitle);
+                    formData.append('genre', songGenre);
+                    formData.append('song_file', audioFileInput.files[0]);
+
+                    // Add cover art if provided
+                    if (coverArtInput && coverArtInput.files[0]) {
+                        formData.append('cover_art', coverArtInput.files[0]);
+                    }
+
+                    // Make API call to upload
+                    const response = await fetch('../backend/api/upload.php', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
                         showNotification(`"${songTitle}" uploaded successfully! It will be available after review.`, 'success');
+
+                        // Reset form and hide upload form
                         songUploadForm.reset();
                         if (uploadForm) uploadForm.style.display = 'none';
-                        
-                        // Refresh songs table
-                        const songsTableBody = document.getElementById('songsTableBody');
-                        if (songsTableBody) {
-                            songsTableBody.innerHTML = getSongsTableRows();
-                            attachMusicListeners(); // Re-attach listeners for new rows
-                        }
-                    }, 2000);
+
+                        // Optionally refresh the songs list
+                        // You might want to reload the page or refresh the songs table
+                        setTimeout(() => {
+                            window.location.reload(); // Simple refresh for now
+                        }, 1500);
+
+                    } else {
+                        showNotification(result.message || 'Upload failed', 'danger');
+                    }
+
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showNotification('Upload failed. Please try again.', 'danger');
+                } finally {
+                    // Reset button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
                 }
             });
         }
