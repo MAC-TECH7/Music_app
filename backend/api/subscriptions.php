@@ -15,7 +15,8 @@ switch ($method) {
             $subscriptions = $stmt->fetchAll();
             echo json_encode(['success' => true, 'data' => $subscriptions]);
         } catch(PDOException $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
         break;
 
@@ -27,7 +28,8 @@ switch ($method) {
             $stmt->execute([$data['user_id'], $data['plan_name'], $data['amount'], $data['status'] ?? 'active', $data['start_date'], $data['end_date']]);
             echo json_encode(['success' => true, 'message' => 'Subscription created successfully']);
         } catch(PDOException $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
         break;
 
@@ -39,7 +41,8 @@ switch ($method) {
             $stmt->execute([$data['user_id'], $data['plan_name'], $data['amount'], $data['status'], $data['start_date'], $data['end_date'], $data['id']]);
             echo json_encode(['success' => true, 'message' => 'Subscription updated successfully']);
         } catch(PDOException $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
         break;
 
@@ -48,9 +51,10 @@ switch ($method) {
         try {
             $stmt = $pdo->prepare("DELETE FROM subscriptions WHERE id = ?");
             $stmt->execute([$id]);
-            echo json_encode(['success' => true, 'message' => $e->getMessage()]);
+            echo json_encode(['success' => true, 'message' => 'Subscription deleted successfully']);
         } catch(PDOException $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
         break;
 }

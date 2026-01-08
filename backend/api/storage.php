@@ -17,14 +17,20 @@ if (!isset($pdo) || !$pdo) {
 }
 
 // Ensure table exists
-$pdo->exec("CREATE TABLE IF NOT EXISTS client_storage (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT DEFAULT NULL,
-    storage_key VARCHAR(191) NOT NULL,
-    storage_value LONGTEXT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY user_key (user_id, storage_key)
-)");
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS client_storage (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT NULL,
+        storage_key VARCHAR(191) NOT NULL,
+        storage_value LONGTEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY user_key (user_id, storage_key)
+    )");
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    exit;
+}
 
 $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
 
@@ -32,11 +38,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = isset($_GET['action']) ? $_GET['action'] : null;
 if ($method === 'GET' && $action === 'get' && isset($_GET['key'])) {
     $key = $_GET['key'];
-    // Prefer user-specific value, fallback to global (user_id IS NULL)
-    $stmt = $pdo->prepare('SELECT storage_value FROM client_storage WHERE storage_key = ? AND (user_id = ? OR user_id IS NULL) ORDER BY user_id IS NOT NULL DESC LIMIT 1');
-    $stmt->execute([$key, $user_id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    echo json_encode(['success'=>true,'value'=>$row ? $row['storage_value'] : null]);
+    try {
+        // Prefer user-specific value, fallback to global (user_id IS NULL)
+        $stmt = $pdo->prepare('SELECT storage_value FROM client_storage WHERE storage_key = ? AND (user_id = ? OR user_id IS NULL) ORDER BY user_id IS NOT NULL DESC LIMIT 1');
+        $stmt->execute([$key, $user_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'value' => $row ? $row['storage_value'] : null]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    }
     exit;
 }
 
@@ -51,46 +62,56 @@ if (!$act || !$key) {
 
 if ($act === 'set') {
     $value = isset($input['value']) ? json_encode($input['value']) : '';
-    // Check if exists
-    if ($user_id !== null) {
-        $stmt = $pdo->prepare('SELECT id FROM client_storage WHERE storage_key = ? AND user_id = ?');
-        $stmt->execute([$key, $user_id]);
-        $exists = $stmt->fetchColumn();
-        if ($exists) {
-            $stmt = $pdo->prepare('UPDATE client_storage SET storage_value = ?, updated_at = NOW() WHERE id = ?');
-            $stmt->execute([$value, $exists]);
+    try {
+        // Check if exists
+        if ($user_id !== null) {
+            $stmt = $pdo->prepare('SELECT id FROM client_storage WHERE storage_key = ? AND user_id = ?');
+            $stmt->execute([$key, $user_id]);
+            $exists = $stmt->fetchColumn();
+            if ($exists) {
+                $stmt = $pdo->prepare('UPDATE client_storage SET storage_value = ?, updated_at = NOW() WHERE id = ?');
+                $stmt->execute([$value, $exists]);
+            } else {
+                $stmt = $pdo->prepare('INSERT INTO client_storage (user_id, storage_key, storage_value) VALUES (?, ?, ?)');
+                $stmt->execute([$user_id, $key, $value]);
+            }
         } else {
-            $stmt = $pdo->prepare('INSERT INTO client_storage (user_id, storage_key, storage_value) VALUES (?, ?, ?)');
-            $stmt->execute([$user_id, $key, $value]);
+            // global (anonymous) value stored with user_id NULL
+            $stmt = $pdo->prepare('SELECT id FROM client_storage WHERE storage_key = ? AND user_id IS NULL');
+            $stmt->execute([$key]);
+            $exists = $stmt->fetchColumn();
+            if ($exists) {
+                $stmt = $pdo->prepare('UPDATE client_storage SET storage_value = ?, updated_at = NOW() WHERE id = ?');
+                $stmt->execute([$value, $exists]);
+            } else {
+                $stmt = $pdo->prepare('INSERT INTO client_storage (user_id, storage_key, storage_value) VALUES (NULL, ?, ?)');
+                $stmt->execute([$key, $value]);
+            }
         }
-    } else {
-        // global (anonymous) value stored with user_id NULL
-        $stmt = $pdo->prepare('SELECT id FROM client_storage WHERE storage_key = ? AND user_id IS NULL');
-        $stmt->execute([$key]);
-        $exists = $stmt->fetchColumn();
-        if ($exists) {
-            $stmt = $pdo->prepare('UPDATE client_storage SET storage_value = ?, updated_at = NOW() WHERE id = ?');
-            $stmt->execute([$value, $exists]);
-        } else {
-            $stmt = $pdo->prepare('INSERT INTO client_storage (user_id, storage_key, storage_value) VALUES (NULL, ?, ?)');
-            $stmt->execute([$key, $value]);
-        }
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
     }
-    echo json_encode(['success'=>true]);
     exit;
 }
 
 if ($act === 'remove' || $act === 'delete') {
-    if ($user_id !== null) {
-        $stmt = $pdo->prepare('DELETE FROM client_storage WHERE storage_key = ? AND user_id = ?');
-        $stmt->execute([$key, $user_id]);
-    } else {
-        $stmt = $pdo->prepare('DELETE FROM client_storage WHERE storage_key = ? AND user_id IS NULL');
-        $stmt->execute([$key]);
+    try {
+        if ($user_id !== null) {
+            $stmt = $pdo->prepare('DELETE FROM client_storage WHERE storage_key = ? AND user_id = ?');
+            $stmt->execute([$key, $user_id]);
+        } else {
+            $stmt = $pdo->prepare('DELETE FROM client_storage WHERE storage_key = ? AND user_id IS NULL');
+            $stmt->execute([$key]);
+        }
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
     }
-    echo json_encode(['success'=>true]);
     exit;
 }
 
-echo json_encode(['success'=>false,'message'=>'unknown action']);
+echo json_encode(['success' => false, 'message' => 'unknown action']);
 exit;

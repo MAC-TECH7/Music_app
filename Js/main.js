@@ -57,10 +57,20 @@ document.addEventListener('DOMContentLoaded', function() {
         newsletterForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const emailInput = this.querySelector('input[type="email"]');
-            if (emailInput.value) {
-                alert('Thank you for subscribing to our newsletter!');
-                emailInput.value = '';
+            const email = emailInput.value.trim();
+            if (!email) {
+                alert('Please enter your email address.');
+                emailInput.focus();
+                return;
             }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address.');
+                emailInput.focus();
+                return;
+            }
+            alert('Thank you for subscribing to our newsletter!');
+            emailInput.value = '';
         });
     }
     

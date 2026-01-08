@@ -139,13 +139,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 }));
 
                 setTimeout(() => {
+                    const path = window.location.pathname;
+                    const directory = path.substring(0, path.lastIndexOf('/'));
+                    const projectRoot = directory.substring(0, directory.lastIndexOf('/'));
+
+                    console.log("🎯 Login successful. User type:", user.type);
+                    console.log("📍 Current Auth Path:", path);
+                    console.log("📂 Calculated Project Root:", projectRoot);
+
+                    let targetUrl;
                     if (user.type === 'artist') {
-                        window.location.href = '../artist.html';
+                        targetUrl = projectRoot + '/artist.html';
                     } else if (user.type === 'admin' || user.type === 'moderator') {
-                        window.location.href = '../admin.html';
+                        targetUrl = projectRoot + '/admin.html';
                     } else {
-                        window.location.href = '../fan.html';
+                        targetUrl = projectRoot + '/fan.html';
                     }
+
+                    console.log("↪️ Redirecting to:", targetUrl);
+                    window.location.href = targetUrl;
                 }, 1000);
             })
             .catch(err => {
@@ -195,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
         googleLoginBtn.disabled = true;
 
         setTimeout(() => {
-            showSuccess('Google login would connect here. For demo, use email: john@example.com, password: password123');
+            showSuccess('Google login would connect here. For demo, use email: john.mbarga@email.com, password: password123');
             googleLoginBtn.innerHTML = '<i class="fab fa-google"></i><span>Google</span>';
             googleLoginBtn.disabled = false;
         }, 1500);
@@ -207,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
         facebookLoginBtn.disabled = true;
 
         setTimeout(() => {
-            showSuccess('Facebook login would connect here. For demo, use email: john@example.com, password: password123');
+            showSuccess('Facebook login would connect here. For demo, use email: john.mbarga@email.com, password: password123');
             facebookLoginBtn.innerHTML = '<i class="fab fa-facebook-f"></i><span>Facebook</span>';
             facebookLoginBtn.disabled = false;
         }, 1500);
@@ -229,6 +241,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Demo credentials hint
     console.log('Demo Credentials:');
-    console.log('Email: john@example.com, Password: password123');
+    console.log('Email: john.mbarga@email.com, Password: password123');
     console.log('Email: user@afrorhythm.com, Password: AfroRhythm2023');
 });

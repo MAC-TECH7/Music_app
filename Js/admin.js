@@ -1,4 +1,5 @@
 // Admin Dashboard JavaScript
+console.log("🚀 Js/admin.js loaded");
 
 // Authentication check
 async function checkAuth() {
@@ -19,14 +20,25 @@ async function checkAuth() {
         }
 
         // If we get here, user is not authenticated or not an admin
-        console.log("⚠️ Admin authentication failed, redirecting to login...");
-        window.location.href = 'auth/login.html';
+        const loginUrl = '/AfroRythm/auth/login.html';
+
+        console.log("⚠️ Admin authentication failed.");
+        console.log("🔄 Redirecting to login:", loginUrl);
+
+        alert("🚨 AUTH FAILED (NORMAL)!\nPath: " + path + "\nDir: " + directory + "\nTarget: " + loginUrl);
+        window.location.href = loginUrl;
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
-        console.log("⚠️ Auth check failed, redirecting to login...");
-        window.location.href = 'auth/login.html';
+
+        const path = window.location.pathname;
+        const directory = path.substring(0, path.lastIndexOf('/'));
+        const loginUrl = directory + '/auth/login.html';
+
+        console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
+        alert("🚨 AUTH FAILED (CATCH)!\nPath: " + path + "\nDir: " + directory + "\nTarget: " + loginUrl);
+        window.location.href = loginUrl;
         return false;
     }
 }
@@ -373,7 +385,7 @@ async function loadSampleData() {
 
     try {
         // Fetch users
-        const usersResponse = await fetch('../backend/api/users.php');
+        const usersResponse = await fetch('backend/api/users.php');
         const usersData = await usersResponse.json();
         let users = usersData.success ? usersData.data : [];
 

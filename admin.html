@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AfroRhythm - Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Google Fonts - Matching index page -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
     <!-- Bootstrap CSS for DataTables -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <!-- DataTables CSS -->
@@ -14,22 +17,28 @@
     <style>
         :root {
             /* Colors - Matching index page palette */
-            --primary-color: #FF6B35; /* African sunset orange */
-            --secondary-color: #2E8B57; /* Forest green */
-            --accent-color: #8B4513; /* Earth brown */
+            --primary-color: #FF6B35;
+            /* African sunset orange */
+            --secondary-color: #2E8B57;
+            /* Forest green */
+            --accent-color: #8B4513;
+            /* Earth brown */
             --dark-color: #1A1A2E;
             --light-color: #F8F9FA;
-            
+
             /* Background colors */
             --bg-primary: var(--dark-color);
-            --bg-secondary: #2a2a3e; /* Slightly lighter than dark-color */
-            --bg-tertiary: #3a3a4e; /* Even lighter */
+            --bg-secondary: #2a2a3e;
+            /* Slightly lighter than dark-color */
+            --bg-tertiary: #3a3a4e;
+            /* Even lighter */
             --text-primary: var(--light-color);
             --text-secondary: #b3b3b3;
             --text-muted: #808080;
             --accent-primary: var(--primary-color);
             --accent-secondary: var(--secondary-color);
-            --accent-hover: #e55a2e; /* Darker orange for hover */
+            --accent-hover: #e55a2e;
+            /* Darker orange for hover */
             --border-color: rgba(255, 255, 255, 0.1);
             --shadow: rgba(0, 0, 0, 0.3);
 
@@ -279,10 +288,21 @@
             font-size: 20px;
         }
 
-        .stat-icon.users { background-color: var(--primary-color); }
-        .stat-icon.artists { background-color: var(--secondary-color); }
-        .stat-icon.songs { background-color: var(--accent-color); }
-        .stat-icon.revenue { background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); }
+        .stat-icon.users {
+            background-color: var(--primary-color);
+        }
+
+        .stat-icon.artists {
+            background-color: var(--secondary-color);
+        }
+
+        .stat-icon.songs {
+            background-color: var(--accent-color);
+        }
+
+        .stat-icon.revenue {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        }
 
         .stat-value {
             font-size: 32px;
@@ -480,7 +500,7 @@
             .search-input {
                 width: 200px;
             }
-            
+
             .table-header {
                 flex-direction: column;
                 gap: var(--spacing-md);
@@ -493,7 +513,7 @@
             display: flex;
             gap: 5px;
         }
-        
+
         .btn-action {
             background: none;
             border: 1px solid #444;
@@ -507,22 +527,22 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .btn-action:hover {
             background-color: #2a2a2a;
             color: white;
         }
-        
+
         .btn-action.view:hover {
             border-color: #16a34a;
             color: #16a34a;
         }
-        
+
         .btn-action.edit:hover {
             border-color: #2563eb;
             color: #2563eb;
         }
-        
+
         .btn-action.delete:hover {
             border-color: #dc2626;
             color: #dc2626;
@@ -537,11 +557,25 @@
             display: inline-block;
         }
 
-        .bg-success { background-color: #16a34a !important; }
-        .bg-warning { background-color: #ca8a04 !important; }
-        .bg-danger { background-color: #dc2626 !important; }
-        .bg-info { background-color: #2563eb !important; }
-        .bg-secondary { background-color: #6b7280 !important; }
+        .bg-success {
+            background-color: #16a34a !important;
+        }
+
+        .bg-warning {
+            background-color: #ca8a04 !important;
+        }
+
+        .bg-danger {
+            background-color: #dc2626 !important;
+        }
+
+        .bg-info {
+            background-color: #2563eb !important;
+        }
+
+        .bg-secondary {
+            background-color: #6b7280 !important;
+        }
 
         /* User Info */
         .user-info {
@@ -643,6 +677,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="app">
         <!-- Sidebar -->
@@ -690,7 +725,8 @@
                     <h1>Admin Dashboard Overview</h1>
                 </div>
                 <div class="top-bar-right">
-                    <input type="text" class="search-input" id="globalSearch" placeholder="Search users, artists, songs...">
+                    <input type="text" class="search-input" id="globalSearch"
+                        placeholder="Search users, artists, songs...">
                     <button class="icon-btn" id="notificationsBtn">
                         <i class="fas fa-bell"></i>
                     </button>
@@ -838,7 +874,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="data-table">
                         <div class="table-header">
                             <h3>All Users</h3>
@@ -929,12 +965,13 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="data-table">
                         <div class="table-header">
                             <h3>All Artists</h3>
                             <div class="search-box">
-                                <input type="text" class="form-control" id="artistSearch" placeholder="Search artists...">
+                                <input type="text" class="form-control" id="artistSearch"
+                                    placeholder="Search artists...">
                             </div>
                         </div>
                         <div class="table-content">
@@ -994,7 +1031,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="data-table">
                         <div class="table-header">
                             <h3>All Songs</h3>
@@ -1662,12 +1699,14 @@
     <!-- Add User Modal -->
     <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
                     <h5 class="modal-title" id="addUserModalLabel">
                         <i class="fas fa-user-plus me-2"></i>Add New User
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addUserForm">
@@ -1675,31 +1714,36 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="userFirstName" class="form-label">First Name *</label>
-                                    <input type="text" class="form-control" id="userFirstName" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="text" class="form-control" id="userFirstName" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="userLastName" class="form-label">Last Name *</label>
-                                    <input type="text" class="form-control" id="userLastName" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="text" class="form-control" id="userLastName" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="userEmail" class="form-label">Email Address *</label>
-                            <input type="email" class="form-control" id="userEmail" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="email" class="form-control" id="userEmail" required
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="userPhone" class="form-label">Phone Number</label>
-                                    <input type="tel" class="form-control" id="userPhone" placeholder="+237 XXX XXX XXX" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="tel" class="form-control" id="userPhone" placeholder="+237 XXX XXX XXX"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="userType" class="form-label">User Type *</label>
-                                    <select class="form-control" id="userType" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <select class="form-control" id="userType" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                         <option value="">Select Type</option>
                                         <option value="fan">Fan</option>
                                         <option value="artist">Artist</option>
@@ -1710,11 +1754,13 @@
                         </div>
                         <div class="mb-3">
                             <label for="userPassword" class="form-label">Password *</label>
-                            <input type="password" class="form-control" id="userPassword" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="password" class="form-control" id="userPassword" required
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="mb-3">
                             <label for="userConfirmPassword" class="form-label">Confirm Password *</label>
-                            <input type="password" class="form-control" id="userConfirmPassword" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="password" class="form-control" id="userConfirmPassword" required
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Account Status</label>
@@ -1751,24 +1797,28 @@
     <!-- Add Artist Modal -->
     <div class="modal fade" id="addArtistModal" tabindex="-1" aria-labelledby="addArtistModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
                     <h5 class="modal-title" id="addArtistModalLabel">
                         <i class="fas fa-microphone-alt me-2"></i>Add New Artist
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addArtistForm">
                         <div class="mb-3">
                             <label for="artistName" class="form-label">Artist Name *</label>
-                            <input type="text" class="form-control" id="artistName" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="text" class="form-control" id="artistName" required
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="artistGenre" class="form-label">Primary Genre *</label>
-                                    <select class="form-control" id="artistGenre" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <select class="form-control" id="artistGenre" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                         <option value="">Select Genre</option>
                                         <option value="Afrobeat">Afrobeat</option>
                                         <option value="Highlife">Highlife</option>
@@ -1786,7 +1836,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="artistUserId" class="form-label">Associated User</label>
-                                    <select class="form-control" id="artistUserId" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <select class="form-control" id="artistUserId"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                         <option value="">Select User (Optional)</option>
                                     </select>
                                 </div>
@@ -1794,19 +1845,23 @@
                         </div>
                         <div class="mb-3">
                             <label for="artistBio" class="form-label">Biography</label>
-                            <textarea class="form-control" id="artistBio" rows="3" placeholder="Tell us about this artist..." style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);"></textarea>
+                            <textarea class="form-control" id="artistBio" rows="3"
+                                placeholder="Tell us about this artist..."
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);"></textarea>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="artistFollowers" class="form-label">Initial Followers</label>
-                                    <input type="number" class="form-control" id="artistFollowers" value="0" min="0" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="number" class="form-control" id="artistFollowers" value="0" min="0"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="artistSongsCount" class="form-label">Songs Count</label>
-                                    <input type="number" class="form-control" id="artistSongsCount" value="0" min="0" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="number" class="form-control" id="artistSongsCount" value="0" min="0"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                         </div>
@@ -1836,24 +1891,28 @@
     <!-- Add Song Modal -->
     <div class="modal fade" id="addSongModal" tabindex="-1" aria-labelledby="addSongModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
                     <h5 class="modal-title" id="addSongModalLabel">
                         <i class="fas fa-music me-2"></i>Add New Song
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addSongForm">
                         <div class="mb-3">
                             <label for="songTitle" class="form-label">Song Title *</label>
-                            <input type="text" class="form-control" id="songTitle" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="text" class="form-control" id="songTitle" required
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="songArtist" class="form-label">Artist *</label>
-                                    <select class="form-control" id="songArtist" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <select class="form-control" id="songArtist" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                         <option value="">Select Artist</option>
                                     </select>
                                 </div>
@@ -1861,7 +1920,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="songGenre" class="form-label">Genre *</label>
-                                    <select class="form-control" id="songGenre" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <select class="form-control" id="songGenre" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                         <option value="">Select Genre</option>
                                         <option value="Afrobeat">Afrobeat</option>
                                         <option value="Highlife">Highlife</option>
@@ -1881,23 +1941,30 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="songDuration" class="form-label">Duration (MM:SS) *</label>
-                                    <input type="text" class="form-control" id="songDuration" placeholder="03:45" required pattern="^\d{1,2}:\d{2}$" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="text" class="form-control" id="songDuration" placeholder="03:45"
+                                        required pattern="^\d{1,2}:\d{2}$"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="songPlays" class="form-label">Initial Plays</label>
-                                    <input type="number" class="form-control" id="songPlays" value="0" min="0" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="number" class="form-control" id="songPlays" value="0" min="0"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="songFilePath" class="form-label">Audio File Path</label>
-                            <input type="text" class="form-control" id="songFilePath" placeholder="/uploads/songs/filename.mp3" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="text" class="form-control" id="songFilePath"
+                                placeholder="/uploads/songs/filename.mp3"
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="mb-3">
                             <label for="songCoverArt" class="form-label">Cover Art URL</label>
-                            <input type="url" class="form-control" id="songCoverArt" placeholder="https://example.com/cover.jpg" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="url" class="form-control" id="songCoverArt"
+                                placeholder="https://example.com/cover.jpg"
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Song Status</label>
@@ -1923,32 +1990,39 @@
     </div>
 
     <!-- Add Subscription Plan Modal -->
-    <div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
                     <h5 class="modal-title" id="addSubscriptionModalLabel">
                         <i class="fas fa-crown me-2"></i>Add Subscription Plan
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addSubscriptionForm">
                         <div class="mb-3">
                             <label for="planName" class="form-label">Plan Name *</label>
-                            <input type="text" class="form-control" id="planName" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <input type="text" class="form-control" id="planName" required
+                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="planAmount" class="form-label">Price (XAF) *</label>
-                                    <input type="number" class="form-control" id="planAmount" required min="0" step="100" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="number" class="form-control" id="planAmount" required min="0"
+                                        step="100"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="planUser" class="form-label">Subscriber *</label>
-                                    <select class="form-control" id="planUser" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <select class="form-control" id="planUser" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                         <option value="">Select User</option>
                                     </select>
                                 </div>
@@ -1958,13 +2032,15 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="planStartDate" class="form-label">Start Date *</label>
-                                    <input type="date" class="form-control" id="planStartDate" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="date" class="form-control" id="planStartDate" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="planEndDate" class="form-label">End Date *</label>
-                                    <input type="date" class="form-control" id="planEndDate" required style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="date" class="form-control" id="planEndDate" required
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </div>
                         </div>
@@ -2025,14 +2101,17 @@
     </div>
 
     <!-- Notifications Modal -->
-    <div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel" aria-hidden="true">
+    <div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
                     <h5 class="modal-title" id="notificationsModalLabel">
                         <i class="fas fa-bell me-2"></i>Notifications
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="notification-list">
@@ -2091,19 +2170,23 @@
     </div>
 
     <!-- Admin Profile Modal -->
-    <div class="modal fade" id="adminProfileModal" tabindex="-1" aria-labelledby="adminProfileModalLabel" aria-hidden="true">
+    <div class="modal fade" id="adminProfileModal" tabindex="-1" aria-labelledby="adminProfileModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
                     <h5 class="modal-title" id="adminProfileModalLabel">
                         <i class="fas fa-user-cog me-2"></i>Admin Profile & Settings
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-4 text-center">
-                            <div class="avatar mb-3" style="width: 100px; height: 100px; font-size: 36px; margin: 0 auto;">AD</div>
+                            <div class="avatar mb-3"
+                                style="width: 100px; height: 100px; font-size: 36px; margin: 0 auto;">AD</div>
                             <h6>Admin User</h6>
                             <p class="text-muted">Administrator</p>
                             <button class="btn btn-outline-primary btn-sm">
@@ -2114,19 +2197,25 @@
                             <form>
                                 <div class="mb-3">
                                     <label for="adminName" class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" id="adminName" value="Admin User" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="text" class="form-control" id="adminName" value="Admin User"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                                 <div class="mb-3">
                                     <label for="adminEmail" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" id="adminEmail" value="admin@afrohythm.com" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="email" class="form-control" id="adminEmail" value="admin@afrohythm.com"
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                                 <div class="mb-3">
                                     <label for="adminRole" class="form-label">Role</label>
-                                    <input type="text" class="form-control" id="adminRole" value="Super Administrator" readonly style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="text" class="form-control" id="adminRole" value="Super Administrator"
+                                        readonly
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                                 <div class="mb-3">
                                     <label for="adminLastLogin" class="form-label">Last Login</label>
-                                    <input type="text" class="form-control" id="adminLastLogin" value="December 24, 2025 - 10:30 AM" readonly style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <input type="text" class="form-control" id="adminLastLogin"
+                                        value="December 24, 2025 - 10:30 AM" readonly
+                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </form>
                         </div>
@@ -2178,6 +2267,8 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="Js/admin.js"></script>
+    <script src="Js/utils.js"></script>
+    <script src="Js/admin.js?v=2"></script>
 </body>
+
 </html>

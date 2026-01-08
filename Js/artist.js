@@ -1,4 +1,5 @@
-// Global functions
+// Artist Dashboard JavaScript
+console.log("🚀 Js/artist.js loaded");
 function showNotification(message, type = 'info') {
     // Create toast container if it doesn't exist
     let toastContainer = document.querySelector('.toast-container');
@@ -52,19 +53,29 @@ async function checkAuth() {
         }
 
         // If we get here, user is not authenticated or not an artist
-        console.log("⚠️ Artist authentication failed, redirecting to login...");
-        window.location.href = 'auth/login.html';
+        const loginUrl = '/AfroRythm/auth/login.html';
+
+        console.log("⚠️ Artist authentication failed.");
+        console.log("🔄 Redirecting to login:", loginUrl);
+
+        window.location.href = loginUrl;
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
-        console.log("⚠️ Auth check failed, redirecting to login...");
-        window.location.href = 'auth/login.html';
+
+        const path = window.location.pathname;
+        const directory = path.substring(0, path.lastIndexOf('/'));
+        const loginUrl = directory + '/auth/login.html';
+
+        console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
+        alert("🚨 ARTIST AUTH FAILED (CATCH)!\nPath: " + path + "\nDir: " + directory + "\nTarget: " + loginUrl);
+        window.location.href = loginUrl;
         return false;
     }
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
     console.log('Artist Dashboard JavaScript loaded successfully!');
 
     // Check authentication first
@@ -76,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     let currentView = 'dashboard';
     let currentPlan = 'Pro'; // Current subscription plan
     let uploadedSongs = []; // Store uploaded songs data (loaded from backend)
-    
+
     // Mock Data for notifications and profile; songs will come from backend
     const mockData = {
         songs: [], // will be populated from backend
@@ -115,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     async function loadArtistSongsFromBackend() {
         // User authentication is now handled by session check
-        const res = await fetch('../backend/api/songs.php');
+        const res = await fetch('backend/api/songs.php');
         const json = await res.json();
         if (!json.success) {
             throw new Error(json.message || 'Failed to load songs');
@@ -138,24 +149,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         mockData.songs = uploadedSongs;
     }
-    
+
     function initializeDashboard() {
         console.log('Initializing dashboard...');
-        
+
         // Initialize sidebar toggle
         const sidebarToggle = document.getElementById('sidebarToggle');
         if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', function(e) {
+            sidebarToggle.addEventListener('click', function (e) {
                 e.preventDefault();
                 const wrapper = document.getElementById('wrapper');
                 wrapper.classList.toggle('toggled');
             });
         }
-        
+
         // Initialize logout buttons
         const logoutButtons = document.querySelectorAll('#logoutBtn, #topLogoutBtn');
         logoutButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 if (confirm('Are you sure you want to logout?')) {
                     // Show loading
@@ -165,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <p class="mt-3 text-fix">Logging out...</p>
                         </div>
                     `;
-                    
+
                     // Simulate logout
                     setTimeout(() => {
                         window.location.href = 'index.html';
@@ -173,40 +184,40 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
         });
-        
+
         // Initialize navigation
         const navItems = document.querySelectorAll('.list-group-item[data-view]');
         navItems.forEach(item => {
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 // Remove active class from all items
                 navItems.forEach(nav => nav.classList.remove('active'));
-                
+
                 // Add active class to clicked item
                 this.classList.add('active');
-                
+
                 // Get view from data attribute
                 const view = this.getAttribute('data-view');
                 console.log('Loading view:', view);
-                
+
                 // Load the view
                 loadView(view);
             });
         });
-        
+
         // Initialize notification dropdown
         const notificationDropdown = document.getElementById('notificationDropdown');
         if (notificationDropdown) {
-            notificationDropdown.addEventListener('click', function() {
+            notificationDropdown.addEventListener('click', function () {
                 updateNotificationDropdown();
             });
         }
-        
+
         // Load initial view
         loadView('dashboard');
     }
-    
+
     // Function to load different views
     function loadView(view) {
         console.log('Loading view:', view);
@@ -216,10 +227,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
         currentView = view;
-        
+
         // Update page title
         document.title = getViewTitle(view) + ' - Artist Dashboard - Beats';
-        
+
         // Show loading indicator
         mainContent.innerHTML = `
             <div class="text-center py-5">
@@ -227,17 +238,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <p class="mt-3 text-fix">Loading ${getViewTitle(view)}...</p>
             </div>
         `;
-        
+
         // Simulate loading delay
         setTimeout(() => {
             try {
                 console.log('Setting content for view:', view);
                 // Load the actual content
                 mainContent.innerHTML = getViewContent(view);
-                
+
                 // Re-attach event listeners for the new content
                 reattachEventListeners(view);
-                
+
                 // Initialize any required components
                 initializeViewComponents(view);
                 console.log('View loaded successfully:', view);
@@ -253,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }, 0);
     }
-    
+
     // Function to get view title
     function getViewTitle(view) {
         const titles = {
@@ -267,10 +278,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         };
         return titles[view] || 'Artist Dashboard';
     }
-    
+
     // Function to get view content
     function getViewContent(view) {
-        switch(view) {
+        switch (view) {
             case 'dashboard':
                 return getDashboardContent();
             case 'profile':
@@ -289,10 +300,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return getDashboardContent();
         }
     }
-    
+
     // Initialize view-specific components
     function initializeViewComponents(view) {
-        switch(view) {
+        switch (view) {
             case 'music':
                 initializeAudioPlayers();
                 break;
@@ -307,7 +318,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 break;
         }
     }
-    
+
     // Content for different views
     function getDashboardContent() {
         return `
@@ -504,7 +515,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     function getProfileContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -693,7 +704,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     function getMusicContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -835,7 +846,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     function getAnalyticsContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1013,12 +1024,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     function getRevenueContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Revenue & Royalties</h1>
-                <button class="btn btn-primary" id="withdrawEarningsBtn" ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,"")) < 50 ? 'disabled' : ''}>
+                <button class="btn btn-primary" id="withdrawEarningsBtn" ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, "")) < 50 ? 'disabled' : ''}>
                     <i class="fas fa-money-check-alt me-2"></i>Withdraw Earnings
                 </button>
             </div>
@@ -1078,9 +1089,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 <div>
                                     <h6 class="text-muted mb-2">Available for Withdrawal</h6>
                                     <h3 class="mb-0">${mockData.stats.availableForWithdrawal}</h3>
-                                    ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,"")) < 50 ? 
-                                    '<small class="text-warning">Min. $50 required</small>' : 
-                                    '<span class="text-success small">Ready to withdraw</span>'}
+                                    ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, "")) < 50 ?
+                '<small class="text-warning">Min. $50 required</small>' :
+                '<span class="text-success small">Ready to withdraw</span>'}
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-money-bill-wave"></i>
@@ -1149,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control" id="withdrawAmount" 
                                                    min="50" 
-                                                   max="${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""))}" 
+                                                   max="${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, ""))}" 
                                                    step="0.01"
                                                    placeholder="Enter amount">
                                         </div>
@@ -1252,7 +1263,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     function getSubscriptionContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1402,7 +1413,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     function getNotificationsContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1476,17 +1487,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
     }
-    
+
     // Helper functions for generating content
     function getActivityTimeline() {
         const activities = [
-            {time: '2 hours ago', action: 'Uploaded new song "Cosmic Drift"', type: 'upload'},
-            {time: '1 day ago', action: 'Reached 100K streams on "Midnight Pulse"', type: 'milestone'},
-            {time: '2 days ago', action: 'Gained 5,420 new followers', type: 'followers'},
-            {time: '1 week ago', action: 'Payment of $8,450 processed', type: 'payment'},
-            {time: '2 weeks ago', action: 'Featured on "Electronic Essentials" playlist', type: 'feature'}
+            { time: '2 hours ago', action: 'Uploaded new song "Cosmic Drift"', type: 'upload' },
+            { time: '1 day ago', action: 'Reached 100K streams on "Midnight Pulse"', type: 'milestone' },
+            { time: '2 days ago', action: 'Gained 5,420 new followers', type: 'followers' },
+            { time: '1 week ago', action: 'Payment of $8,450 processed', type: 'payment' },
+            { time: '2 weeks ago', action: 'Featured on "Electronic Essentials" playlist', type: 'feature' }
         ];
-        
+
         return activities.map(activity => `
             <div class="activity-item">
                 <div class="activity-icon ${activity.type}">
@@ -1499,7 +1510,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `).join('');
     }
-    
+
     function getSongsTableRows() {
         return uploadedSongs.map(song => `
             <tr>
@@ -1534,7 +1545,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </tr>
         `).join('');
     }
-    
+
     function getNotificationsList() {
         return mockData.notifications.map(notification => `
             <div class="notification-item ${notification.read ? '' : 'unread'} mb-3 p-3 bg-dark rounded" data-id="${notification.id}">
@@ -1558,18 +1569,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `).join('');
     }
-    
+
     function updateNotificationDropdown() {
         const dropdownContainer = document.querySelector('.dropdown-notifications');
         if (!dropdownContainer) return;
-        
+
         const unreadNotifications = mockData.notifications.filter(n => !n.read);
         const notificationCount = document.getElementById('notificationCount');
         const topNotificationCount = document.getElementById('topNotificationCount');
-        
+
         if (notificationCount) notificationCount.textContent = unreadNotifications.length;
         if (topNotificationCount) topNotificationCount.textContent = unreadNotifications.length;
-        
+
         if (unreadNotifications.length === 0) {
             dropdownContainer.innerHTML = `
                 <div class="p-3 text-center">
@@ -1591,42 +1602,42 @@ document.addEventListener('DOMContentLoaded', async function() {
             `).join('');
         }
     }
-    
+
     // Initialize audio players
     function initializeAudioPlayers() {
         // Play song button
         document.querySelectorAll('.play-song-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const songTitle = this.getAttribute('data-title');
                 const songGenre = this.getAttribute('data-genre');
-                
+
                 // Update modal content
                 document.getElementById('playingSongTitle').textContent = songTitle;
                 document.getElementById('playingSongGenre').textContent = songGenre;
-                
+
                 // Show modal
                 const modal = new bootstrap.Modal(document.getElementById('audioPlayerModal'));
                 modal.show();
-                
+
                 // Initialize audio player
                 initializeAudioPlayer();
             });
         });
     }
-    
+
     function initializeAudioPlayer() {
         let isPlaying = false;
-        
+
         const playPauseBtn = document.getElementById('playPauseBtn');
         const playPauseIcon = document.getElementById('playPauseIcon');
-        
+
         // Remove existing event listeners by cloning and replacing
         const newPlayPauseBtn = playPauseBtn.cloneNode(true);
         playPauseBtn.parentNode.replaceChild(newPlayPauseBtn, playPauseBtn);
-        
-        newPlayPauseBtn.addEventListener('click', function() {
+
+        newPlayPauseBtn.addEventListener('click', function () {
             const songTitle = document.getElementById('playingSongTitle').textContent;
-            
+
             if (!isPlaying) {
                 // Start playing
                 isPlaying = true;
@@ -1639,20 +1650,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 showNotification(`Paused "${songTitle}"`, 'info');
             }
         });
-        
+
         // Volume controls
         const volumeBtn = document.getElementById('volumeBtn');
         const volumeSlider = document.getElementById('volumeSlider');
         const volumeContainer = volumeBtn.nextElementSibling;
-        
-        volumeBtn.addEventListener('click', function() {
+
+        volumeBtn.addEventListener('click', function () {
             volumeContainer.style.display = volumeContainer.style.display === 'none' ? 'block' : 'none';
         });
-        
-        volumeSlider.addEventListener('input', function() {
+
+        volumeSlider.addEventListener('input', function () {
             const icon = volumeBtn.querySelector('i');
             const volume = parseInt(this.value);
-            
+
             if (volume === 0) {
                 icon.className = 'fas fa-volume-mute';
             } else if (volume < 50) {
@@ -1661,21 +1672,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 icon.className = 'fas fa-volume-up';
             }
         });
-        
+
         // Download button
-        document.getElementById('downloadBtn').addEventListener('click', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function () {
             const songTitle = document.getElementById('playingSongTitle').textContent;
             showNotification(`Downloading "${songTitle}"...`, 'info');
         });
     }
-    
+
     // Initialize profile image upload
     function initializeProfileImageUpload() {
         const changeAvatarBtn = document.getElementById('changeAvatarBtn');
         const avatarFileInput = document.getElementById('avatarFileInput');
         const profileAvatar = document.getElementById('profileAvatar');
         const uploadProgress = document.getElementById('avatarUploadProgress');
-        
+
         if (changeAvatarBtn) {
             // Create file input if it doesn't exist
             if (!avatarFileInput) {
@@ -1685,56 +1696,56 @@ document.addEventListener('DOMContentLoaded', async function() {
                 input.accept = 'image/*';
                 input.className = 'd-none';
                 document.body.appendChild(input);
-                
-                input.addEventListener('change', function() {
+
+                input.addEventListener('change', function () {
                     if (this.files.length > 0) {
                         const file = this.files[0];
-                        
+
                         // Validate file type
                         if (!file.type.match('image.*')) {
                             showNotification('Please select an image file', 'danger');
                             return;
                         }
-                        
+
                         // Validate file size (max 5MB)
                         if (file.size > 5 * 1024 * 1024) {
                             showNotification('Image size should be less than 5MB', 'danger');
                             return;
                         }
-                        
+
                         // Show upload progress
                         if (uploadProgress) {
                             uploadProgress.style.display = 'block';
                             const progressBar = uploadProgress.querySelector('.progress-bar');
-                            
+
                             // Simulate upload
                             let progress = 0;
                             const interval = setInterval(() => {
                                 progress += 10;
                                 progressBar.style.width = `${progress}%`;
-                                
+
                                 if (progress >= 100) {
                                     clearInterval(interval);
-                                    
+
                                     // Create preview
                                     const reader = new FileReader();
-                                    reader.onload = function(e) {
+                                    reader.onload = function (e) {
                                         // Update avatar
                                         profileAvatar.src = e.target.result;
-                                        
+
                                         // Update top bar image
                                         const topBarImage = document.getElementById('topBarProfileImage');
                                         if (topBarImage) {
                                             topBarImage.src = e.target.result;
                                         }
-                                        
+
                                         // Hide progress
                                         setTimeout(() => {
                                             if (uploadProgress) {
                                                 uploadProgress.style.display = 'none';
                                                 progressBar.style.width = '0%';
                                             }
-                                            
+
                                             // Show success message
                                             showNotification('Profile photo updated successfully!', 'success');
                                         }, 500);
@@ -1745,44 +1756,44 @@ document.addEventListener('DOMContentLoaded', async function() {
                         }
                     }
                 });
-                
-                changeAvatarBtn.addEventListener('click', function() {
+
+                changeAvatarBtn.addEventListener('click', function () {
                     input.click();
                 });
             }
         }
     }
-    
+
     // Initialize payment options
     function initializePaymentOptions() {
         // Plan selection buttons
         document.querySelectorAll('.plan-card .btn').forEach(btn => {
             if (!btn.classList.contains('disabled')) {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const selectedPlan = this.getAttribute('data-plan');
                     const selectedPrice = this.getAttribute('data-price');
-                    
+
                     // Update payment modal
                     document.getElementById('selectedPlanName').textContent = selectedPlan;
                     document.getElementById('selectedPlanPrice').textContent = selectedPrice;
-                    
+
                     // Show payment modal
                     const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
                     modal.show();
                 });
             }
         });
-        
+
         // Payment method toggle
         document.querySelectorAll('input[name="paymentMethod"]').forEach(method => {
-            method.addEventListener('change', function() {
+            method.addEventListener('change', function () {
                 const value = this.value;
-                
+
                 // Hide all forms
                 document.getElementById('creditCardForm').style.display = 'none';
                 document.getElementById('paypalInfo').style.display = 'none';
                 document.getElementById('applePayInfo').style.display = 'none';
-                
+
                 // Show selected form
                 if (value === 'creditCard') {
                     document.getElementById('creditCardForm').style.display = 'block';
@@ -1793,81 +1804,81 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
         });
-        
+
         // Process payment button
         const processPaymentBtn = document.getElementById('processPaymentBtn');
         if (processPaymentBtn) {
-            processPaymentBtn.addEventListener('click', function() {
+            processPaymentBtn.addEventListener('click', function () {
                 const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
                 let isValid = true;
-                
+
                 if (selectedMethod === 'creditCard') {
                     // Validate credit card details
                     const cardNumber = document.getElementById('cardNumber').value.trim();
                     const cardExpiry = document.getElementById('cardExpiry').value.trim();
                     const cardCVV = document.getElementById('cardCVV').value.trim();
                     const cardName = document.getElementById('cardName').value.trim();
-                    
+
                     if (!cardNumber || cardNumber.length < 16) {
                         showNotification('Please enter a valid card number', 'danger');
                         isValid = false;
                     }
-                    
+
                     if (!cardExpiry || !cardExpiry.match(/^\d{2}\/\d{2}$/)) {
                         showNotification('Please enter a valid expiry date (MM/YY)', 'danger');
                         isValid = false;
                     }
-                    
+
                     if (!cardCVV || cardCVV.length < 3) {
                         showNotification('Please enter a valid CVV', 'danger');
                         isValid = false;
                     }
-                    
+
                     if (!cardName) {
                         showNotification('Please enter cardholder name', 'danger');
                         isValid = false;
                     }
                 }
-                
+
                 if (isValid) {
                     // Disable button and show processing
                     this.disabled = true;
                     const originalText = this.textContent;
                     this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-                    
+
                     // Simulate payment processing
                     setTimeout(() => {
                         this.disabled = false;
                         this.textContent = originalText;
-                        
+
                         // Close modal
                         bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
-                        
+
                         // Show success message
                         showNotification('Payment processed successfully!', 'success');
                     }, 2000);
                 }
             });
         }
-        
+
         // Manage billing button
         const manageBillingBtn = document.getElementById('manageBillingBtn');
         if (manageBillingBtn) {
-            manageBillingBtn.addEventListener('click', function() {
+            manageBillingBtn.addEventListener('click', function () {
                 // Show manage billing modal
                 const modal = new bootstrap.Modal(document.getElementById('manageBillingModal'));
                 modal.show();
             });
         }
     }
-    
+
     // Re-attach event listeners after content loads
     function reattachEventListeners(view) {
         // Common event listeners
         attachCommonListeners();
-        
+
         // View-specific event listeners
-        switch(view) {
+        switch (view) {
             case 'dashboard':
                 attachDashboardListeners();
                 break;
@@ -1891,46 +1902,46 @@ document.addEventListener('DOMContentLoaded', async function() {
                 break;
         }
     }
-    
+
     function attachCommonListeners() {
         // Save profile button
         const saveProfileBtn = document.getElementById('saveProfileBtn');
         if (saveProfileBtn) {
-            saveProfileBtn.addEventListener('click', function() {
+            saveProfileBtn.addEventListener('click', function () {
                 // Get form values
                 const artistName = document.getElementById('artistNameInput')?.value || mockData.profile.name;
                 const bio = document.getElementById('bioInput')?.value || mockData.profile.bio;
-                
+
                 // Update mock data
                 mockData.profile.name = artistName;
                 mockData.profile.bio = bio;
-                
+
                 // Update display
                 const nameDisplay = document.getElementById('artistNameDisplay');
                 if (nameDisplay) nameDisplay.textContent = artistName;
-                
+
                 // Update top bar
                 const topBarName = document.getElementById('topBarArtistName');
                 if (topBarName) topBarName.textContent = artistName;
-                
+
                 showNotification('Profile updated successfully!', 'success');
             });
         }
-        
+
         // Save notification settings in profile
         const saveNotificationSettings = document.getElementById('saveNotificationSettings');
         if (saveNotificationSettings) {
-            saveNotificationSettings.addEventListener('click', function() {
+            saveNotificationSettings.addEventListener('click', function () {
                 showNotification('Notification settings saved successfully!', 'success');
             });
         }
     }
-    
+
     function attachDashboardListeners() {
         // Upload music button
         const uploadMusicBtn = document.getElementById('uploadMusicBtn');
         if (uploadMusicBtn) {
-            uploadMusicBtn.addEventListener('click', function() {
+            uploadMusicBtn.addEventListener('click', function () {
                 // Switch to music view and show upload modal
                 loadView('music');
                 setTimeout(() => {
@@ -1939,17 +1950,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }, 100);
             });
         }
-        
+
         // Export data button - find by class and text content
         const buttons = document.querySelectorAll('button.btn-outline-secondary');
         const exportBtn = Array.from(buttons).find(btn => btn.textContent.includes('Export Data'));
         if (exportBtn) {
-            exportBtn.addEventListener('click', function() {
+            exportBtn.addEventListener('click', function () {
                 showNotification('Data export started. You will receive an email when ready.', 'info');
             });
         }
     }
-    
+
     function attachProfileListeners() {
         // Update social media preview when inputs change
         const socialInputs = ['instagramInput', 'twitterInput', 'youtubeInput', 'tiktokInput', 'spotifyInput', 'soundcloudInput'];
@@ -1959,11 +1970,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 input.addEventListener('input', updateSocialPreview);
             }
         });
-        
+
         // Initialize social preview
         updateSocialPreview();
     }
-    
+
     function updateSocialPreview() {
         console.log('Updating social preview');
         const previewContainer = document.getElementById('socialPreview');
@@ -1971,18 +1982,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('socialPreview container not found');
             return;
         }
-        
+
         const instagram = document.getElementById('instagramInput')?.value?.trim();
         const twitter = document.getElementById('twitterInput')?.value?.trim();
         const youtube = document.getElementById('youtubeInput')?.value?.trim();
         const tiktok = document.getElementById('tiktokInput')?.value?.trim();
         const spotify = document.getElementById('spotifyInput')?.value?.trim();
         const soundcloud = document.getElementById('soundcloudInput')?.value?.trim();
-        
-        console.log('Social values:', {instagram, twitter, youtube, tiktok, spotify, soundcloud});
-        
+
+        console.log('Social values:', { instagram, twitter, youtube, tiktok, spotify, soundcloud });
+
         let html = '';
-        
+
         if (instagram) {
             const handle = instagram.startsWith('@') ? instagram.substring(1) : instagram;
             html += `<a href="https://instagram.com/${handle}" target="_blank" class="social-icon instagram" title="Instagram"><i class="fab fa-instagram"></i></a>`;
@@ -2004,36 +2015,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (soundcloud) {
             html += `<a href="https://soundcloud.com/${soundcloud}" target="_blank" class="social-icon soundcloud" title="SoundCloud"><i class="fab fa-soundcloud"></i></a>`;
         }
-        
+
         console.log('Generated HTML:', html);
         previewContainer.innerHTML = html || '<small class="text-muted">No social media links set</small>';
     }
-    
+
     function attachMusicListeners() {
         // Upload new song button
         const uploadNewSongBtn = document.getElementById('uploadNewSongBtn');
         const uploadForm = document.getElementById('uploadForm');
-        
+
         if (uploadNewSongBtn && uploadForm) {
-            uploadNewSongBtn.addEventListener('click', function() {
+            uploadNewSongBtn.addEventListener('click', function () {
                 uploadForm.style.display = uploadForm.style.display === 'none' ? 'block' : 'none';
             });
         }
-        
+
         // Cancel upload button
         const cancelUploadBtn = document.getElementById('cancelUploadBtn');
         if (cancelUploadBtn && uploadForm) {
-            cancelUploadBtn.addEventListener('click', function() {
+            cancelUploadBtn.addEventListener('click', function () {
                 uploadForm.style.display = 'none';
                 const songUploadForm = document.getElementById('songUploadForm');
                 if (songUploadForm) songUploadForm.reset();
             });
         }
-        
+
         // Audio upload area
         const audioUploadArea = document.getElementById('audioUploadArea');
         if (audioUploadArea) {
-            audioUploadArea.addEventListener('click', function() {
+            audioUploadArea.addEventListener('click', function () {
                 const audioFileInput = document.getElementById('audioFileInput');
                 if (audioFileInput) audioFileInput.click();
             });
@@ -2047,15 +2058,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         const removeCoverArtBtn = document.getElementById('removeCoverArt');
 
         if (coverArtUploadArea && coverArtInput) {
-            coverArtUploadArea.addEventListener('click', function() {
+            coverArtUploadArea.addEventListener('click', function () {
                 coverArtInput.click();
             });
 
-            coverArtInput.addEventListener('change', function(e) {
+            coverArtInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         coverArtImg.src = e.target.result;
                         coverArtPreview.style.display = 'block';
                         coverArtUploadArea.style.display = 'none';
@@ -2066,17 +2077,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         if (removeCoverArtBtn) {
-            removeCoverArtBtn.addEventListener('click', function() {
+            removeCoverArtBtn.addEventListener('click', function () {
                 coverArtInput.value = '';
                 coverArtPreview.style.display = 'none';
                 coverArtUploadArea.style.display = 'block';
             });
         }
-        
+
         // Song upload form
         const songUploadForm = document.getElementById('songUploadForm');
         if (songUploadForm) {
-            songUploadForm.addEventListener('submit', async function(e) {
+            songUploadForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
 
                 const songTitle = document.getElementById('songTitleInput')?.value;
@@ -2113,7 +2124,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
 
                     // Make API call to upload
-                    const response = await fetch('../backend/api/upload.php', {
+                    const response = await fetch('backend/api/upload.php', {
                         method: 'POST',
                         body: formData,
                         credentials: 'include'
@@ -2148,70 +2159,70 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
         }
-        
+
         // Edit song buttons
         document.querySelectorAll('.edit-song-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const songId = this.getAttribute('data-id');
                 const song = uploadedSongs.find(s => s.id == songId);
-                
+
                 if (song) {
                     // Fill edit form
                     document.getElementById('editSongTitle').value = song.title;
                     document.getElementById('editSongGenre').value = song.genre;
                     document.getElementById('editSongId').value = songId;
-                    
+
                     // Show modal
                     const modal = new bootstrap.Modal(document.getElementById('editSongModal'));
                     modal.show();
                 }
             });
         });
-        
+
         // Save song changes
         const saveSongChanges = document.getElementById('saveSongChanges');
         if (saveSongChanges) {
-            saveSongChanges.addEventListener('click', function() {
+            saveSongChanges.addEventListener('click', function () {
                 const songId = document.getElementById('editSongId').value;
                 const songTitle = document.getElementById('editSongTitle').value;
                 const songGenre = document.getElementById('editSongGenre').value;
-                
+
                 if (!songTitle || !songGenre) {
                     showNotification('Please fill in all required fields', 'danger');
                     return;
                 }
-                
+
                 // Find and update song
                 const songIndex = uploadedSongs.findIndex(s => s.id == songId);
                 if (songIndex !== -1) {
                     uploadedSongs[songIndex].title = songTitle;
                     uploadedSongs[songIndex].genre = songGenre;
-                    
+
                     // Close modal
                     bootstrap.Modal.getInstance(document.getElementById('editSongModal')).hide();
-                    
+
                     // Refresh table
                     const songsTableBody = document.getElementById('songsTableBody');
                     if (songsTableBody) {
                         songsTableBody.innerHTML = getSongsTableRows();
                         attachMusicListeners();
                     }
-                    
+
                     showNotification(`"${songTitle}" updated successfully!`, 'success');
                 }
             });
         }
-        
+
         // Delete song buttons
         document.querySelectorAll('.delete-song-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const songId = this.getAttribute('data-id');
                 const song = uploadedSongs.find(s => s.id == songId);
-                
+
                 if (song && confirm(`Delete "${song.title}"? This action cannot be undone.`)) {
                     // Remove from uploadedSongs
                     uploadedSongs = uploadedSongs.filter(s => s.id != songId);
-                    
+
                     // Remove row from table
                     const row = this.closest('tr');
                     row.style.opacity = '0.5';
@@ -2223,87 +2234,87 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         });
     }
-    
+
     function attachAnalyticsListeners() {
         // Period dropdown
         const periodItems = document.querySelectorAll('.dropdown-item[data-period]');
         periodItems.forEach(item => {
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', function (e) {
                 e.preventDefault();
                 const period = this.getAttribute('data-period');
-                
+
                 // Update active item
                 periodItems.forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
-                
+
                 // Update dropdown button text
                 const dropdownBtn = this.closest('.dropdown-menu').previousElementSibling;
                 dropdownBtn.textContent = this.textContent;
-                
+
                 showNotification(`Analytics updated for ${this.textContent}`, 'info');
             });
         });
     }
-    
+
     function attachRevenueListeners() {
         // Withdraw all button
         const withdrawAllBtn = document.getElementById('withdrawAllBtn');
         if (withdrawAllBtn) {
-            withdrawAllBtn.addEventListener('click', function() {
-                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""));
+            withdrawAllBtn.addEventListener('click', function () {
+                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, ""));
                 document.getElementById('withdrawAmount').value = availableAmount.toFixed(2);
             });
         }
-        
+
         // Process withdrawal button
         const processWithdrawalBtn = document.getElementById('processWithdrawalBtn');
         if (processWithdrawalBtn) {
-            processWithdrawalBtn.addEventListener('click', function() {
+            processWithdrawalBtn.addEventListener('click', function () {
                 const amountInput = document.getElementById('withdrawAmount');
                 const amount = parseFloat(amountInput.value);
-                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""));
+                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, ""));
                 const method = document.getElementById('withdrawMethod').value;
-                
+
                 if (!amount || isNaN(amount)) {
                     showNotification('Please enter a valid amount', 'danger');
                     return;
                 }
-                
+
                 if (amount < 50) {
                     showNotification('Minimum withdrawal amount is $50', 'danger');
                     return;
                 }
-                
+
                 if (amount > availableAmount) {
                     showNotification('Insufficient balance', 'danger');
                     return;
                 }
-                
+
                 if (amount > 10000) {
                     showNotification('Maximum withdrawal per day is $10,000', 'danger');
                     return;
                 }
-                
+
                 // Disable button and show processing
                 this.disabled = true;
                 const originalText = this.textContent;
                 this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-                
+
                 // Simulate withdrawal processing
                 setTimeout(() => {
                     this.disabled = false;
                     this.textContent = originalText;
-                    
+
                     // Update available balance
                     const newBalance = availableAmount - amount;
                     mockData.stats.availableForWithdrawal = `$${newBalance.toFixed(2)}`;
-                    
+
                     // Clear input
                     amountInput.value = '';
-                    
+
                     // Show success message
                     showNotification(`Successfully withdrew $${amount.toFixed(2)} via ${method}. Funds will arrive in 3-5 business days.`, 'success');
-                    
+
                     // Update UI
                     const availableBalanceEl = document.getElementById('availableBalance');
                     if (availableBalanceEl) {
@@ -2312,39 +2323,39 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }, 2000);
             });
         }
-        
+
         // Withdraw earnings button
         const withdrawEarningsBtn = document.getElementById('withdrawEarningsBtn');
         if (withdrawEarningsBtn) {
-            withdrawEarningsBtn.addEventListener('click', function() {
-                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g,""));
-                
+            withdrawEarningsBtn.addEventListener('click', function () {
+                const availableAmount = parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, ""));
+
                 if (availableAmount < 50) {
                     showNotification(`Minimum withdrawal is $50. Current available: $${availableAmount.toFixed(2)}`, 'warning');
                     return;
                 }
-                
+
                 // Show withdraw modal
                 const modal = new bootstrap.Modal(document.getElementById('withdrawEarningsModal'));
                 modal.show();
             });
         }
     }
-    
+
     function attachSubscriptionListeners() {
         // Already handled in initializePaymentOptions
     }
-    
+
     function attachNotificationsListeners() {
         // Mark all as read button
         const markAllReadBtn = document.getElementById('markAllReadBtn');
         if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', function() {
+            markAllReadBtn.addEventListener('click', function () {
                 // Mark all notifications as read
                 mockData.notifications.forEach(notification => {
                     notification.read = true;
                 });
-                
+
                 // Update UI
                 const notifications = document.querySelectorAll('.notification-item');
                 notifications.forEach(notification => {
@@ -2352,18 +2363,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                     const markReadBtn = notification.querySelector('.mark-read-btn');
                     if (markReadBtn) markReadBtn.remove();
                 });
-                
+
                 // Update dropdown
                 updateNotificationDropdown();
-                
+
                 showNotification('All notifications marked as read', 'success');
             });
         }
-        
+
         // Clear all notifications button
         const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
         if (clearNotificationsBtn) {
-            clearNotificationsBtn.addEventListener('click', function() {
+            clearNotificationsBtn.addEventListener('click', function () {
                 if (confirm('Clear all notifications?')) {
                     const notificationsList = document.getElementById('notificationsList');
                     notificationsList.innerHTML = '<p class="text-center text-muted py-4">No notifications</p>';
@@ -2371,36 +2382,36 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
         }
-        
+
         // Mark individual as read buttons
         document.querySelectorAll('.mark-read-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const notificationId = this.getAttribute('data-id');
                 const notification = mockData.notifications.find(n => n.id == notificationId);
-                
+
                 if (notification) {
                     notification.read = true;
                     const notificationEl = this.closest('.notification-item');
                     notificationEl.classList.remove('unread');
                     this.remove();
-                    
+
                     // Update dropdown
                     updateNotificationDropdown();
-                    
+
                     showNotification('Notification marked as read', 'success');
                 }
             });
         });
-        
+
         // Save notification settings button
         const saveNotificationSettingsBtn = document.getElementById('saveNotificationSettingsBtn');
         if (saveNotificationSettingsBtn) {
-            saveNotificationSettingsBtn.addEventListener('click', function() {
+            saveNotificationSettingsBtn.addEventListener('click', function () {
                 showNotification('Notification settings saved successfully!', 'success');
             });
         }
     }
-    
+
     // Notification function
     function showNotification(message, type = 'info') {
         // Remove existing notifications
@@ -2408,7 +2419,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         existingAlerts.forEach(alert => {
             alert.remove();
         });
-        
+
         const notification = document.createElement('div');
         notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
         notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
@@ -2416,9 +2427,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             ${message}
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-dismiss after 3 seconds
         setTimeout(() => {
             if (notification.parentNode) {

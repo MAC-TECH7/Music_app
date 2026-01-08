@@ -1,4 +1,5 @@
 // ========== GLOBAL VARIABLES ==========
+console.log("🚀 Js/fan.js loaded");
 let globalAudioPlayer = null;
 let isPlaying = false;
 let currentSongIndex = 0;
@@ -224,14 +225,21 @@ async function checkAuth() {
         }
 
         // If we get here, user is not authenticated
-        console.log("⚠️ User not authenticated, redirecting to login...");
-        window.location.href = 'auth/login.html';
+        const loginUrl = '/AfroRythm/auth/login.html';
+
+        console.log("⚠️ User not authenticated.");
+        console.log("🔄 Redirecting to login:", loginUrl);
+
+        window.location.href = loginUrl;
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
-        console.log("⚠️ Auth check failed, redirecting to login...");
-        window.location.href = 'auth/login.html';
+
+        const loginUrl = '/AfroRythm/auth/login.html';
+
+        console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
+        window.location.href = loginUrl;
         return false;
     }
 }
@@ -1782,12 +1790,12 @@ function startRealPlayback(song) {
         audioElement.load();
 
         // Set up event listeners
-        audioElement.onloadedmetadata = function() {
+        audioElement.onloadedmetadata = function () {
             console.log('Audio loaded, duration:', audioElement.duration);
             updateTotalTime(audioElement.duration);
         };
 
-        audioElement.ontimeupdate = function() {
+        audioElement.ontimeupdate = function () {
             if (!isNaN(audioElement.duration)) {
                 const progress = (audioElement.currentTime / audioElement.duration) * 100;
                 updateProgressBar(progress);
@@ -1795,7 +1803,7 @@ function startRealPlayback(song) {
             }
         };
 
-        audioElement.onended = function() {
+        audioElement.onended = function () {
             isPlaying = false;
             const playBtn = document.getElementById('playPauseBtn');
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -1808,7 +1816,7 @@ function startRealPlayback(song) {
             }
         };
 
-        audioElement.onerror = function() {
+        audioElement.onerror = function () {
             console.error('Audio playback error');
             showNotification('Unable to play this song. File may be corrupted or missing.', 'danger');
             isPlaying = false;
