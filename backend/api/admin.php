@@ -214,6 +214,12 @@ function handleGetRequests($action) {
                     ]
                 ]);
                 break;
+                
+            case 'settings':
+                $stmt = $pdo->query("SELECT setting_key, setting_value FROM settings");
+                $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                echo json_encode(['success' => true, 'data' => $settings]);
+                break;
 
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
@@ -292,6 +298,21 @@ function handlePostRequests($action) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$data['status'], $data['user_id']]);
                 echo json_encode(['success' => true, 'message' => 'User status updated']);
+                break;
+
+            case 'settings':
+                $pdo->beginTransaction();
+                try {
+                    foreach ($data as $key => $value) {
+                        $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+                        $stmt->execute([$key, $value, $value]);
+                    }
+                    $pdo->commit();
+                    echo json_encode(['success' => true, 'message' => 'Settings saved successfully']);
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    echo json_encode(['success' => false, 'message' => 'Error saving settings: ' . $e->getMessage()]);
+                }
                 break;
 
             default:

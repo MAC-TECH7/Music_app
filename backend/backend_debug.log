@@ -1,0 +1,42 @@
+[2026-01-17 13:56:12] Upload request started. Type: profile_image
+[2026-01-17 13:56:12] FILES: Array
+(
+    [profile_image] => Array
+        (
+            [name] => chefs-3.jpg
+            [full_path] => chefs-3.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php3448.tmp
+            [error] => 0
+            [size] => 46489
+        )
+
+)
+
+[2026-01-17 13:56:12] POST: Array
+(
+    [upload_type] => profile_image
+)
+
+[2026-01-17 13:56:12] Response: {"success":true,"message":"Profile photo updated successfully","data":{"file_path":"uploads\/avatars\/avatar_696b86ec637fa5.77339930.jpg"}}
+[2026-01-17 14:59:20] Upload request started. Type: profile_image
+[2026-01-17 14:59:20] FILES: Array
+(
+    [profile_image] => Array
+        (
+            [name] => chefs-2.jpg
+            [full_path] => chefs-2.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\phpB58B.tmp
+            [error] => 0
+            [size] => 59278
+        )
+
+)
+
+[2026-01-17 14:59:20] POST: Array
+(
+    [upload_type] => profile_image
+)
+
+[2026-01-17 14:59:20] Response: {"success":true,"message":"Profile photo updated successfully","data":{"file_path":"uploads\/avatars\/avatar_696b95b8c40a67.28081313.jpg"}}

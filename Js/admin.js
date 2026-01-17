@@ -25,7 +25,6 @@ async function checkAuth() {
         console.log("⚠️ Admin authentication failed.");
         console.log("🔄 Redirecting to login:", loginUrl);
 
-        alert("🚨 AUTH FAILED (NORMAL)!\nPath: " + path + "\nDir: " + directory + "\nTarget: " + loginUrl);
         window.location.href = loginUrl;
         return false;
 
@@ -37,7 +36,6 @@ async function checkAuth() {
         const loginUrl = directory + '/auth/login.html';
 
         console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
-        alert("🚨 AUTH FAILED (CATCH)!\nPath: " + path + "\nDir: " + directory + "\nTarget: " + loginUrl);
         window.location.href = loginUrl;
         return false;
     }
@@ -97,12 +95,18 @@ function initializeDataTables() {
         }
     };
 
-    // Apply to all tables
-    $('table').each(function () {
-        if (!$.fn.DataTable.isDataTable(this)) {
-            $(this).DataTable(tableOptions);
+    // Initialize tables with specific IDs or classes
+    const targetTables = ['#recentSubscriptionsTable', '#topSongsTable', '#topArtistsTable', '#recentSongsTable', '#allUsersTable', '#artistsTable', '#songsTable', '#reportsTable'];
+
+    targetTables.forEach(selector => {
+        const $table = $(selector);
+        if ($table.length && !$.fn.DataTable.isDataTable(selector)) {
+            $table.DataTable(tableOptions);
+            console.log(`✅ DataTable initialized: ${selector}`);
         }
     });
+
+    console.log('DataTables initialization complete.');
 }
 
 function initializeCharts() {
@@ -969,8 +973,12 @@ function setupNavigation() {
 
                 // Refresh DataTables when switching to a section
                 setTimeout(() => {
-                    $('table').DataTable().draw();
-                }, 100);
+                    const dataTable = $(sectionId).find('table').DataTable();
+                    if (dataTable) {
+                        dataTable.columns.adjust().draw();
+                        console.log(`🔄 Redrawn tables in ${sectionId}`);
+                    }
+                }, 200);
             }
         });
     });

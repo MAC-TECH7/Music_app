@@ -6,13 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AfroRhythm - Fan Dashboard</title>
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/lib/bootstrap/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap"
-        rel="stylesheet">
+    <link rel="stylesheet" href="assets/lib/fontawesome/all.min.css">
+    <link rel="stylesheet" href="assets/lib/fonts/fonts.css">
 
     <style>
         :root {
@@ -1362,6 +1359,7 @@
 </head>
 
 <body>
+    <input type="file" id="profileImageInput" hidden accept="image/*">
     <div class="app">
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
@@ -1540,18 +1538,30 @@
                         </div>
                     </div>
 
-                    <!-- Trending Songs -->
+
+                    <!-- New Releases Section -->
                     <div class="section">
                         <div class="section-header">
-                            <h2>🔥 Trending Now</h2>
-                            <button class="view-all" data-view="browse">
-                                View All <i class="fas fa-arrow-right"></i>
-                            </button>
+                            <h2>🔥 New Releases</h2>
+                            <button class="view-all" data-view="browse">View All <i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="cards-grid" id="newReleases">
+                            <!-- New releases will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Trending Songs Section -->
+                    <section class="section">
+                        <div class="section-header">
+                            <h2>📈 Trending Songs</h2>
+                            <button class="view-all" data-view="browse">View All <i
+                                    class="fas fa-chevron-right"></i></button>
                         </div>
                         <div class="cards-grid" id="trendingSongs">
                             <!-- Trending songs will be loaded here -->
                         </div>
-                    </div>
+                    </section>
 
                     <!-- Genre Navigation -->
                     <div class="section">
@@ -1840,55 +1850,16 @@
                 </div>
             </div>
 
-            <!-- Now Playing Bar -->
-            <div class="now-playing" id="nowPlaying">
-                <div class="now-playing-info">
-                    <div class="now-playing-cover">
-                        <i class="fas fa-music"></i>
-                    </div>
-                    <div class="now-playing-details">
-                        <h5 id="nowPlayingTitle">Not Playing</h5>
-                        <p id="nowPlayingArtist">Select a song to play</p>
-                    </div>
-                </div>
 
-                <div class="now-playing-controls">
-                    <button class="control-btn">
-                        <i class="fas fa-step-backward"></i>
-                    </button>
-                    <button class="control-btn play-btn" id="playPauseBtn">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <button class="control-btn">
-                        <i class="fas fa-step-forward"></i>
-                    </button>
-                </div>
-
-                <div class="progress-container">
-                    <span class="time" id="currentTime">0:00</span>
-                    <div class="progress-bar" id="progressBar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <span class="time" id="totalTime">0:00</span>
-                </div>
-
-                <div class="volume-control">
-                    <button class="volume-btn">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
-                    <div class="volume-slider">
-                        <div class="volume-level"></div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="Js/utils.js"></script>
-    <script src="Js/fan.js?v=2"></script>
+    <script src="Js/modal-player.js?v=4"></script>
+    <script src="Js/fan.js?v=3"></script>
 </body>
 
 </html>

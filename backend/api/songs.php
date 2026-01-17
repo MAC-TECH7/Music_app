@@ -11,7 +11,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 switch ($method) {
     case 'GET':
         try {
-            $stmt = $pdo->query("SELECT s.*, a.name as artist_name FROM songs s LEFT JOIN artists a ON s.artist_id = a.id ORDER BY s.id DESC");
+            $stmt = $pdo->query("SELECT s.*, a.name as artist_name, a.instagram_url, a.twitter_url, a.facebook_url, a.youtube_url FROM songs s LEFT JOIN artists a ON s.artist_id = a.id ORDER BY s.id DESC");
             $songs = $stmt->fetchAll();
             echo json_encode(['success' => true, 'data' => $songs]);
         } catch(PDOException $e) {

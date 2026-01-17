@@ -2,7 +2,7 @@
 // Features: play/pause, seek, time, volume, cover, title, artist
 // Streams files provided by backend/api/songs.php and reports plays/history to backend/api/track.php
 
-(function(){
+(function () {
     // CSS
     const css = `
     .afro-player{position:fixed;left:0;right:0;bottom:0;background:rgba(18,18,28,0.98);color:#fff;z-index:9999;display:flex;align-items:center;padding:8px 12px;gap:12px;border-top:1px solid rgba(255,255,255,0.03)}
@@ -67,28 +67,28 @@
     let hasReportedPlay = false;
 
     // Fetch tracks from backend
-    async function fetchTracks(){
-        try{
+    async function fetchTracks() {
+        try {
             const res = await fetch('backend/api/songs.php');
             const json = await res.json();
             if (!json.success) throw new Error(json.message || 'Failed to load songs');
-            tracks = (json.data || []).map(t=>({
+            tracks = (json.data || []).map(t => ({
                 id: t.id,
                 title: t.title || 'Unknown',
                 artist: t.artist_name || t.artist || 'Unknown artist',
-                src: t.file_path || t.file_path_local || null,
+                src: (t.file_path || t.file_path_local || '').replace(/^\/+/, '') || null,
                 cover: t.cover_art || null
-            })).filter(t=>t.src);
+            })).filter(t => t.src);
             return tracks;
-        }catch(err){
-            console.warn('Player fetchTracks error',err);
+        } catch (err) {
+            console.warn('Player fetchTracks error', err);
             return [];
         }
     }
 
-    function formatTime(s){ if (!s||isNaN(s)) return '0:00'; const m=Math.floor(s/60); const sec=Math.floor(s%60).toString().padStart(2,'0'); return m+':'+sec; }
+    function formatTime(s) { if (!s || isNaN(s)) return '0:00'; const m = Math.floor(s / 60); const sec = Math.floor(s % 60).toString().padStart(2, '0'); return m + ':' + sec; }
 
-    function setTrack(idx){
+    function setTrack(idx) {
         if (!tracks.length) return;
         current = (idx + tracks.length) % tracks.length;
         const t = tracks[current];
@@ -106,21 +106,21 @@
     let serverUserId = null;
 
     // Play reporting: increment play count once per track play
-    async function reportPlay(trackId){
-        try{
+    async function reportPlay(trackId) {
+        try {
             const payload = { action: 'play', id: trackId };
             if (serverUserId) payload.user_id = serverUserId;
             else {
                 const user = (window.afro && window.afro.user) ? window.afro.user : null;
                 if (user && user.id) payload.user_id = user.id;
             }
-            await fetch('backend/api/track.php', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        }catch(e){ console.warn('reportPlay failed',e); }
+            await fetch('backend/api/track.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        } catch (e) { console.warn('reportPlay failed', e); }
     }
 
     // Save listening history (called when playback starts)
-    async function saveHistory(trackId){
-        try{
+    async function saveHistory(trackId) {
+        try {
             const payload = { action: 'history', id: trackId };
             if (serverUserId) {
                 payload.user_id = serverUserId;
@@ -128,55 +128,60 @@
                 const user = (window.afro && window.afro.user) ? window.afro.user : null;
                 if (!user || !user.id) return; payload.user_id = user.id;
             }
-            await fetch('backend/api/track.php', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        }catch(e){ console.warn('saveHistory failed',e); }
+            await fetch('backend/api/track.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        } catch (e) { console.warn('saveHistory failed', e); }
     }
 
     // Controls
-    playBtn.addEventListener('click', ()=>{ if (audio.paused) audio.play(); else audio.pause(); });
-    prevBtn.addEventListener('click', ()=>{ setTrack(current-1); audio.play(); });
-    nextBtn.addEventListener('click', ()=>{ setTrack(current+1); audio.play(); });
-    volumeEl.addEventListener('input', (e)=>{ audio.volume = parseFloat(e.target.value); });
+    playBtn.addEventListener('click', () => { if (audio.paused) audio.play(); else audio.pause(); });
+    prevBtn.addEventListener('click', () => { setTrack(current - 1); audio.play(); });
+    nextBtn.addEventListener('click', () => { setTrack(current + 1); audio.play(); });
+    volumeEl.addEventListener('input', (e) => { audio.volume = parseFloat(e.target.value); });
     audio.volume = parseFloat(volumeEl.value);
 
     // Progress and seeking
-    audio.addEventListener('timeupdate', ()=>{
+    audio.addEventListener('timeupdate', () => {
         if (!audio.duration || isNaN(audio.duration)) return;
         const pct = (audio.currentTime / audio.duration) * 100;
         bar.style.width = pct + '%';
         timeEl.textContent = formatTime(audio.currentTime) + ' / ' + formatTime(audio.duration);
     });
 
-    progress.addEventListener('click', (e)=>{
+    progress.addEventListener('click', (e) => {
         if (!audio.duration) return;
         const rect = progress.getBoundingClientRect();
-        const x = e.clientX - rect.left; const pct = x/rect.width; audio.currentTime = pct * audio.duration;
+        const x = e.clientX - rect.left; const pct = x / rect.width; audio.currentTime = pct * audio.duration;
     });
 
     // Loading indicator
-    audio.addEventListener('waiting', ()=>{ loadingEl.style.display = 'inline'; });
-    audio.addEventListener('canplay', ()=>{ loadingEl.style.display = 'none'; });
-    audio.addEventListener('playing', ()=>{ playBtn.textContent = '❚❚'; if (!hasReportedPlay){ hasReportedPlay=true; const t=tracks[current]; reportPlay(t.id); saveHistory(t.id); } });
-    audio.addEventListener('pause', ()=>{ playBtn.textContent = '▶'; });
-    audio.addEventListener('ended', ()=>{ setTrack(current+1); audio.play(); });
+    audio.addEventListener('waiting', () => { loadingEl.style.display = 'inline'; });
+    audio.addEventListener('canplay', () => { loadingEl.style.display = 'none'; });
+    audio.addEventListener('playing', () => { playBtn.textContent = '❚❚'; if (!hasReportedPlay) { hasReportedPlay = true; const t = tracks[current]; reportPlay(t.id); saveHistory(t.id); } });
+    audio.addEventListener('pause', () => { playBtn.textContent = '▶'; });
+    audio.addEventListener('ended', () => { setTrack(current + 1); audio.play(); });
+    audio.addEventListener('error', (e) => {
+        console.error('Audio playback error', e);
+        loadingEl.style.display = 'none';
+        alert('Error playing audio: ' + (audio.error ? audio.error.message : 'Unknown error'));
+    });
 
     // Expose a function to play a specific track id (for song list clicks)
-    window.afroPlayById = function(trackId){ const idx = tracks.findIndex(t=>t.id==trackId); if (idx===-1) return; setTrack(idx); audio.play(); };
+    window.afroPlayById = function (trackId) { const idx = tracks.findIndex(t => t.id == trackId); if (idx === -1) return; setTrack(idx); audio.play(); };
 
     // Init: fetch current session user and tracks
-    (async function init(){
-        try{
+    (async function init() {
+        try {
             const me = await fetch('backend/api/me.php');
             const mj = await me.json();
             if (mj.success && mj.data && mj.data.user) {
                 serverUserId = mj.data.user.id;
             }
-        }catch(e){
+        } catch (e) {
             // ignore — fallback to localStorage
         }
 
         const list = await fetchTracks();
-        if (!list || !list.length){ titleEl.textContent='No playable tracks found'; artistEl.textContent=''; return; }
+        if (!list || !list.length) { titleEl.textContent = 'No playable tracks found'; artistEl.textContent = ''; return; }
         setTrack(0);
     })();
 

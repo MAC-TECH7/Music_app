@@ -1,31 +1,52 @@
 <?php
+ob_start();
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Allow-Credentials: true');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");         
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
     exit(0);
 }
 
-// Start session
 session_start();
 
-require_once '../db.php';
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+function sendResponse($success, $message, $data = null, $httpCode = 200) {
+    if (ob_get_length()) ob_clean();
+    http_response_code($httpCode);
+    echo json_encode([
+        'success' => $success,
+        'message' => $message,
+        'data' => $data
+    ]);
+    ob_end_flush();
     exit;
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
+try {
+    require_once '../db.php';
+} catch (Exception $e) {
+    sendResponse(false, 'Database configuration error', ['error' => $e->getMessage()], 500);
+}
 
-if (!$data || empty($data['email']) || empty($data['password'])) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Email and password are required']);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    sendResponse(false, 'Method not allowed', null, 405);
+}
+
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+if (!$data) {
+    sendResponse(false, 'Invalid JSON input received', ['raw_input' => substr($input, 0, 100)], 400);
+}
+
+if (empty($data['email']) || empty($data['password'])) {
+    sendResponse(false, 'Email and password are required', null, 400);
 }
 
 try {
@@ -34,15 +55,11 @@ try {
     $user = $stmt->fetch();
 
     if (!$user || !password_verify($data['password'], $user['password'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Invalid email or password']);
-        exit;
+        sendResponse(false, 'Invalid email or password', null, 401);
     }
 
     if ($user['status'] !== 'active') {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Account is not active']);
-        exit;
+        sendResponse(false, 'Account is not active', null, 403);
     }
 
     // Store user data in session
@@ -50,28 +67,19 @@ try {
         'id' => $user['id'],
         'email' => $user['email'],
         'name' => $user['name'],
-        'phone' => $user['phone'],
         'type' => $user['type'],
-        'status' => $user['status'],
-        'joined' => $user['joined'],
-        'avatar' => $user['avatar'],
-        'isLoggedIn' => true,
-        'loginTime' => date('Y-m-d H:i:s')
+        'isLoggedIn' => true
     ];
+    // For compatibility with me.php
+    $_SESSION['user_id'] = $user['id'];
 
-    // Never expose password hash to frontend
     unset($user['password']);
 
-    echo json_encode([
-        'success' => true,
-        'data' => [
-            'user' => $user,
-            'session_id' => session_id()
-        ]
+    sendResponse(true, 'Login successful', [
+        'user' => $user,
+        'session_id' => session_id()
     ]);
+
 } catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Server error']);
+    sendResponse(false, 'Database error occurred', ['error' => $e->getMessage()], 500);
 }
-
-

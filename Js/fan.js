@@ -98,6 +98,24 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    // Global click listener for play buttons
+    document.addEventListener('click', function (e) {
+        const playBtn = e.target.closest('.play-btn');
+        if (playBtn) {
+            const songId = playBtn.dataset.songId;
+            if (songId) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.playSongInModal) {
+                    window.playSongInModal(songId);
+                } else {
+                    console.error("Modal player not ready, please wait...");
+                    showNotification("Player not ready, please wait...", "info");
+                }
+            }
+        }
+    });
+
     // Check protocol
     if (window.location.protocol === 'file:') {
         console.warn("⚠️ Running from file system. Backend features will not work. Please access via localhost (e.g., http://localhost/Music_app/fan.html)");
@@ -128,9 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
         setupNotifications();
         setupSearch();
         loadViewContent('discover');
-        initializeAudio();
+        // initializeAudio(); // Removed to prevent conflict with player.js
         updateUserProfileUI();
         updateQuickStats();
+        setupProfileUpload();
 
         console.log("✅ Fan Dashboard fully initialized!");
     });
@@ -175,7 +194,7 @@ async function loadBackendData() {
                 duration: song.duration || '0:00',
                 plays: parseInt(song.plays) || 0,
                 coverColor: getTimeBasedColor(song.id), // Dynamic color
-                audioUrl: song.file_path || '#' // Ensure this path is reachable from frontend
+                audioUrl: song.file_path ? song.file_path.replace(/^\/+/, '') : '#'
             }));
         }
 
@@ -188,7 +207,13 @@ async function loadBackendData() {
                 monthlyListeners: parseInt(artist.followers) * 5 || 0, // Mock calc
                 genre: artist.genre || 'Unknown',
                 bio: artist.bio || 'No biography available',
-                avatarColor: getTimeBasedColor(artist.id + 100)
+                avatarColor: getTimeBasedColor(artist.id + 100),
+                social: {
+                    instagram: artist.instagram_url,
+                    twitter: artist.twitter_url,
+                    facebook: artist.facebook_url,
+                    youtube: artist.youtube_url
+                }
             }));
         }
 
@@ -255,28 +280,87 @@ function updateUserProfileUI() {
     if (currentUser) {
         const initials = currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'FU';
 
-        if (userAvatar) {
-            userAvatar.textContent = initials;
-            if (currentUser.avatarColor) {
-                userAvatar.style.background = currentUser.avatarColor;
+        const updateElement = (element) => {
+            if (!element) return;
+            if (currentUser.avatar && currentUser.avatar.startsWith('uploads/')) {
+                element.style.backgroundImage = `url('${currentUser.avatar}?t=${new Date().getTime()}')`;
+                element.style.backgroundSize = 'cover';
+                element.style.backgroundPosition = 'center';
+                element.textContent = '';
+            } else {
+                element.style.backgroundImage = 'none';
+                element.textContent = initials;
+                if (currentUser.avatarColor) {
+                    element.style.background = currentUser.avatarColor;
+                }
             }
-        }
+        };
+
+        updateElement(userAvatar);
+        updateElement(profileAvatar);
+        updateElement(document.getElementById('modalAvatar'));
 
         if (userName) userName.textContent = currentUser.name || 'Fan User';
         if (userEmail) userEmail.textContent = currentUser.email || 'fan@example.com';
-
-        if (profileAvatar) {
-            profileAvatar.textContent = initials;
-            if (currentUser.avatarColor) {
-                profileAvatar.style.background = currentUser.avatarColor;
-            }
-        }
 
         if (profileName) profileName.textContent = currentUser.name || 'Fan User';
         if (profileEmail) profileEmail.textContent = currentUser.email || 'fan@example.com';
 
         const memberSince = document.getElementById('memberSince');
         if (memberSince) memberSince.textContent = currentUser.memberSince || '2023';
+    }
+}
+
+function setupProfileUpload() {
+    const fileInput = document.getElementById('profileImageInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function (e) {
+            if (this.files && this.files[0]) {
+                handleProfileUpload(this.files[0]);
+            }
+        });
+    }
+}
+
+async function handleProfileUpload(file) {
+    if (!currentUser || !currentUser.id) return;
+
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please upload an image file', 'error');
+        return;
+    }
+
+    // Validate size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image size must be less than 5MB', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('profile_image', file);
+    formData.append('upload_type', 'profile_image');
+
+    showNotification('Uploading profile photo...', 'info');
+
+    try {
+        const response = await fetch('backend/api/upload.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentUser.avatar = data.data.file_path;
+            updateUserProfileUI();
+            showNotification('Profile photo updated successfully', 'success');
+        } else {
+            showNotification(data.message || 'Upload failed', 'error');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('Error uploading profile photo', 'error');
     }
 }
 
@@ -575,10 +659,25 @@ function loadDiscoverView() {
     console.log("🔍 Loading discover view...");
 
     // Load trending songs
+    // Load New Releases (Latest 6 songs)
+    const newReleases = document.getElementById('newReleases');
+    if (newReleases) {
+        newReleases.innerHTML = '';
+        // sampleSongs is already sorted by ID DESC from backend (newest first)
+        sampleSongs.slice(0, 6).forEach(song => {
+            const isFavorite = userFavorites.songs.includes(song.id);
+            const songCard = createSongCard(song, isFavorite);
+            newReleases.appendChild(songCard);
+        });
+    }
+
+    // Load Trending songs (Top 6 by plays)
     const trendingSongs = document.getElementById('trendingSongs');
     if (trendingSongs) {
         trendingSongs.innerHTML = '';
-        sampleSongs.forEach(song => {
+        const trending = [...sampleSongs].sort((a, b) => b.plays - a.plays).slice(0, 6);
+
+        trending.forEach(song => {
             const isFavorite = userFavorites.songs.includes(song.id);
             const songCard = createSongCard(song, isFavorite);
             trendingSongs.appendChild(songCard);
@@ -709,6 +808,18 @@ function loadFavoriteArtists() {
 
             const artistCard = document.createElement('div');
             artistCard.className = 'artist-card';
+
+            // Build social links HTML
+            let socialLinksHtml = '';
+            if (artist.social) {
+                socialLinksHtml = '<div class="artist-social-links mt-2" style="display: flex; justify-content: center; gap: 8px;">';
+                if (artist.social.instagram) socialLinksHtml += `<a href="${artist.social.instagram.startsWith('http') ? artist.social.instagram : `https://instagram.com/${artist.social.instagram.replace('@', '')}`}" target="_blank" class="text-white" title="Instagram"><i class="fab fa-instagram"></i></a>`;
+                if (artist.social.twitter) socialLinksHtml += `<a href="${artist.social.twitter.startsWith('http') ? artist.social.twitter : `https://twitter.com/${artist.social.twitter.replace('@', '')}`}" target="_blank" class="text-white" title="Twitter"><i class="fab fa-twitter"></i></a>`;
+                if (artist.social.facebook) socialLinksHtml += `<a href="${artist.social.facebook.startsWith('http') ? artist.social.facebook : `https://facebook.com/${artist.social.facebook}`}" target="_blank" class="text-white" title="Facebook"><i class="fab fa-facebook"></i></a>`;
+                if (artist.social.youtube) socialLinksHtml += `<a href="${artist.social.youtube.startsWith('http') ? artist.social.youtube : `https://youtube.com/${artist.social.youtube}`}" target="_blank" class="text-white" title="YouTube"><i class="fab fa-youtube"></i></a>`;
+                socialLinksHtml += '</div>';
+            }
+
             artistCard.innerHTML = `
                 <div class="artist-avatar" style="background: ${artist.avatarColor || getRandomColor()};">${artist.name.charAt(0)}</div>
                 <h4>${artist.name}</h4>
@@ -716,6 +827,7 @@ function loadFavoriteArtists() {
                 <button class="follow-btn following" data-artist-id="${artist.id}">
                     Following
                 </button>
+                ${socialLinksHtml}
             `;
             favoriteArtists.appendChild(artistCard);
         });
@@ -1353,7 +1465,12 @@ function createAccountSettingsModal() {
             </div>
             
             <div style="display: flex; align-items: center; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
-                <div class="user-avatar" style="width: 80px; height: 80px; font-size: 24px;" id="modalAvatar">${currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'FU'}</div>
+                <div class="user-avatar" style="width: 80px; height: 80px; font-size: 24px; position: relative; cursor: pointer; overflow: hidden;" id="modalAvatar" onclick="document.getElementById('profileImageInput').click()">
+                    ${currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'FU'}
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); height: 30px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-camera" style="font-size: 14px;"></i>
+                    </div>
+                </div>
                 <div>
                     <h4>${currentUser?.name || 'Fan User'}</h4>
                     <p>${currentUser?.email || 'fan@example.com'}</p>
@@ -2062,6 +2179,8 @@ async function toggleFollowArtist(artistId, btn) {
         }
 
         updateQuickStats();
+        // Refresh favorite artists list if we are in discover view
+        loadFavoriteArtists();
     } catch (error) {
         console.error('Error toggling follow:', error);
         showNotification('Error updating follow status', 'error');
@@ -2069,27 +2188,20 @@ async function toggleFollowArtist(artistId, btn) {
 }
 
 async function playSong(songId) {
-    const song = sampleSongs.find(s => s.id === songId);
-    if (song) {
-        // Add to history (async, but don't wait - fire and forget)
-        addToHistory(songId).catch(err => console.error('Error adding to history:', err));
+    // Delegate to the global player defined in Js/player.js
+    if (window.afroPlayById) {
+        window.afroPlayById(songId);
 
-        updateNowPlayingUI(song);
-
-        const playBtn = document.getElementById('playPauseBtn');
-        if (playBtn) {
-            isPlaying = true;
-            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            startRealPlayback(song); // Use real playback instead of simulation
-        }
-
-        showNotification(`Now playing: ${song.title}`, 'info');
-
-        // Reset playlist context
-        currentPlaylist = null;
-        currentSongIndex = sampleSongs.findIndex(s => s.id === songId);
+        // Optimistically update UI specific to fan.js if needed (like favorites)
+        // But do not manage audio state here.
+        console.log(`Requested playback for song ${songId}`);
+    } else {
+        console.error("Audio player not initialized");
+        showNotification("Player not ready, please wait...", "warning");
     }
 }
+
+
 
 function updateNowPlayingUI(song) {
     const nowPlayingTitle = document.getElementById('nowPlayingTitle');

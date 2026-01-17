@@ -37,14 +37,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Show error message
     function showError(message) {
+        console.error("❌ Auth Error:", message);
         errorText.textContent = message;
         errorMessage.style.display = 'block';
         successMessage.style.display = 'none';
 
-        // Hide after 5 seconds
+        // Scroll to error message
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Hide after 8 seconds (increased for better readability)
         setTimeout(() => {
             errorMessage.style.display = 'none';
-        }, 5000);
+        }, 8000);
     }
 
     // Show success message
@@ -106,15 +110,39 @@ document.addEventListener('DOMContentLoaded', function () {
         loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
         loginBtn.disabled = true;
 
-        // Call backend login API
-        fetch('../backend/api/login.php', {
+        // Create a controller for request timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        // Call backend login API with cache-buster
+        const timestamp = new Date().getTime();
+        console.log(`🚀 Sending login request for ${email}...`);
+
+        fetch(`../backend/api/login.php?t=${timestamp}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
+            signal: controller.signal,
             body: JSON.stringify({ email, password })
         })
-            .then(res => res.json().then(body => ({ ok: res.ok, status: res.status, body })))
+            .then(res => {
+                clearTimeout(timeoutId);
+                console.log(`📡 Server responded with status: ${res.status}`);
+                return res.text().then(text => {
+                    if (!text) {
+                        console.error("Empty response from server");
+                        throw new Error('Server returned an empty response. Please check if PHP is working.');
+                    }
+                    try {
+                        return { ok: res.ok, status: res.status, body: JSON.parse(text) };
+                    } catch (e) {
+                        console.error("🔥 Server returned non-JSON response:", text);
+                        throw new Error('Server returned invalid data format. Please check backend logs.');
+                    }
+                });
+            })
             .then(({ ok, body }) => {
                 if (!ok || !body.success) {
                     throw new Error(body.message || 'Invalid email or password');
@@ -161,7 +189,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 }, 1000);
             })
             .catch(err => {
-                showError(err.message || 'Login failed. Please try again.');
+                clearTimeout(timeoutId);
+
+                if (err.name === 'AbortError') {
+                    showError('Server is taking too long to respond. Please ensure MySQL is running or try again later.');
+                } else {
+                    console.error("❌ Login failed:", err);
+                    showError(err.message || 'Login failed. Please try again.');
+                }
+
                 loginBtn.innerHTML = originalText;
                 loginBtn.disabled = false;
 
@@ -207,10 +243,10 @@ document.addEventListener('DOMContentLoaded', function () {
         googleLoginBtn.disabled = true;
 
         setTimeout(() => {
-            showSuccess('Google login would connect here. For demo, use email: john.mbarga@email.com, password: password123');
+            showSuccess('Social login is disabled for demo. Use the Quick Demo Login tiles below.');
             googleLoginBtn.innerHTML = '<i class="fab fa-google"></i><span>Google</span>';
             googleLoginBtn.disabled = false;
-        }, 1500);
+        }, 1000);
     });
 
     // Facebook login
@@ -219,11 +255,64 @@ document.addEventListener('DOMContentLoaded', function () {
         facebookLoginBtn.disabled = true;
 
         setTimeout(() => {
-            showSuccess('Facebook login would connect here. For demo, use email: john.mbarga@email.com, password: password123');
+            showSuccess('Social login is disabled for demo. Use the Quick Demo Login tiles below.');
             facebookLoginBtn.innerHTML = '<i class="fab fa-facebook-f"></i><span>Facebook</span>';
             facebookLoginBtn.disabled = false;
-        }, 1500);
+        }, 1000);
     });
+
+    // Demo Credentials Quick-Fill
+    const demoPills = document.querySelectorAll('.demo-pill');
+    demoPills.forEach(pill => {
+        pill.addEventListener('click', function () {
+            const email = this.getAttribute('data-email');
+            const pass = this.getAttribute('data-pass');
+
+            emailInput.value = email;
+            passwordInput.value = pass;
+
+            // Highlight the inputs briefly
+            emailInput.classList.add('is-valid');
+            passwordInput.classList.add('is-valid');
+
+            // Scroll to the submit button to make it obvious
+            loginBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Pulse the login button
+            loginBtn.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                loginBtn.style.transform = 'scale(1)';
+            }, 300);
+
+            setTimeout(() => {
+                emailInput.classList.remove('is-valid');
+                passwordInput.classList.remove('is-valid');
+            }, 1000);
+
+            showSuccess(`Filled credentials for ${this.querySelector('span').textContent}. Click Login to continue.`);
+        });
+    });
+
+    // Handle initial role from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const role = urlParams.get('role');
+    if (role) {
+        let pillToClick = null;
+        if (role === 'fan') {
+            pillToClick = document.querySelector('.demo-pill[data-email*="john.mbarga"]');
+        } else if (role === 'artist') {
+            pillToClick = document.querySelector('.demo-pill[data-email*="marie.ndongo"]');
+        } else if (role === 'admin') {
+            pillToClick = document.querySelector('.demo-pill[data-email*="thomas.n"]');
+        }
+
+        if (pillToClick) {
+            setTimeout(() => {
+                pillToClick.click();
+                showSuccess(`Context detected: ${role.charAt(0).toUpperCase() + role.slice(1)} Login. Credentials pre-filled.`);
+            }, 500);
+        }
+    }
 
     // Add shake animation CSS
     const style = document.createElement('style');
@@ -241,6 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Demo credentials hint
     console.log('Demo Credentials:');
-    console.log('Email: john.mbarga@email.com, Password: password123');
-    console.log('Email: user@afrorhythm.com, Password: AfroRhythm2023');
+    console.log('Fan: john.mbarga@email.com, Password: password123');
+    console.log('Artist: marie.ndongo@email.com, Password: password123');
+    console.log('Admin: thomas.n@email.com, Password: password123');
 });

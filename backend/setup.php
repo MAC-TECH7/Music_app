@@ -41,6 +41,10 @@ $tables = [
         status ENUM('verified', 'pending', 'rejected') DEFAULT 'pending',
         verification ENUM('approved', 'pending', 'rejected') DEFAULT 'pending',
         bio TEXT,
+        instagram_url VARCHAR(255),
+        twitter_url VARCHAR(255),
+        facebook_url VARCHAR(255),
+        youtube_url VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )",
@@ -222,6 +226,12 @@ $tables = [
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE CASCADE
+    )",
+    
+    "CREATE TABLE IF NOT EXISTS settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )"
 ];
 
@@ -303,6 +313,31 @@ foreach ($sampleSongs as $song) {
         echo "Song inserted<br>";
     } catch(PDOException $e) {
         echo "Error inserting song: " . $e->getMessage() . "<br>";
+    }
+}
+
+// Insert initial settings
+$initialSettings = [
+    'site_name' => 'AfroRhythm',
+    'site_description' => 'Amplifying Cameroonian music globally',
+    'contact_email' => 'contact@afrorhythm.com',
+    'maintenance_mode' => 'off',
+    'auto_approve_artists' => 'off',
+    'auto_approve_songs' => 'off',
+    'max_upload_size' => '20',
+    'currency' => 'XAF',
+    'payment_mode' => 'sandbox',
+    'smtp_host' => 'smtp.afrorhythm.com',
+    'smtp_port' => '587'
+];
+
+foreach ($initialSettings as $key => $value) {
+    try {
+        $stmt = $pdo->prepare("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)");
+        $stmt->execute([$key, $value]);
+        echo "Setting $key inserted<br>";
+    } catch(PDOException $e) {
+        echo "Error inserting setting $key: " . $e->getMessage() . "<br>";
     }
 }
 

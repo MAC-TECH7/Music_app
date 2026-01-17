@@ -6,12 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AfroRhythm - Login</title>
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../assets/lib/bootstrap/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/lib/fontawesome/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="../assets/lib/fonts/fonts.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../css/auth.css">
     <style>
@@ -42,7 +41,75 @@
             color: #FF6B35;
         }
 
-        /* Additional login-specific styles if needed */
+        /* Demo Accounts Styles */
+        .demo-accounts {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .demo-title {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            text-align: center;
+            display: block;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .demo-pill {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 15px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            gap: 15px;
+        }
+
+        .demo-pill:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .demo-pill i {
+            font-size: 1.4rem;
+            color: var(--secondary-color);
+            width: 30px;
+            text-align: center;
+        }
+
+        .demo-info {
+            flex: 1;
+        }
+
+        .demo-pill span {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            line-height: 1.2;
+        }
+
+        .demo-pill small {
+            display: block;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 2px;
+        }
     </style>
 </head>
 
@@ -119,6 +186,37 @@
                 </button>
             </div>
 
+            <!-- Demo Accounts -->
+            <div class="demo-accounts">
+                <span class="demo-title">Quick Demo Login</span>
+                <div class="demo-grid">
+                    <div class="demo-pill" data-email="john.mbarga@email.com" data-pass="password123">
+                        <i class="fas fa-user"></i>
+                        <div class="demo-info">
+                            <span>Fan Account</span>
+                            <small>john.mbarga@email.com</small>
+                        </div>
+                        <i class="fas fa-magic ms-auto" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                    </div>
+                    <div class="demo-pill" data-email="marie.ndongo@email.com" data-pass="password123">
+                        <i class="fas fa-microphone"></i>
+                        <div class="demo-info">
+                            <span>Artist Account</span>
+                            <small>marie.ndongo@email.com</small>
+                        </div>
+                        <i class="fas fa-magic ms-auto" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                    </div>
+                    <div class="demo-pill" data-email="thomas.n@email.com" data-pass="password123">
+                        <i class="fas fa-user-shield"></i>
+                        <div class="demo-info">
+                            <span>Admin Account</span>
+                            <small>thomas.n@email.com</small>
+                        </div>
+                        <i class="fas fa-magic ms-auto" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+
             <!-- Signup Link -->
             <div class="auth-footer">
                 <p>Don't have an account? <a href="signup.html">Sign up now</a></p>
@@ -151,10 +249,10 @@
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="../Js/utils.js"></script>
-    <script src="auth-logic.js"></script>
+    <script src="auth-logic.js?v=2.0"></script>
 </body>
 
 </html>

@@ -126,6 +126,52 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function loadArtistSongsFromBackend() {
         // User authentication is now handled by session check
+        // First get the user ID from session to find the artist profile
+        let artistId = null;
+        try {
+            const sessionRes = await fetch('backend/api/session.php');
+            const sessionData = await sessionRes.json();
+            if (sessionData.success && sessionData.data.user) {
+                const userId = sessionData.data.user.id;
+
+                // Get artist profile
+                const artistRes = await fetch(`backend/api/artists.php?user_id=${userId}`);
+                const artistJson = await artistRes.json();
+
+                if (artistJson.success && artistJson.data.length > 0) {
+                    const artist = artistJson.data[0]; // Assuming user has one artist profile
+                    artistId = artist.id;
+
+                    // Update mockData profile with real data
+                    mockData.profile.name = artist.name;
+                    mockData.profile.bio = artist.bio || mockData.profile.bio;
+
+                    // Update avatar from session user data if available
+                    if (sessionData.data.user.avatar) {
+                        mockData.profile.avatar = sessionData.data.user.avatar;
+                    }
+
+                    // Store social links
+                    mockData.profile.social = {
+                        instagram: artist.instagram_url || '',
+                        twitter: artist.twitter_url || '',
+                        facebook: artist.facebook_url || '',
+                        youtube: artist.youtube_url || ''
+                    };
+
+                    // Update header
+                    const topBarName = document.getElementById('topBarArtistName');
+                    if (topBarName) topBarName.textContent = artist.name;
+
+                    const topBarImage = document.getElementById('topBarProfileImage');
+                    if (topBarImage && mockData.profile.avatar) topBarImage.src = mockData.profile.avatar;
+
+                }
+            }
+        } catch (e) {
+            console.error('Error loading artist profile:', e);
+        }
+
         const res = await fetch('backend/api/songs.php');
         const json = await res.json();
         if (!json.success) {
@@ -133,7 +179,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
 
         // Filter songs by artist when we know the artist ID; for now, show all active songs
-        const songs = json.data.filter(song => song.status === 'active' || song.status === 'pending');
+        // If we found the artist ID, filter strictly by it. Otherwise, show all (dev mode fallback)
+        let songs = json.data;
+        if (artistId) {
+            songs = songs.filter(song => song.artist_id == artistId && (song.status === 'active' || song.status === 'pending'));
+        } else {
+            songs = songs.filter(song => song.status === 'active' || song.status === 'pending');
+        }
 
         uploadedSongs = songs.map(song => ({
             id: song.id,
@@ -575,27 +627,19 @@ document.addEventListener('DOMContentLoaded', async function () {
                         <div class="card-body">
                             <div class="mb-3">
                                 <label class="form-label">Instagram</label>
-                                <input type="text" class="form-control" value="@novarhythm" id="instagramInput">
+                                <input type="text" class="form-control" value="${mockData.profile.social?.instagram || ''}" id="instagramInput" placeholder="@username or URL">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Twitter</label>
-                                <input type="text" class="form-control" value="@novarhythm" id="twitterInput">
+                                <input type="text" class="form-control" value="${mockData.profile.social?.twitter || ''}" id="twitterInput" placeholder="@username or URL">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Facebook</label>
+                                <input type="text" class="form-control" value="${mockData.profile.social?.facebook || ''}" id="facebookInput" placeholder="URL">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">YouTube</label>
-                                <input type="text" class="form-control" value="NovaRhythmMusic" id="youtubeInput">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">TikTok</label>
-                                <input type="text" class="form-control" value="@novarhythm" id="tiktokInput">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Spotify</label>
-                                <input type="text" class="form-control" value="NovaRhythm" id="spotifyInput">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">SoundCloud</label>
-                                <input type="text" class="form-control" value="novarhythm" id="soundcloudInput">
+                                <input type="text" class="form-control" value="${mockData.profile.social?.youtube || ''}" id="youtubeInput" placeholder="Channel URL">
                             </div>
                             <div>
                                 <h6 class="mb-2">Preview & Test Links</h6>
@@ -1605,78 +1649,18 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Initialize audio players
     function initializeAudioPlayers() {
-        // Play song button
+        // Attach click listeners to all play song buttons
         document.querySelectorAll('.play-song-btn').forEach(btn => {
             btn.addEventListener('click', function () {
-                const songTitle = this.getAttribute('data-title');
-                const songGenre = this.getAttribute('data-genre');
+                const songId = this.getAttribute('data-id');
 
-                // Update modal content
-                document.getElementById('playingSongTitle').textContent = songTitle;
-                document.getElementById('playingSongGenre').textContent = songGenre;
-
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById('audioPlayerModal'));
-                modal.show();
-
-                // Initialize audio player
-                initializeAudioPlayer();
+                // Use the global modal player function
+                if (window.playSongInModal && songId) {
+                    window.playSongInModal(songId);
+                } else {
+                    console.error('Modal player not available or song ID missing');
+                }
             });
-        });
-    }
-
-    function initializeAudioPlayer() {
-        let isPlaying = false;
-
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const playPauseIcon = document.getElementById('playPauseIcon');
-
-        // Remove existing event listeners by cloning and replacing
-        const newPlayPauseBtn = playPauseBtn.cloneNode(true);
-        playPauseBtn.parentNode.replaceChild(newPlayPauseBtn, playPauseBtn);
-
-        newPlayPauseBtn.addEventListener('click', function () {
-            const songTitle = document.getElementById('playingSongTitle').textContent;
-
-            if (!isPlaying) {
-                // Start playing
-                isPlaying = true;
-                this.innerHTML = '<i class="fas fa-pause"></i>';
-                showNotification(`Now playing "${songTitle}"`, 'success');
-            } else {
-                // Pause
-                isPlaying = false;
-                this.innerHTML = '<i class="fas fa-play"></i>';
-                showNotification(`Paused "${songTitle}"`, 'info');
-            }
-        });
-
-        // Volume controls
-        const volumeBtn = document.getElementById('volumeBtn');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const volumeContainer = volumeBtn.nextElementSibling;
-
-        volumeBtn.addEventListener('click', function () {
-            volumeContainer.style.display = volumeContainer.style.display === 'none' ? 'block' : 'none';
-        });
-
-        volumeSlider.addEventListener('input', function () {
-            const icon = volumeBtn.querySelector('i');
-            const volume = parseInt(this.value);
-
-            if (volume === 0) {
-                icon.className = 'fas fa-volume-mute';
-            } else if (volume < 50) {
-                icon.className = 'fas fa-volume-down';
-            } else {
-                icon.className = 'fas fa-volume-up';
-            }
-        });
-
-        // Download button
-        document.getElementById('downloadBtn').addEventListener('click', function () {
-            const songTitle = document.getElementById('playingSongTitle').textContent;
-            showNotification(`Downloading "${songTitle}"...`, 'info');
         });
     }
 
@@ -1697,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 input.className = 'd-none';
                 document.body.appendChild(input);
 
-                input.addEventListener('change', function () {
+                input.addEventListener('change', async function () {
                     if (this.files.length > 0) {
                         const file = this.files[0];
 
@@ -1717,42 +1701,47 @@ document.addEventListener('DOMContentLoaded', async function () {
                         if (uploadProgress) {
                             uploadProgress.style.display = 'block';
                             const progressBar = uploadProgress.querySelector('.progress-bar');
+                            progressBar.style.width = '30%';
 
-                            // Simulate upload
-                            let progress = 0;
-                            const interval = setInterval(() => {
-                                progress += 10;
-                                progressBar.style.width = `${progress}%`;
+                            try {
+                                const formData = new FormData();
+                                formData.append('upload_type', 'profile_image');
+                                formData.append('profile_image', file);
 
-                                if (progress >= 100) {
-                                    clearInterval(interval);
+                                const response = await fetch('backend/api/upload.php', {
+                                    method: 'POST',
+                                    body: formData
+                                });
 
-                                    // Create preview
-                                    const reader = new FileReader();
-                                    reader.onload = function (e) {
-                                        // Update avatar
-                                        profileAvatar.src = e.target.result;
+                                progressBar.style.width = '80%';
+                                const result = await response.json();
 
-                                        // Update top bar image
-                                        const topBarImage = document.getElementById('topBarProfileImage');
-                                        if (topBarImage) {
-                                            topBarImage.src = e.target.result;
+                                if (result.success) {
+                                    progressBar.style.width = '100%';
+
+                                    // Update images with new URL (add timestamp to bust cache)
+                                    const newUrl = result.data.file_path; // Local path or full URL
+
+                                    if (profileAvatar) profileAvatar.src = newUrl;
+
+                                    const topBarImage = document.getElementById('topBarProfileImage');
+                                    if (topBarImage) topBarImage.src = newUrl;
+
+                                    setTimeout(() => {
+                                        if (uploadProgress) {
+                                            uploadProgress.style.display = 'none';
+                                            progressBar.style.width = '0%';
                                         }
-
-                                        // Hide progress
-                                        setTimeout(() => {
-                                            if (uploadProgress) {
-                                                uploadProgress.style.display = 'none';
-                                                progressBar.style.width = '0%';
-                                            }
-
-                                            // Show success message
-                                            showNotification('Profile photo updated successfully!', 'success');
-                                        }, 500);
-                                    };
-                                    reader.readAsDataURL(file);
+                                        showNotification('Profile photo updated successfully!', 'success');
+                                    }, 500);
+                                } else {
+                                    throw new Error(result.message);
                                 }
-                            }, 100);
+                            } catch (error) {
+                                console.error('Upload error:', error);
+                                showNotification('Failed to upload profile photo: ' + error.message, 'danger');
+                                if (uploadProgress) uploadProgress.style.display = 'none';
+                            }
                         }
                     }
                 });
@@ -1907,24 +1896,81 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Save profile button
         const saveProfileBtn = document.getElementById('saveProfileBtn');
         if (saveProfileBtn) {
-            saveProfileBtn.addEventListener('click', function () {
+            saveProfileBtn.addEventListener('click', async function () {
                 // Get form values
                 const artistName = document.getElementById('artistNameInput')?.value || mockData.profile.name;
                 const bio = document.getElementById('bioInput')?.value || mockData.profile.bio;
 
-                // Update mock data
-                mockData.profile.name = artistName;
-                mockData.profile.bio = bio;
+                // Get Social values
+                const instagram = document.getElementById('instagramInput')?.value?.trim();
+                const twitter = document.getElementById('twitterInput')?.value?.trim();
+                const facebook = document.getElementById('facebookInput')?.value?.trim();
+                const youtube = document.getElementById('youtubeInput')?.value?.trim();
 
-                // Update display
-                const nameDisplay = document.getElementById('artistNameDisplay');
-                if (nameDisplay) nameDisplay.textContent = artistName;
+                try {
+                    // We need artist ID. If not in mockData directly (it's in loadArtistSongsFromBackend local scope), we need to fetch or store it globally. 
+                    // Let's assume we can get it via same method or better, store it in mockData for now.
+                    // For this implementation, we'll refetch/find user.
 
-                // Update top bar
-                const topBarName = document.getElementById('topBarArtistName');
-                if (topBarName) topBarName.textContent = artistName;
+                    const sessionRes = await fetch('backend/api/session.php');
+                    const sessionData = await sessionRes.json();
 
-                showNotification('Profile updated successfully!', 'success');
+                    if (!sessionData.success) throw new Error("Not logged in");
+
+                    const userId = sessionData.data.user.id;
+                    const artistRes = await fetch(`backend/api/artists.php?user_id=${userId}`);
+                    const artistJson = await artistRes.json();
+
+                    if (!artistJson.success || artistJson.data.length === 0) throw new Error("Artist profile not found");
+
+                    const artistId = artistJson.data[0].id;
+
+                    const updateData = {
+                        id: artistId,
+                        name: artistName,
+                        genre: artistJson.data[0].genre, // Keep existing
+                        followers: artistJson.data[0].followers,
+                        songs_count: artistJson.data[0].songs_count,
+                        status: artistJson.data[0].status,
+                        verification: artistJson.data[0].verification,
+                        bio: bio,
+                        instagram_url: instagram,
+                        twitter_url: twitter,
+                        facebook_url: facebook,
+                        youtube_url: youtube
+                    };
+
+                    const updateRes = await fetch('backend/api/artists.php', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateData)
+                    });
+
+                    const updateJson = await updateRes.json();
+
+                    if (updateJson.success) {
+                        // Update mock data
+                        mockData.profile.name = artistName;
+                        mockData.profile.bio = bio;
+                        mockData.profile.social = { instagram, twitter, facebook, youtube };
+
+                        // Update display
+                        const nameDisplay = document.getElementById('artistNameDisplay');
+                        if (nameDisplay) nameDisplay.textContent = artistName;
+
+                        // Update top bar
+                        const topBarName = document.getElementById('topBarArtistName');
+                        if (topBarName) topBarName.textContent = artistName;
+
+                        showNotification('Profile updated successfully!', 'success');
+                    } else {
+                        throw new Error(updateJson.message);
+                    }
+
+                } catch (e) {
+                    console.error("Save failed", e);
+                    showNotification('Error saving profile: ' + e.message, 'danger');
+                }
             });
         }
 
@@ -1963,7 +2009,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function attachProfileListeners() {
         // Update social media preview when inputs change
-        const socialInputs = ['instagramInput', 'twitterInput', 'youtubeInput', 'tiktokInput', 'spotifyInput', 'soundcloudInput'];
+        // Update social media preview when inputs change
+        const socialInputs = ['instagramInput', 'twitterInput', 'facebookInput', 'youtubeInput'];
         socialInputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             if (input) {
@@ -1985,35 +2032,28 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const instagram = document.getElementById('instagramInput')?.value?.trim();
         const twitter = document.getElementById('twitterInput')?.value?.trim();
+        const facebook = document.getElementById('facebookInput')?.value?.trim();
         const youtube = document.getElementById('youtubeInput')?.value?.trim();
-        const tiktok = document.getElementById('tiktokInput')?.value?.trim();
-        const spotify = document.getElementById('spotifyInput')?.value?.trim();
-        const soundcloud = document.getElementById('soundcloudInput')?.value?.trim();
 
-        console.log('Social values:', { instagram, twitter, youtube, tiktok, spotify, soundcloud });
+        console.log('Social values:', { instagram, twitter, facebook, youtube });
 
         let html = '';
 
         if (instagram) {
-            const handle = instagram.startsWith('@') ? instagram.substring(1) : instagram;
-            html += `<a href="https://instagram.com/${handle}" target="_blank" class="social-icon instagram" title="Instagram"><i class="fab fa-instagram"></i></a>`;
+            const handle = instagram.startsWith('http') ? instagram : (instagram.startsWith('@') ? `https://instagram.com/${instagram.substring(1)}` : `https://instagram.com/${instagram}`);
+            html += `<a href="${handle}" target="_blank" class="social-icon instagram" title="Instagram"><i class="fab fa-instagram"></i></a>`;
         }
         if (twitter) {
-            const handle = twitter.startsWith('@') ? twitter.substring(1) : twitter;
-            html += `<a href="https://twitter.com/${handle}" target="_blank" class="social-icon twitter" title="Twitter"><i class="fab fa-twitter"></i></a>`;
+            const handle = twitter.startsWith('http') ? twitter : (twitter.startsWith('@') ? `https://twitter.com/${twitter.substring(1)}` : `https://twitter.com/${twitter}`);
+            html += `<a href="${handle}" target="_blank" class="social-icon twitter" title="Twitter"><i class="fab fa-twitter"></i></a>`;
+        }
+        if (facebook) {
+            const handle = facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`;
+            html += `<a href="${handle}" target="_blank" class="social-icon facebook" title="Facebook"><i class="fab fa-facebook"></i></a>`;
         }
         if (youtube) {
-            html += `<a href="https://youtube.com/${youtube.startsWith('@') ? '' : '@'}${youtube}" target="_blank" class="social-icon youtube" title="YouTube"><i class="fab fa-youtube"></i></a>`;
-        }
-        if (tiktok) {
-            const handle = tiktok.startsWith('@') ? tiktok.substring(1) : tiktok;
-            html += `<a href="https://tiktok.com/@${handle}" target="_blank" class="social-icon tiktok" title="TikTok"><i class="fab fa-tiktok"></i></a>`;
-        }
-        if (spotify) {
-            html += `<a href="https://open.spotify.com/artist/${spotify}" target="_blank" class="social-icon spotify" title="Spotify"><i class="fab fa-spotify"></i></a>`;
-        }
-        if (soundcloud) {
-            html += `<a href="https://soundcloud.com/${soundcloud}" target="_blank" class="social-icon soundcloud" title="SoundCloud"><i class="fab fa-soundcloud"></i></a>`;
+            const handle = youtube.startsWith('http') ? youtube : `https://youtube.com/${youtube}`;
+            html += `<a href="${handle}" target="_blank" class="social-icon youtube" title="YouTube"><i class="fab fa-youtube"></i></a>`;
         }
 
         console.log('Generated HTML:', html);

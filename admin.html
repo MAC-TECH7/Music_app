@@ -5,15 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AfroRhythm - Admin Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Google Fonts - Matching index page -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&family=Open+Sans:wght@400;600&display=swap"
-        rel="stylesheet">
+    <link rel="stylesheet" href="assets/lib/fontawesome/all.min.css">
+    <link rel="stylesheet" href="assets/lib/fonts/fonts.css">
     <!-- Bootstrap CSS for DataTables -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/lib/bootstrap/bootstrap.min.css">
     <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="assets/lib/datatables/dataTables.bootstrap5.min.css">
     <style>
         :root {
             /* Colors - Matching index page palette */
@@ -1580,11 +1577,11 @@
                             <div class="table-content">
                                 <div class="form-group">
                                     <label class="form-label">Platform Name</label>
-                                    <input type="text" class="form-control" value="AfroRhythm">
+                                    <input type="text" id="settingPlatformName" class="form-control" value="AfroRhythm">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Default Language</label>
-                                    <select class="form-control">
+                                    <select id="settingLanguage" class="form-control">
                                         <option value="en">English</option>
                                         <option value="fr" selected>French</option>
                                         <option value="es">Spanish</option>
@@ -1592,7 +1589,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Timezone</label>
-                                    <select class="form-control">
+                                    <select id="settingTimezone" class="form-control">
                                         <option value="utc">UTC</option>
                                         <option value="wat" selected>West Africa Time (WAT)</option>
                                         <option value="cat">Central Africa Time (CAT)</option>
@@ -1600,7 +1597,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">
-                                        <input type="checkbox" checked> Enable Registration
+                                        <input type="checkbox" id="settingEnableRegistration" checked> Enable
+                                        Registration
                                     </label>
                                 </div>
                             </div>
@@ -1614,21 +1612,25 @@
                             <div class="table-content">
                                 <div class="form-group">
                                     <label class="form-label">
-                                        <input type="checkbox" checked> Auto-approve Artist Applications
+                                        <input type="checkbox" id="settingAutoApproveArtists" checked> Auto-approve
+                                        Artist Applications
                                     </label>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">
-                                        <input type="checkbox" checked> Enable Content Filtering
+                                        <input type="checkbox" id="settingEnableFiltering" checked> Enable Content
+                                        Filtering
                                     </label>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Max File Size (MB)</label>
-                                    <input type="number" class="form-control" value="50" min="1" max="500">
+                                    <input type="number" id="settingMaxFileSize" class="form-control" value="50" min="1"
+                                        max="500">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Allowed File Types</label>
-                                    <input type="text" class="form-control" value="mp3, wav, flac, m4a">
+                                    <input type="text" id="settingFileTypes" class="form-control"
+                                        value="mp3, wav, flac, m4a">
                                 </div>
                             </div>
                         </div>
@@ -2261,14 +2263,17 @@
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <!-- DataTables and Chart.js -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/lib/jquery/jquery.min.js"></script>
+    <script src="assets/lib/datatables/jquery.dataTables.min.js"></script>
+    <script src="assets/lib/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="assets/lib/chartjs/chart.min.js"></script>
     <script src="Js/utils.js"></script>
+    <script src="Js/modal-player.js?v=4"></script>
     <script src="Js/admin.js?v=2"></script>
+    <script src="Js/admin-enhanced.js?v=1"></script>
+    <script src="Js/admin-settings.js?v=1"></script>
 </body>
 
 </html>

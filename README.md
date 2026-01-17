@@ -414,6 +414,7 @@ We created some test pages to help you check if everything works:
 - Make sure you're using the correct URLs
 
 ### 📁 Project Structure Explained
++
 
 Here's what each folder contains (you don't need to change anything here):
 

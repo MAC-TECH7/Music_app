@@ -5,6 +5,16 @@ header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Credentials: true');
 
+// Disable error reporting to output to prevent JSON breakage
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+
+// Increase limits for large uploads
+ini_set('upload_max_filesize', '64M');
+ini_set('post_max_size', '64M');
+ini_set('memory_limit', '256M');
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
@@ -14,10 +24,18 @@ session_start();
 
 // Check if user is authenticated
 if (!isset($_SESSION['user']) || !$_SESSION['user']['isLoggedIn']) {
+    error_log("Upload failed: User not logged in");
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Authentication required']);
     exit;
 }
+
+function debugLog($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '../backend_debug.log');
+}
+debugLog("Upload request started. Type: " . ($_POST['upload_type'] ?? 'unknown'));
+debugLog("FILES: " . print_r($_FILES, true));
+debugLog("POST: " . print_r($_POST, true));
 
 require_once '../db.php';
 
@@ -43,6 +61,10 @@ if (!file_exists($songsDir)) {
 if (!file_exists($artworkDir)) {
     mkdir($artworkDir, 0755, true);
 }
+$avatarsDir = $uploadDir . 'avatars/';
+if (!file_exists($avatarsDir)) {
+    mkdir($avatarsDir, 0755, true);
+}
 
 $response = ['success' => false, 'message' => ''];
 
@@ -58,9 +80,23 @@ try {
         throw new Exception('Upload type is required');
     }
 
+    // Get artist ID from session user if not provided
+    if (empty($artistId) && isset($_SESSION['user']['id'])) {
+        $stmt = $pdo->prepare("SELECT id FROM artists WHERE user_id = ?");
+        $stmt->execute([$_SESSION['user']['id']]);
+        $artist = $stmt->fetch();
+        if ($artist) {
+            $artistId = $artist['id'];
+        }
+    }
+
     if ($uploadType === 'song') {
         if (empty($title) || empty($genre)) {
             throw new Exception('Title and genre are required for song uploads');
+        }
+
+        if (empty($artistId)) {
+            throw new Exception('Artist profile not found for current user');
         }
 
         // Handle song file upload
@@ -126,8 +162,8 @@ try {
             $artistId,
             $genre,
             $duration,
-            '/uploads/songs/' . $songFilename,
-            $coverArtPath ? '/uploads/artwork/' . basename($coverArtPath) : null
+            'uploads/songs/' . $songFilename,
+            $coverArtPath ? 'uploads/artwork/' . basename($coverArtPath) : null
         ]);
 
         $songId = $pdo->lastInsertId();
@@ -136,9 +172,50 @@ try {
             'success' => true,
             'message' => 'Song uploaded successfully and pending review',
             'data' => [
-                'song_id' => $songId,
-                'file_path' => '/uploads/songs/' . $songFilename,
-                'cover_art' => $coverArtPath ? '/uploads/artwork/' . basename($coverArtPath) : null
+                'cover_art' => $coverArtPath ? 'uploads/artwork/' . basename($coverArtPath) : null
+            ]
+        ];
+
+    } elseif ($uploadType === 'profile_image') {
+        // Handle profile image upload
+        if (!isset($_FILES['profile_image'])) {
+            throw new Exception('Profile image file is required');
+        }
+
+        $imageFile = $_FILES['profile_image'];
+        $allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $maxImageSize = 5 * 1024 * 1024; // 5MB
+
+        if (!in_array($imageFile['type'], $allowedImageTypes)) {
+            throw new Exception('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+        }
+
+        if ($imageFile['size'] > $maxImageSize) {
+            throw new Exception('File size exceeds 5MB limit.');
+        }
+
+        $extension = pathinfo($imageFile['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('avatar_', true) . '.' . $extension;
+        $avatarPath = $avatarsDir . $filename;
+        $webPath = 'uploads/avatars/' . $filename;
+
+        if (!move_uploaded_file($imageFile['tmp_name'], $avatarPath)) {
+            throw new Exception('Failed to save profile image');
+        }
+
+        // Update user record in database
+        $userId = $_SESSION['user']['id'];
+        $stmt = $pdo->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+        $stmt->execute([$webPath, $userId]);
+        
+        // Update session
+        $_SESSION['user']['avatar'] = $webPath;
+
+        $response = [
+            'success' => true,
+            'message' => 'Profile photo updated successfully',
+            'data' => [
+                'file_path' => $webPath
             ]
         ];
 
@@ -172,7 +249,7 @@ try {
             'success' => true,
             'message' => 'Cover art uploaded successfully',
             'data' => [
-                'file_path' => '/uploads/artwork/' . $coverFilename
+                'file_path' => 'uploads/artwork/' . $coverFilename
             ]
         ];
 
@@ -181,6 +258,7 @@ try {
     }
 
 } catch (Exception $e) {
+    debugLog("Exception: " . $e->getMessage());
     $response = [
         'success' => false,
         'message' => $e->getMessage()
@@ -195,5 +273,6 @@ try {
     }
 }
 
+debugLog("Response: " . json_encode($response));
 echo json_encode($response);
 ?>
