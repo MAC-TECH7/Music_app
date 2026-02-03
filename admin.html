@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -30,8 +30,8 @@
             --bg-tertiary: #3a3a4e;
             /* Even lighter */
             --text-primary: var(--light-color);
-            --text-secondary: #b3b3b3;
-            --text-muted: #808080;
+            --text-secondary: #ffffff;
+            --text-muted: #ffffff;
             --accent-primary: var(--primary-color);
             --accent-secondary: var(--secondary-color);
             --accent-hover: #e55a2e;
@@ -88,15 +88,23 @@
         }
 
         .sidebar-header {
-            padding: var(--spacing-lg);
+            padding: var(--spacing-xl) var(--spacing-lg);
             border-bottom: 1px solid var(--border-color);
+            text-align: center;
         }
 
         .sidebar-header h1 {
             color: var(--accent-primary);
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 28px;
+            font-weight: 900;
+            margin: 0;
             font-family: 'Montserrat', sans-serif;
+        }
+
+        .sidebar-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: var(--spacing-xs);
         }
 
         .sidebar-nav {
@@ -545,6 +553,34 @@
             color: #dc2626;
         }
 
+        .btn-action.suspend:hover {
+            border-color: #ca8a04;
+            color: #ca8a04;
+        }
+
+        .btn-action.reset:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .btn-action.verify:hover,
+        .btn-action.approve:hover {
+            border-color: #16a34a;
+            color: #16a34a;
+        }
+
+        .btn-action.unverify:hover,
+        .btn-action.reject:hover {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
+        .btn-action.ban:hover,
+        .btn-action.block:hover {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
         /* Badges */
         .badge {
             padding: 4px 8px;
@@ -560,6 +596,24 @@
 
         .bg-warning {
             background-color: #ca8a04 !important;
+        }
+
+        .modal-content p,
+        .modal-content label,
+        .modal-content span:not(.badge),
+        .modal-content .text-muted,
+        .modal-content .text-secondary,
+        .modal-content small {
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .modal-body label {
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            display: block;
         }
 
         .bg-danger {
@@ -591,6 +645,7 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            overflow: hidden;
         }
 
         /* Modal Styles */
@@ -680,7 +735,8 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>AfroRhythm</h1>
+                <h1><i class="fas fa-drum"></i> AfroRhythm</h1>
+                <p>Discover Cameroonian Music</p>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-view="dashboard">
@@ -1107,195 +1163,6 @@
                     </div>
                 </div>
 
-                <!-- Subscriptions View -->
-                <div id="subscriptionsSection" class="dashboard-view">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2>Subscription Management</h2>
-                        <button class="btn-primary" id="addSubscriptionPlanBtn">
-                            <i class="fas fa-plus"></i> Add New Plan
-                        </button>
-                    </div>
-
-                    <!-- Subscription Stats -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon revenue">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                                <div>
-                                    <div class="stat-value">$8,450</div>
-                                    <div class="stat-label">Monthly Revenue</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon users">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div>
-                                    <div class="stat-value">1,250</div>
-                                    <div class="stat-label">Active Subscribers</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon artists">
-                                    <i class="fas fa-microphone-alt"></i>
-                                </div>
-                                <div>
-                                    <div class="stat-value">320</div>
-                                    <div class="stat-label">Artist Subscriptions</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon songs">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <div>
-                                    <div class="stat-value">15.2%</div>
-                                    <div class="stat-label">Conversion Rate</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Subscription Plans -->
-                    <div class="data-table" style="margin-bottom: var(--spacing-xxl);">
-                        <div class="table-header">
-                            <h3>Subscription Plans</h3>
-                        </div>
-                        <div class="table-content">
-                            <table class="table table-dark table-striped" id="subscriptionPlansTable">
-                                <thead>
-                                    <tr>
-                                        <th>Plan Name</th>
-                                        <th>Price</th>
-                                        <th>Duration</th>
-                                        <th>Features</th>
-                                        <th>Subscribers</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Fan Basic</td>
-                                        <td>$4.99/month</td>
-                                        <td>Monthly</td>
-                                        <td>Ad-free listening, Offline downloads</td>
-                                        <td>850</td>
-                                        <td><span class="status-badge status-active">Active</span></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
-                                                <button class="btn-action delete"><i class="fas fa-trash"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Fan Premium</td>
-                                        <td>$9.99/month</td>
-                                        <td>Monthly</td>
-                                        <td>All Basic + HD audio, Unlimited skips</td>
-                                        <td>400</td>
-                                        <td><span class="status-badge status-active">Active</span></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
-                                                <button class="btn-action delete"><i class="fas fa-trash"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Artist Pro</td>
-                                        <td>$19.99/month</td>
-                                        <td>Monthly</td>
-                                        <td>Upload unlimited songs, Analytics dashboard</td>
-                                        <td>320</td>
-                                        <td><span class="status-badge status-active">Active</span></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
-                                                <button class="btn-action delete"><i class="fas fa-trash"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Recent Subscriptions -->
-                    <div class="data-table">
-                        <div class="table-header">
-                            <h3>Recent Subscriptions</h3>
-                            <button class="btn-secondary" id="refreshSubscriptionsBtn">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                        </div>
-                        <div class="table-content">
-                            <table class="table table-dark table-striped" id="recentSubscriptionsTable">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Plan</th>
-                                        <th>Amount</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>John Smith</td>
-                                        <td>Fan Premium</td>
-                                        <td>$9.99</td>
-                                        <td>2024-01-15</td>
-                                        <td><span class="status-badge status-active">Active</span></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <button class="btn-action view"><i class="fas fa-eye"></i></button>
-                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Sarah Johnson</td>
-                                        <td>Artist Pro</td>
-                                        <td>$19.99</td>
-                                        <td>2024-01-14</td>
-                                        <td><span class="status-badge status-active">Active</span></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <button class="btn-action view"><i class="fas fa-eye"></i></button>
-                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Mike Wilson</td>
-                                        <td>Fan Basic</td>
-                                        <td>$4.99</td>
-                                        <td>2024-01-13</td>
-                                        <td><span class="status-badge status-expired">Expired</span></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <button class="btn-action view"><i class="fas fa-eye"></i></button>
-                                                <button class="btn-action edit"><i class="fas fa-edit"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Reports View -->
                 <div id="reportsSection" class="dashboard-view">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1558,6 +1425,118 @@
                     </div>
                 </div>
 
+                <!-- Subscriptions View -->
+                <div id="subscriptionsSection" class="dashboard-view">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Subscription Management</h2>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" id="managePlansBtn">
+                                <i class="fas fa-cog"></i> Manage Pricing Plans
+                            </button>
+                            <button class="btn btn-primary" id="addSubscriptionBtn">
+                                <i class="fas fa-plus"></i> Add New Subscription
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="activeSubscriptions">1,250</div>
+                                    <div class="stat-label">Active Subscriptions</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon users">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="newSubscribers">45</div>
+                                    <div class="stat-label">New This Month</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon artists">
+                                    <i class="fas fa-ban"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="expiredSubscriptions">12</div>
+                                    <div class="stat-label">Expired Plans</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon songs">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value" id="subscriptionRevenue">$5,200</div>
+                                    <div class="stat-label">Monthly Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Plans Table -->
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>Subscription Plans</h3>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="subscriptionPlansTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Plan Name</th>
+                                        <th>Subscriber</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subscriptionPlansTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Subscriptions Table -->
+                    <div class="data-table">
+                        <div class="table-header">
+                            <h3>Recent Subscriptions</h3>
+                        </div>
+                        <div class="table-content">
+                            <table class="table table-dark table-striped" id="recentSubscriptionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Plan Name</th>
+                                        <th>Subscriber</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentSubscriptionsTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Settings View -->
                 <div id="settingsSection" class="dashboard-view">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1575,30 +1554,23 @@
                                 <h3>General Settings</h3>
                             </div>
                             <div class="table-content">
-                                <div class="form-group">
-                                    <label class="form-label">Platform Name</label>
-                                    <input type="text" id="settingPlatformName" class="form-control" value="AfroRhythm">
+                                <div class="form-group mb-3">
+                                    <label class="form-label font-weight-bold">Platform Name</label>
+                                    <input type="text" id="platformName" class="form-control" value="AfroRhythm">
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Default Language</label>
-                                    <select id="settingLanguage" class="form-control">
-                                        <option value="en">English</option>
-                                        <option value="fr" selected>French</option>
-                                        <option value="es">Spanish</option>
-                                    </select>
+                                <div class="form-group mb-3">
+                                    <label class="form-label font-weight-bold">Platform Description</label>
+                                    <textarea id="platformDesc" class="form-control"
+                                        rows="2">Standardizing African Rhythm</textarea>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Timezone</label>
-                                    <select id="settingTimezone" class="form-control">
-                                        <option value="utc">UTC</option>
-                                        <option value="wat" selected>West Africa Time (WAT)</option>
-                                        <option value="cat">Central Africa Time (CAT)</option>
-                                    </select>
+                                <div class="form-group mb-3">
+                                    <label class="form-label font-weight-bold">Contact Email</label>
+                                    <input type="email" id="contactEmail" class="form-control"
+                                        value="contact@afrohythm.com">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">
-                                        <input type="checkbox" id="settingEnableRegistration" checked> Enable
-                                        Registration
+                                        <input type="checkbox" id="maintenanceMode"> Enable Maintenance Mode
                                     </label>
                                 </div>
                             </div>
@@ -1610,27 +1582,21 @@
                                 <h3>Content Moderation</h3>
                             </div>
                             <div class="table-content">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">
-                                        <input type="checkbox" id="settingAutoApproveArtists" checked> Auto-approve
-                                        Artist Applications
+                                        <input type="checkbox" id="artistAutoApprove" checked> Auto-approve Artist
+                                        Applications
                                     </label>
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">
-                                        <input type="checkbox" id="settingEnableFiltering" checked> Enable Content
-                                        Filtering
+                                        <input type="checkbox" id="songAutoApprove" checked> Auto-approve Song Uploads
                                     </label>
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">Max File Size (MB)</label>
-                                    <input type="number" id="settingMaxFileSize" class="form-control" value="50" min="1"
+                                    <input type="number" id="maxUploadSize" class="form-control" value="50" min="1"
                                         max="500">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Allowed File Types</label>
-                                    <input type="text" id="settingFileTypes" class="form-control"
-                                        value="mp3, wav, flac, m4a">
                                 </div>
                             </div>
                         </div>
@@ -1641,27 +1607,20 @@
                                 <h3>Payment Settings</h3>
                             </div>
                             <div class="table-content">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">Currency</label>
-                                    <select class="form-control">
-                                        <option value="usd">USD ($)</option>
-                                        <option value="eur">EUR (€)</option>
-                                        <option value="xaf" selected>XAF (FCFA)</option>
+                                    <select id="currency" class="form-control">
+                                        <option value="USD">USD ($)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                        <option value="XAF" selected>XAF (FCFA)</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Platform Fee (%)</label>
-                                    <input type="number" class="form-control" value="15" min="0" max="50" step="0.5">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        <input type="checkbox" checked> Enable Stripe Payments
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        <input type="checkbox"> Enable PayPal
-                                    </label>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Payment Mode</label>
+                                    <select id="paymentMode" class="form-control">
+                                        <option value="live">Live/Production</option>
+                                        <option value="sandbox" selected>Sandbox/Testing</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1672,22 +1631,17 @@
                                 <h3>Email Configuration</h3>
                             </div>
                             <div class="table-content">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">SMTP Server</label>
-                                    <input type="text" class="form-control" value="smtp.gmail.com">
+                                    <input type="text" id="smtpHost" class="form-control" value="smtp.gmail.com">
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">SMTP Port</label>
-                                    <input type="number" class="form-control" value="587">
+                                    <input type="number" id="smtpPort" class="form-control" value="587">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">
-                                        <input type="checkbox" checked> Enable Email Notifications
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <button class="btn-secondary w-100">
-                                        <i class="fas fa-envelope"></i> Test Email Configuration
+                                    <button class="btn btn-outline-info w-100 mt-2">
+                                        <i class="fas fa-envelope me-1"></i> Test Email Configuration
                                     </button>
                                 </div>
                             </div>
@@ -1698,14 +1652,17 @@
         </div>
     </div>
 
+    <!-- ============================================================== -->
+    <!-- MODALS CONTAINER -->
+    <!-- ============================================================== -->
+
     <!-- Add User Modal -->
     <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content"
                 style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="addUserModalLabel">
-                        <i class="fas fa-user-plus me-2"></i>Add New User
+                    <h5 class="modal-title" id="addUserModalLabel"><i class="fas fa-user-plus me-2"></i>Add New User
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
@@ -1713,19 +1670,15 @@
                 <div class="modal-body">
                     <form id="addUserForm">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="userFirstName" class="form-label">First Name *</label>
-                                    <input type="text" class="form-control" id="userFirstName" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="userFirstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="userFirstName" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="userLastName" class="form-label">Last Name *</label>
-                                    <input type="text" class="form-control" id="userLastName" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="userLastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="userLastName" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
                         </div>
                         <div class="mb-3">
@@ -1734,63 +1687,48 @@
                                 style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="userPhone" class="form-label">Phone Number</label>
-                                    <input type="tel" class="form-control" id="userPhone" placeholder="+237 XXX XXX XXX"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="userPhone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="userPhone" placeholder="+237 XXX XXX XXX"
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="userType" class="form-label">User Type *</label>
-                                    <select class="form-control" id="userType" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                        <option value="">Select Type</option>
-                                        <option value="fan">Fan</option>
-                                        <option value="artist">Artist</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="userType" class="form-label">User Type *</label>
+                                <select class="form-control" id="userType" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="">Select Type</option>
+                                    <option value="fan">Fan</option>
+                                    <option value="artist">Artist</option>
+                                    <option value="moderator">Moderator</option>
+                                    <option value="admin">Admin</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="userPassword" class="form-label">Password *</label>
-                            <input type="password" class="form-control" id="userPassword" required
-                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                        </div>
-                        <div class="mb-3">
-                            <label for="userConfirmPassword" class="form-label">Confirm Password *</label>
-                            <input type="password" class="form-control" id="userConfirmPassword" required
-                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="userPassword" class="form-label">Password *</label>
+                                <input type="password" class="form-control" id="userPassword" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="userConfirmPassword" class="form-label">Confirm Password *</label>
+                                <input type="password" class="form-control" id="userConfirmPassword" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Account Status</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="userActive" checked>
-                                <label class="form-check-label" for="userActive">
-                                    Active Account
-                                </label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email Notifications</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="userEmailNotifications" checked>
-                                <label class="form-check-label" for="userEmailNotifications">
-                                    Send welcome email
-                                </label>
+                                <label class="form-check-label" for="userActive">Active Account</label>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="addNewUser()">
-                        <i class="fas fa-save me-1"></i>Create User
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewUser()"><i
+                            class="fas fa-save me-1"></i>Create User</button>
                 </div>
             </div>
         </div>
@@ -1802,9 +1740,8 @@
             <div class="modal-content"
                 style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="addArtistModalLabel">
-                        <i class="fas fa-microphone-alt me-2"></i>Add New Artist
-                    </h5>
+                    <h5 class="modal-title" id="addArtistModalLabel"><i class="fas fa-microphone-alt me-2"></i>Add New
+                        Artist</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
@@ -1816,33 +1753,28 @@
                                 style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="artistGenre" class="form-label">Primary Genre *</label>
-                                    <select class="form-control" id="artistGenre" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                        <option value="">Select Genre</option>
-                                        <option value="Afrobeat">Afrobeat</option>
-                                        <option value="Highlife">Highlife</option>
-                                        <option value="Makossa">Makossa</option>
-                                        <option value="Bikutsi">Bikutsi</option>
-                                        <option value="Hip Hop">Hip Hop</option>
-                                        <option value="R&B">R&B</option>
-                                        <option value="Reggae">Reggae</option>
-                                        <option value="Jazz">Jazz</option>
-                                        <option value="Gospel">Gospel</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="artistGenre" class="form-label">Primary Genre *</label>
+                                <select class="form-control" id="artistGenre" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="">Select Genre</option>
+                                    <option value="Makossa">Makossa</option>
+                                    <option value="Bikutsi">Bikutsi</option>
+                                    <option value="Afrobeat">Afrobeat</option>
+                                    <option value="Assiko">Assiko</option>
+                                    <option value="Traditional">Traditional</option>
+                                    <option value="Gospel">Gospel</option>
+                                    <option value="Bend Skin">Bend Skin</option>
+                                    <option value="Hip Hop">Hip Hop</option>
+                                    <option value="R&B">R&B</option>
+                                </select>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="artistUserId" class="form-label">Associated User</label>
-                                    <select class="form-control" id="artistUserId"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                        <option value="">Select User (Optional)</option>
-                                    </select>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="artistUserId" class="form-label">Associated User ID</label>
+                                <select class="form-control" id="artistUserId"
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="">Select User (Optional)</option>
+                                </select>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -1851,40 +1783,12 @@
                                 placeholder="Tell us about this artist..."
                                 style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);"></textarea>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="artistFollowers" class="form-label">Initial Followers</label>
-                                    <input type="number" class="form-control" id="artistFollowers" value="0" min="0"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="artistSongsCount" class="form-label">Songs Count</label>
-                                    <input type="number" class="form-control" id="artistSongsCount" value="0" min="0"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Verification Status</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="artistVerified">
-                                <label class="form-check-label" for="artistVerified">
-                                    Mark as verified artist
-                                </label>
-                            </div>
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="addNewArtist()">
-                        <i class="fas fa-save me-1"></i>Create Artist
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewArtist()"><i
+                            class="fas fa-save me-1"></i>Create Artist</button>
                 </div>
             </div>
         </div>
@@ -1896,9 +1800,7 @@
             <div class="modal-content"
                 style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="addSongModalLabel">
-                        <i class="fas fa-music me-2"></i>Add New Song
-                    </h5>
+                    <h5 class="modal-title" id="addSongModalLabel"><i class="fas fa-music me-2"></i>Add New Song</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
@@ -1910,197 +1812,117 @@
                                 style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="songArtist" class="form-label">Artist *</label>
-                                    <select class="form-control" id="songArtist" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                        <option value="">Select Artist</option>
-                                    </select>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="songArtist" class="form-label">Artist *</label>
+                                <select class="form-control" id="songArtist" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="">Select Artist</option>
+                                </select>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="songGenre" class="form-label">Genre *</label>
-                                    <select class="form-control" id="songGenre" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                        <option value="">Select Genre</option>
-                                        <option value="Afrobeat">Afrobeat</option>
-                                        <option value="Highlife">Highlife</option>
-                                        <option value="Makossa">Makossa</option>
-                                        <option value="Bikutsi">Bikutsi</option>
-                                        <option value="Hip Hop">Hip Hop</option>
-                                        <option value="R&B">R&B</option>
-                                        <option value="Reggae">Reggae</option>
-                                        <option value="Jazz">Jazz</option>
-                                        <option value="Gospel">Gospel</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="songGenre" class="form-label">Genre *</label>
+                                <select class="form-control" id="songGenre" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="">Select Genre</option>
+                                    <option value="Makossa">Makossa</option>
+                                    <option value="Bikutsi">Bikutsi</option>
+                                    <option value="Afrobeat">Afrobeat</option>
+                                    <option value="Assiko">Assiko</option>
+                                    <option value="Traditional">Traditional</option>
+                                    <option value="Gospel">Gospel</option>
+                                    <option value="Bend Skin">Bend Skin</option>
+                                    <option value="Hip Hop">Hip Hop</option>
+                                    <option value="R&B">R&B</option>
+                                </select>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="songDuration" class="form-label">Duration (MM:SS) *</label>
-                                    <input type="text" class="form-control" id="songDuration" placeholder="03:45"
-                                        required pattern="^\d{1,2}:\d{2}$"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="songDuration" class="form-label">Duration (MM:SS) *</label>
+                                <input type="text" class="form-control" id="songDuration" placeholder="03:45" required
+                                    pattern="^\d{1,2}:\d{2}$"
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="songPlays" class="form-label">Initial Plays</label>
-                                    <input type="number" class="form-control" id="songPlays" value="0" min="0"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="songFilePath" class="form-label">Audio File Path</label>
-                            <input type="text" class="form-control" id="songFilePath"
-                                placeholder="/uploads/songs/filename.mp3"
-                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                        </div>
-                        <div class="mb-3">
-                            <label for="songCoverArt" class="form-label">Cover Art URL</label>
-                            <input type="url" class="form-control" id="songCoverArt"
-                                placeholder="https://example.com/cover.jpg"
-                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Song Status</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="songActive" checked>
-                                <label class="form-check-label" for="songActive">
-                                    Publish song immediately
-                                </label>
+                            <div class="col-md-6 mb-3">
+                                <label for="songStatus" class="form-label">Status</label>
+                                <select class="form-control" id="songStatus"
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                </select>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="addNewSong()">
-                        <i class="fas fa-save me-1"></i>Create Song
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewSong()"><i
+                            class="fas fa-save me-1"></i>Create Song</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Subscription Plan Modal -->
+    <!-- Add Subscription Modal -->
     <div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content"
                 style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="addSubscriptionModalLabel">
-                        <i class="fas fa-crown me-2"></i>Add Subscription Plan
-                    </h5>
+                    <h5 class="modal-title" id="addSubscriptionModalLabel"><i class="fas fa-crown me-2"></i>Add
+                        Subscription</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addSubscriptionForm">
                         <div class="mb-3">
-                            <label for="planName" class="form-label">Plan Name *</label>
-                            <input type="text" class="form-control" id="planName" required
+                            <label for="planUser" class="form-label">Subscriber *</label>
+                            <select class="form-control" id="planUser" required
                                 style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                <option value="">Select User</option>
+                            </select>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planAmount" class="form-label">Price (XAF) *</label>
-                                    <input type="number" class="form-control" id="planAmount" required min="0"
-                                        step="100"
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="planName" class="form-label">Plan *</label>
+                                <select class="form-control" id="planName" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                                    <option value="Free">Free</option>
+                                    <option value="Premium">Premium</option>
+                                    <option value="Family">Family</option>
+                                </select>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planUser" class="form-label">Subscriber *</label>
-                                    <select class="form-control" id="planUser" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                        <option value="">Select User</option>
-                                    </select>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="planAmount" class="form-label">Price (XAF) *</label>
+                                <input type="number" class="form-control" id="planAmount" required min="0"
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planStartDate" class="form-label">Start Date *</label>
-                                    <input type="date" class="form-control" id="planStartDate" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="planStartDate" class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" id="planStartDate" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planEndDate" class="form-label">End Date *</label>
-                                    <input type="date" class="form-control" id="planEndDate" required
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Plan Features</label>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="featureUnlimited">
-                                        <label class="form-check-label" for="featureUnlimited">
-                                            Unlimited Downloads
-                                        </label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="featureAdFree">
-                                        <label class="form-check-label" for="featureAdFree">
-                                            Ad-Free Listening
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="featureOffline">
-                                        <label class="form-check-label" for="featureOffline">
-                                            Offline Access
-                                        </label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="featureHighQuality">
-                                        <label class="form-check-label" for="featureHighQuality">
-                                            High Quality Audio
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Subscription Status</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="planActive" checked>
-                                <label class="form-check-label" for="planActive">
-                                    Activate subscription immediately
-                                </label>
+                            <div class="col-md-6 mb-3">
+                                <label for="planEndDate" class="form-label">End Date *</label>
+                                <input type="date" class="form-control" id="planEndDate" required
+                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="addNewSubscription()">
-                        <i class="fas fa-save me-1"></i>Create Subscription
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewSubscription()"><i
+                            class="fas fa-save me-1"></i>Create Subscription</button>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Notifications Modal -->
     <div class="modal fade" id="notificationsModal" tabindex="-1" aria-labelledby="notificationsModalLabel"
@@ -2109,63 +1931,21 @@
             <div class="modal-content"
                 style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="notificationsModalLabel">
-                        <i class="fas fa-bell me-2"></i>Notifications
+                    <h5 class="modal-title" id="notificationsModalLabel"><i class="fas fa-bell me-2"></i>Notifications
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="notification-list">
-                        <div class="notification-item unread">
-                            <div class="notification-icon">
-                                <i class="fas fa-user-plus text-success"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">New User Registration</div>
-                                <div class="notification-message">John Doe has joined the platform</div>
-                                <div class="notification-time">2 minutes ago</div>
-                            </div>
-                        </div>
-                        <div class="notification-item unread">
-                            <div class="notification-icon">
-                                <i class="fas fa-music text-primary"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">New Song Uploaded</div>
-                                <div class="notification-message">Artist "Afro Beats" uploaded "Rhythm of Africa"</div>
-                                <div class="notification-time">15 minutes ago</div>
-                            </div>
-                        </div>
-                        <div class="notification-item">
-                            <div class="notification-icon">
-                                <i class="fas fa-exclamation-triangle text-warning"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">System Alert</div>
-                                <div class="notification-message">Server maintenance scheduled for tonight</div>
-                                <div class="notification-time">1 hour ago</div>
-                            </div>
-                        </div>
-                        <div class="notification-item">
-                            <div class="notification-icon">
-                                <i class="fas fa-dollar-sign text-success"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">Payment Received</div>
-                                <div class="notification-message">$25.00 received from Premium subscription</div>
-                                <div class="notification-time">2 hours ago</div>
-                            </div>
-                        </div>
+                    <div class="notification-list" id="notificationList">
+                        <!-- Populated by JS -->
+                        <div class="text-center py-4 text-muted">No new notifications</div>
                     </div>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-outline-secondary" onclick="markAllAsRead()">
-                        <i class="fas fa-check-double me-1"></i>Mark All as Read
-                    </button>
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Close
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="markAllAsRead()"><i
+                            class="fas fa-check-double me-1"></i>Mark All as Read</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -2178,9 +1958,8 @@
             <div class="modal-content"
                 style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="adminProfileModalLabel">
-                        <i class="fas fa-user-cog me-2"></i>Admin Profile & Settings
-                    </h5>
+                    <h5 class="modal-title" id="adminProfileModalLabel"><i class="fas fa-user-cog me-2"></i>Admin
+                        Profile & Settings</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
@@ -2188,79 +1967,437 @@
                     <div class="row">
                         <div class="col-md-4 text-center">
                             <div class="avatar mb-3"
-                                style="width: 100px; height: 100px; font-size: 36px; margin: 0 auto;">AD</div>
-                            <h6>Admin User</h6>
+                                style="width: 100px; height: 100px; font-size: 36px; margin: 0 auto; background: var(--primary-color); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                AD</div>
+                            <h6 id="profileDisplayName">Admin User</h6>
                             <p class="text-muted">Administrator</p>
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-camera me-1"></i>Change Avatar
-                            </button>
                         </div>
                         <div class="col-md-8">
-                            <form>
+                            <form id="adminProfileForm">
                                 <div class="mb-3">
-                                    <label for="adminName" class="form-label">Full Name</label>
+                                    <label class="form-label">Full Name</label>
                                     <input type="text" class="form-control" id="adminName" value="Admin User"
                                         style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="adminEmail" class="form-label">Email Address</label>
+                                    <label class="form-label">Email Address</label>
                                     <input type="email" class="form-control" id="adminEmail" value="admin@afrohythm.com"
                                         style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="adminRole" class="form-label">Role</label>
-                                    <input type="text" class="form-control" id="adminRole" value="Super Administrator"
-                                        readonly
-                                        style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="adminLastLogin" class="form-label">Last Login</label>
-                                    <input type="text" class="form-control" id="adminLastLogin"
-                                        value="December 24, 2025 - 10:30 AM" readonly
+                                    <label class="form-label">New Password (leave blank to keep current)</label>
+                                    <input type="password" class="form-control" id="adminNewPassword"
                                         style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
                                 </div>
                             </form>
                         </div>
                     </div>
-                    <hr style="border-color: var(--border-color);">
-                    <div class="row">
-                        <div class="col-12">
-                            <h6>Account Settings</h6>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
-                                <label class="form-check-label" for="emailNotifications">
-                                    Email Notifications
-                                </label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="twoFactorAuth">
-                                <label class="form-check-label" for="twoFactorAuth">
-                                    Two-Factor Authentication
-                                </label>
-                            </div>
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="autoLogout" checked>
-                                <label class="form-check-label" for="autoLogout">
-                                    Auto-logout after 30 minutes of inactivity
-                                </label>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-outline-danger me-auto">
-                        <i class="fas fa-sign-out-alt me-1"></i>Logout
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="saveAdminProfile()">
-                        <i class="fas fa-save me-1"></i>Save Changes
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAdminProfile()"><i
+                            class="fas fa-save me-1"></i>Save Profile</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Manage Plans Modal -->
+    <div class="modal fade" id="managePlansModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-tasks me-2"></i>Manage Subscription Plans</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Existing Plans</h6>
+                        <button class="btn btn-primary btn-sm" id="addNewPlanBtn">
+                            <i class="fas fa-plus me-1"></i>Add New Plan
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Plan Name</th>
+                                    <th>Price</th>
+                                    <th>Period</th>
+                                    <th>Description</th>
+                                    <th>Popular</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plansTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Plan Modal -->
+    <div class="modal fade" id="addEditPlanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content"
+                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title" id="addEditPlanModalLabel"><i class="fas fa-plus me-2"></i>Add New Plan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="planForm">
+                        <input type="hidden" id="planId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="formPlanName" class="form-label">Plan Name *</label>
+                                <input type="text" class="form-control" id="formPlanName" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="formPlanPrice" class="form-label">Price *</label>
+                                <input type="number" class="form-control" id="formPlanPrice" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="formPlanCurrency" class="form-label">Currency *</label>
+                                <input type="text" class="form-control" id="formPlanCurrency" value="XAF" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="formPlanPeriod" class="form-label">Billing Period *</label>
+                                <select class="form-control" id="formPlanPeriod" required>
+                                    <option value="month">Monthly</option>
+                                    <option value="year">Yearly</option>
+                                    <option value="once">One-time</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="formPlanButtonText" class="form-label">Button Text</label>
+                                <input type="text" class="form-control" id="formPlanButtonText"
+                                    placeholder="Get Started">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="formPlanDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="formPlanDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="formPlanFeatures" class="form-label">Features (one per line)</label>
+                            <textarea class="form-control" id="formPlanFeatures" rows="4"
+                                placeholder="Unlimited skips&#10;Ad-free music&#10;Offline mode"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formPlanPopular">
+                                <label class="form-check-label" for="formPlanPopular">Mark as Most Popular</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="savePlan()"><i
+                            class="fas fa-save me-1"></i>Save Plan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- View User Modal -->
+    <div class="modal fade" id="viewUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-user me-2"></i>User Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewUserModalBody">
+                    <!-- Details will be populated here -->
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Artist Modal -->
+    <div class="modal fade" id="viewArtistModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-microphone-alt me-2"></i>Artist Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewArtistModalBody">
+                    <!-- Details will be populated here -->
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Song Modal -->
+    <div class="modal fade" id="viewSongModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-music me-2"></i>Song Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewSongModalBody">
+                    <!-- Details will be populated here -->
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Subscription Modal -->
+    <div class="modal fade" id="viewSubscriptionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i>Subscription Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewSubscriptionModalBody">
+                    <!-- Details will be populated here -->
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Edit User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <input type="hidden" id="editUserId">
+                        <div class="mb-3">
+                            <label for="editUserName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="editUserName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="editUserEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserPhone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="editUserPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserType" class="form-label">Type *</label>
+                            <select class="form-control" id="editUserType" required>
+                                <option value="fan">Fan</option>
+                                <option value="artist">Artist</option>
+                                <option value="moderator">Moderator</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUserStatus" class="form-label">Status *</label>
+                            <select class="form-control" id="editUserStatus" required>
+                                <option value="active">Active</option>
+                                <option value="pending">Pending</option>
+                                <option value="blocked">Blocked</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUserEdit()"><i
+                            class="fas fa-save me-1"></i>Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Artist Modal -->
+    <div class="modal fade" id="editArtistModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-microphone-alt me-2"></i>Edit Artist</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editArtistForm">
+                        <input type="hidden" id="editArtistId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistName" class="form-label">Artist Name *</label>
+                                <input type="text" class="form-control" id="editArtistName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistGenre" class="form-label">Genre *</label>
+                                <select class="form-control" id="editArtistGenre" required>
+                                    <option value="Makossa">Makossa</option>
+                                    <option value="Bikutsi">Bikutsi</option>
+                                    <option value="Afrobeat">Afrobeat</option>
+                                    <option value="Assiko">Assiko</option>
+                                    <option value="Traditional">Traditional</option>
+                                    <option value="Gospel">Gospel</option>
+                                    <option value="Bend Skin">Bend Skin</option>
+                                    <option value="Hip Hop">Hip Hop</option>
+                                    <option value="R&B">R&B</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistStatus" class="form-label">Status *</label>
+                                <select class="form-control" id="editArtistStatus" required>
+                                    <option value="verified">Verified</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="blocked">Blocked</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistVerification" class="form-label">Verification *</label>
+                                <select class="form-control" id="editArtistVerification" required>
+                                    <option value="approved">Approved</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editArtistBio" class="form-label">Bio</label>
+                            <textarea class="form-control" id="editArtistBio" rows="3"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistInstagram" class="form-label">Instagram URL</label>
+                                <input type="url" class="form-control" id="editArtistInstagram"
+                                    placeholder="https://instagram.com/...">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistTwitter" class="form-label">Twitter URL</label>
+                                <input type="url" class="form-control" id="editArtistTwitter"
+                                    placeholder="https://twitter.com/...">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistFacebook" class="form-label">Facebook URL</label>
+                                <input type="url" class="form-control" id="editArtistFacebook"
+                                    placeholder="https://facebook.com/...">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editArtistYoutube" class="form-label">YouTube URL</label>
+                                <input type="url" class="form-control" id="editArtistYoutube"
+                                    placeholder="https://youtube.com/...">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveArtistEdit()"><i
+                            class="fas fa-save me-1"></i>Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Song Modal -->
+    <div class="modal fade" id="editSongModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content"
+                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-top: 1px solid var(--border-color);">
+                    <h5 class="modal-title"><i class="fas fa-music me-2"></i>Edit Song</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editSongForm">
+                        <input type="hidden" id="editSongId">
+                        <input type="hidden" id="editSongArtistId">
+                        <div class="mb-3">
+                            <label for="editSongTitle" class="form-label">Song Title *</label>
+                            <input type="text" class="form-control" id="editSongTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSongArtist" class="form-label">Artist (Read-only)</label>
+                            <input type="text" class="form-control" id="editSongArtist" readonly
+                                style="background-color: #1a1a2e; cursor: not-allowed;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSongGenre" class="form-label">Genre *</label>
+                            <select class="form-control" id="editSongGenre" required>
+                                <option value="Makossa">Makossa</option>
+                                <option value="Bikutsi">Bikutsi</option>
+                                <option value="Afrobeat">Afrobeat</option>
+                                <option value="Assiko">Assiko</option>
+                                <option value="Traditional">Traditional</option>
+                                <option value="Gospel">Gospel</option>
+                                <option value="Bend Skin">Bend Skin</option>
+                                <option value="Hip Hop">Hip Hop</option>
+                                <option value="R&B">R&B</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSongDuration" class="form-label">Duration (MM:SS)</label>
+                            <input type="text" class="form-control" id="editSongDuration" placeholder="4:32"
+                                pattern="[0-9]{1,2}:[0-9]{2}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSongStatus" class="form-label">Status *</label>
+                            <select class="form-control" id="editSongStatus" required>
+                                <option value="active">Active/Published</option>
+                                <option value="pending">Pending</option>
+                                <option value="blocked">Blocked</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSongEdit()"><i
+                            class="fas fa-save me-1"></i>Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     <!-- Bootstrap JS -->
     <script src="assets/lib/bootstrap/bootstrap.bundle.min.js"></script>
@@ -2271,9 +2408,10 @@
     <script src="assets/lib/chartjs/chart.min.js"></script>
     <script src="Js/utils.js"></script>
     <script src="Js/modal-player.js?v=4"></script>
-    <script src="Js/admin.js?v=2"></script>
+    <script src="Js/admin.js?v=3"></script>
     <script src="Js/admin-enhanced.js?v=1"></script>
     <script src="Js/admin-settings.js?v=1"></script>
+    <script src="Js/admin-plans.js?v=1"></script>
 </body>
 
 </html>

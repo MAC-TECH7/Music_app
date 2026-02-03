@@ -55,7 +55,7 @@
                         </div>
                         <div class="modal-body">
                             <div class="text-center mb-4">
-                                <img id="playingAlbumArt" src="https://via.placeholder.com/200?text=Cover" 
+                                <img id="playingAlbumArt" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%232a2a3e' stroke='%23444' stroke-width='2'/%3E%3Ctext x='50%25' y='50%25' fill='%23666' text-anchor='middle' dy='.3em' font-family='Arial' font-size='24'%3EAfroRhythm%3C/text%3E%3C/svg%3E" 
                                      alt="Album Art" 
                                      style="width: 200px; height: 200px; border-radius: 8px; object-fit: cover;">
                             </div>

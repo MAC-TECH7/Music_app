@@ -237,8 +237,34 @@
         }
 
         .footer {
-            background-color: #0f0f1a;
+            background-color: #0d0d1a !important;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff !important;
+        }
+
+        .footer .text-muted {
+            color: #a0a0b0 !important;
+        }
+
+        .footer a.text-muted:hover {
+            color: var(--primary-color) !important;
+        }
+
+        .footer h3,
+        .footer h5,
+        .footer h6 {
+            color: #ffffff !important;
+        }
+
+        .footer .btn-outline-light {
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            color: #ffffff !important;
+        }
+
+        .footer .btn-outline-light:hover {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: #ffffff !important;
         }
 
         .social-icons a {
@@ -1024,93 +1050,11 @@
                     <p class="text-center text-muted">Choose the plan that fits your career stage</p>
                 </div>
             </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-4 mb-4">
-                    <div class="card pricing-card h-100">
-                        <div class="card-header text-center py-4">
-                            <h4 class="card-title mb-0">Starter</h4>
-                            <div class="price mt-3">
-                                <span class="currency">FCFA</span>
-                                <span class="amount">5,000</span>
-                                <span class="period">/month</span>
-                            </div>
-                            <p class="text-muted mt-2">For upcoming artists</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <ul class="list-unstyled mb-4">
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Upload up to 10 songs
-                                </li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Basic analytics</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Standard audio quality
-                                </li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Artist profile page</li>
-                                <li class="mb-3"><i class="fas fa-times text-muted me-2"></i> No fan messaging</li>
-                                <li class="mb-3"><i class="fas fa-times text-muted me-2"></i> Limited promotion</li>
-                                <li class="mb-3"><i class="fas fa-times text-muted me-2"></i> 70% royalty rate</li>
-                            </ul>
-                            <a href="#" class="btn btn-outline-primary w-100">Start Free Trial</a>
-                            <p class="text-center mt-2 small text-muted">7-day free trial</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 mb-4">
-                    <div class="card pricing-card h-100 popular">
-                        <div class="popular-badge">MOST POPULAR</div>
-                        <div class="card-header text-center py-4">
-                            <h4 class="card-title mb-0">Professional</h4>
-                            <div class="price mt-3">
-                                <span class="currency">FCFA</span>
-                                <span class="amount">12,000</span>
-                                <span class="period">/month</span>
-                            </div>
-                            <p class="text-muted mt-2">For active musicians</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <ul class="list-unstyled mb-4">
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Unlimited song uploads
-                                </li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Advanced analytics</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> High-quality audio</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Fan messaging system
-                                </li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Promotion tools</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Priority support</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> 85% royalty rate</li>
-                            </ul>
-                            <a href="#" class="btn btn-primary w-100">Get Professional</a>
-                            <p class="text-center mt-2 small text-muted">14-day money-back guarantee</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 mb-4">
-                    <div class="card pricing-card h-100">
-                        <div class="card-header text-center py-4">
-                            <h4 class="card-title mb-0">Label</h4>
-                            <div class="price mt-3">
-                                <span class="currency">FCFA</span>
-                                <span class="amount">30,000</span>
-                                <span class="period">/month</span>
-                            </div>
-                            <p class="text-muted mt-2">For labels & collectives</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <ul class="list-unstyled mb-4">
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Up to 10 artist accounts
-                                </li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Label analytics
-                                    dashboard</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Lossless audio quality
-                                </li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Custom promotion
-                                    campaigns</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> Dedicated account
-                                    manager</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> API access</li>
-                                <li class="mb-3"><i class="fas fa-check text-success me-2"></i> 90% royalty rate</li>
-                            </ul>
-                            <a href="#" class="btn btn-outline-primary w-100">Contact Sales</a>
-                            <p class="text-center mt-2 small text-muted">Custom solutions available</p>
-                        </div>
+            <div class="row justify-content-center" id="pricing-plans-container">
+                <!-- Dynamic Plans will be loaded here -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
             </div>
@@ -1162,6 +1106,20 @@
                         <a href="#" class="me-3"><i class="fab fa-youtube"></i></a>
                         <a href="#" class="me-3"><i class="fab fa-tiktok"></i></a>
                     </div>
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-2">Dashboards</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="auth/login.html?role=fan" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-headphones me-1"></i>Fan
+                            </a>
+                            <a href="auth/login.html?role=artist" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-microphone-alt me-1"></i>Artist
+                            </a>
+                            <a href="auth/login.html?role=admin" class="btn btn-primary btn-sm">
+                                <i class="fas fa-user-shield me-1"></i>Admin Login
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-lg-2 col-md-6 mb-4">
                     <h5 class="mb-3">For Artists</h5>
@@ -1192,6 +1150,9 @@
                         <li class="mb-2"><a href="#" class="text-muted">Partnerships</a></li>
                         <li class="mb-2"><a href="#" class="text-muted">Press Kit</a></li>
                         <li class="mb-2"><a href="contact.html" class="text-muted">Contact</a></li>
+                        <li class="mb-2 border-top pt-2 mt-2"><a href="auth/login.html?role=admin"
+                                class="text-primary fw-bold" style="text-decoration: none;"><i
+                                    class="fas fa-key me-1"></i>Admin Access</a></li>
                     </ul>
                     <div class="mt-4">
                         <p class="text-muted mb-2">Stay updated on Cameroonian music</p>
@@ -1204,10 +1165,18 @@
             </div>
             <hr class="my-4">
             <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">&copy; 2023 AfroRhythm. Proudly supporting Cameroonian music.</p>
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <p class="text-muted mb-0">&copy; 2026 AfroRhythm. Proudly supporting Cameroonian music.</p>
+                    <p class="text-muted small mb-0">Developed by <span class="text-primary fw-bold"
+                            style="letter-spacing: 1px;">ENGR MAC-TECH</span></p>
                     <p class="text-muted small mb-0">Headquarters: Yaoundé, Cameroon | Offices: Douala, Buea, Bamenda
                     </p>
+                    <div class="mt-4 text-md-start">
+                        <a href="auth/login.html?role=admin" class="btn btn-sm admin-portal-btn"
+                            style="font-size: 11px; background-color: rgba(255, 107, 53, 0.05); color: var(--accent-primary); border: 1px solid var(--accent-primary); padding: 5px 15px; border-radius: 20px; transition: all 0.3s ease; display: inline-block; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+                            <i class="fas fa-lock me-2"></i>Admin Portal
+                        </a>
+                    </div>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <a href="#" class="text-muted me-3">Privacy Policy</a>
@@ -1324,7 +1293,67 @@
                     navbar.style.boxShadow = 'none';
                 }
             });
+
+            // Fetch dynamic pricing plans
+            fetchPlans();
         });
+
+        async function fetchPlans() {
+            try {
+                const response = await fetch('backend/api/plans.php');
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    const container = document.getElementById('pricing-plans-container');
+                    container.innerHTML = '';
+
+                    data.data.forEach(plan => {
+                        const popularClass = plan.is_popular ? 'popular' : '';
+                        const badge = plan.is_popular ? '<div class="popular-badge">MOST POPULAR</div>' : '';
+
+                        // Format price
+                        const formattedPrice = new Intl.NumberFormat().format(plan.price);
+
+                        // Generate features list
+                        let featuresHtml = '';
+                        if (plan.features && Array.isArray(plan.features)) {
+                            plan.features.forEach(feature => {
+                                featuresHtml += `<li class="mb-3"><i class="fas fa-check text-success me-2"></i> ${feature}</li>`;
+                            });
+                        }
+
+                        const html = `
+                             <div class="col-lg-4 mb-4">
+                                <div class="card pricing-card h-100 ${popularClass}">
+                                    ${badge}
+                                    <div class="card-header text-center py-4">
+                                        <h4 class="card-title mb-0">${plan.name}</h4>
+                                        <div class="price mt-3">
+                                            <span class="currency">${plan.currency}</span>
+                                            <span class="amount">${formattedPrice}</span>
+                                            <span class="period">${plan.period}</span>
+                                        </div>
+                                        <div class="mt-2 text-muted small">${plan.description}</div>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <ul class="list-unstyled mb-4">
+                                            ${featuresHtml}
+                                        </ul>
+                                        <a href="#" class="btn ${plan.button_style} w-100">${plan.button_text}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += html;
+                    });
+                } else {
+                    document.getElementById('pricing-plans-container').innerHTML = '<div class="col-12 text-center text-muted">No plans available at the moment.</div>';
+                }
+            } catch (error) {
+                console.error('Error loading plans:', error);
+                document.getElementById('pricing-plans-container').innerHTML = '<div class="col-12 text-center text-danger">Failed to load pricing plans.</div>';
+            }
+        }
     </script>
 </body>
 

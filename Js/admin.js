@@ -484,7 +484,11 @@ function populateUsersTable(users) {
         row.innerHTML = `
             <td>
                 <div class="user-info">
-                    <div class="user-avatar">${user.avatar}</div>
+                    <div class="user-avatar" style="overflow: hidden;">
+                        ${user.avatar && (user.avatar.includes('/') || user.avatar.includes('.'))
+                ? `<img src="${user.avatar}" alt="" style="width: 100%; height: 100%; object-fit: cover;">`
+                : (user.avatar || user.name.charAt(0))}
+                    </div>
                     <div>
                         <strong>${user.name}</strong><br>
                         <small class="text-muted">ID: ${user.id}</small>
@@ -497,10 +501,10 @@ function populateUsersTable(users) {
             <td>${user.joined}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-action view" data-id="${user.id}" title="View">
+                    <button class="btn-action view" data-entity="user" data-id="${user.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-id="${user.id}" title="Edit">
+                    <button class="btn-action edit" data-entity="user" data-id="${user.id}" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
                 </div>
@@ -522,7 +526,11 @@ function populateAllUsersTable(users) {
             <td>${user.id}</td>
             <td>
                 <div class="user-info">
-                    <div class="user-avatar">${user.avatar}</div>
+                    <div class="user-avatar" style="overflow: hidden;">
+                        ${user.avatar && (user.avatar.includes('/') || user.avatar.includes('.'))
+                ? `<img src="${user.avatar}" alt="" style="width: 100%; height: 100%; object-fit: cover;">`
+                : (user.avatar || user.name.charAt(0))}
+                    </div>
                     <div>
                         <strong>${user.name}</strong>
                     </div>
@@ -535,11 +543,17 @@ function populateAllUsersTable(users) {
             <td>${user.joined}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-action view" data-id="${user.id}" title="View">
+                    <button class="btn-action view" data-entity="user" data-id="${user.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-id="${user.id}" title="Edit">
+                    <button class="btn-action edit" data-entity="user" data-id="${user.id}" title="Edit">
                         <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-action suspend" data-entity="user" data-id="${user.id}" data-status="${user.status}" title="${user.status === 'blocked' ? 'Activate' : 'Suspend'}">
+                        <i class="fas ${user.status === 'blocked' ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                    </button>
+                    <button class="btn-action reset" data-entity="user" data-id="${user.id}" title="Reset Password">
+                        <i class="fas fa-key"></i>
                     </button>
                     <select class="form-select form-select-sm" style="width: auto; display: inline-block; margin-right: 5px;" onchange="assignRole(${user.id}, this.value)">
                         <option value="">Change Role</option>
@@ -554,7 +568,7 @@ function populateAllUsersTable(users) {
                         <option value="pending" ${user.status === 'pending' ? 'selected' : ''}>Pending</option>
                         <option value="blocked" ${user.status === 'blocked' ? 'selected' : ''}>Blocked</option>
                     </select>
-                    <button class="btn-action delete" data-id="${user.id}" title="Delete">
+                    <button class="btn-action delete" data-entity="user" data-id="${user.id}" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -576,7 +590,11 @@ function populateArtistsTable(artists) {
             <td>${artist.id}</td>
             <td>
                 <div class="user-info">
-                    <div class="user-avatar">${artist.name.charAt(0)}</div>
+                    <div class="user-avatar" style="overflow: hidden;">
+                        ${(artist.image || artist.photo || artist.avatar)
+                ? `<img src="${artist.image || artist.photo || artist.avatar}" alt="" style="width: 100%; height: 100%; object-fit: cover;">`
+                : artist.name.charAt(0)}
+                    </div>
                     <div>
                         <strong>${artist.name}</strong>
                     </div>
@@ -593,21 +611,31 @@ function populateArtistsTable(artists) {
             </td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-action view" data-id="${artist.id}" title="View">
+                    <button class="btn-action view" data-entity="artist" data-id="${artist.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-id="${artist.id}" title="Edit">
+                    <button class="btn-action edit" data-entity="artist" data-id="${artist.id}" title="Edit Profile">
                         <i class="fas fa-edit"></i>
                     </button>
-                    ${artist.verification === 'pending' ? `
-                        <button class="btn-action approve" data-id="${artist.id}" title="Approve" onclick="approveArtist(${artist.id})">
-                            <i class="fas fa-check"></i>
+                    ${artist.verification === 'approved' ? `
+                        <button class="btn-action unverify" data-entity="artist" data-id="${artist.id}" title="Unverify">
+                            <i class="fas fa-user-times"></i>
                         </button>
-                        <button class="btn-action reject" data-id="${artist.id}" title="Reject" onclick="rejectArtist(${artist.id})">
-                            <i class="fas fa-times"></i>
+                    ` : `
+                        <button class="btn-action verify" data-entity="artist" data-id="${artist.id}" title="Verify">
+                            <i class="fas fa-user-check"></i>
                         </button>
-                    ` : ''}
-                    <button class="btn-action delete" data-id="${artist.id}" title="Delete">
+                    `}
+                    ${artist.status === 'blocked' ? `
+                        <button class="btn-action ban" data-entity="artist" data-id="${artist.id}" data-status="${artist.status}" title="Unban">
+                            <i class="fas fa-user-check"></i>
+                        </button>
+                    ` : `
+                        <button class="btn-action ban" data-entity="artist" data-id="${artist.id}" data-status="${artist.status}" title="Ban">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    `}
+                    <button class="btn-action delete" data-entity="artist" data-id="${artist.id}" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -636,23 +664,21 @@ function populateSongsTable(songs) {
             <td><span class="status-badge status-${song.status}">${song.status}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-action view" data-id="${song.id}" title="View">
+                    <button class="btn-action view" data-entity="song" data-id="${song.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-id="${song.id}" title="Edit">
+                    <button class="btn-action edit" data-entity="song" data-id="${song.id}" title="Edit Metadata">
                         <i class="fas fa-edit"></i>
                     </button>
                     ${song.status === 'pending' ? `
-                        <button class="btn-action approve" data-id="${song.id}" title="Approve" onclick="approveSong(${song.id})">
+                        <button class="btn-action approve" data-entity="song" data-id="${song.id}" title="Approve">
                             <i class="fas fa-check"></i>
                         </button>
-                    ` : ''}
-                    ${song.status === 'active' ? `
-                        <button class="btn-action block" data-id="${song.id}" title="Block" onclick="blockSong(${song.id})">
-                            <i class="fas fa-ban"></i>
+                        <button class="btn-action reject" data-entity="song" data-id="${song.id}" title="Reject">
+                            <i class="fas fa-times"></i>
                         </button>
                     ` : ''}
-                    <button class="btn-action delete" data-id="${song.id}" title="Delete">
+                    <button class="btn-action delete" data-entity="song" data-id="${song.id}" title="Remove">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -678,10 +704,10 @@ function populateRecentSongsTable(songs) {
             <td><span class="status-badge status-${song.status}">${song.status}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-action view" data-id="${song.id}" title="View">
+                    <button class="btn-action view" data-entity="song" data-id="${song.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-id="${song.id}" title="Edit">
+                    <button class="btn-action edit" data-entity="song" data-id="${song.id}" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
                 </div>
@@ -800,6 +826,13 @@ function setupEventListeners() {
         modal.show();
     });
 
+    // Add subscription button
+    document.getElementById('addSubscriptionBtn')?.addEventListener('click', function () {
+        populateUserDropdown('planUser');
+        const modal = new bootstrap.Modal(document.getElementById('addSubscriptionModal'));
+        modal.show();
+    });
+
     // Add subscription plan button
     document.getElementById('addSubscriptionPlanBtn')?.addEventListener('click', function () {
         populateUserDropdown('planUser');
@@ -885,32 +918,115 @@ function setupEventListeners() {
         if (e.target.closest('.btn-action.view')) {
             const button = e.target.closest('.btn-action.view');
             const id = button.dataset.id;
-            const type = button.closest('tr').querySelector('td:nth-child(2)')?.textContent.includes('@') ? 'user' :
-                button.closest('tr').querySelector('td:nth-child(3)')?.textContent.includes('K') ? 'artist' : 'song';
-            alert(`View ${type} details for ID: ${id}`);
+            const tbodyId = button.closest('tbody')?.id || '';
+
+            if (tbodyId.includes('User')) {
+                viewUserDetails(id);
+            } else if (tbodyId.includes('Song')) {
+                viewSongDetails(id);
+            } else if (tbodyId.includes('Artist')) {
+                viewArtistDetails(id);
+            } else if (tbodyId.includes('Subscription')) {
+                viewSubscriptionDetails(id);
+            } else {
+                // Fallback authentication check logic if unsure
+                const type = button.closest('tr').querySelector('td:nth-child(2)')?.textContent.includes('@') ? 'user' : 'song';
+                if (type === 'user') viewUserDetails(id);
+                else viewSongDetails(id);
+            }
         }
 
         // Edit buttons
         if (e.target.closest('.btn-action.edit')) {
             const button = e.target.closest('.btn-action.edit');
+            const row = button.closest('tr');
+            const table = button.closest('table');
+            const tbodyId = button.closest('tbody')?.id || '';
+            const tableId = table?.id || '';
+            const entity = (button.dataset.entity || '').toLowerCase();
+            const fallbackEntity = (() => {
+                const scope = `${tableId} ${tbodyId}`.toLowerCase();
+                if (scope.includes('user')) return 'user';
+                if (scope.includes('artist')) return 'artist';
+                if (scope.includes('song')) return 'song';
+                return '';
+            })();
+            const id = button.dataset.id
+                || row?.dataset?.id
+                || row?.querySelector('td')?.textContent?.trim()
+                || '';
+
+            const resolvedEntity = entity || fallbackEntity;
+
+            if (resolvedEntity === 'user') {
+                openEditUserModal(id);
+            } else if (resolvedEntity === 'artist') {
+                openEditArtistModal(id);
+            } else if (resolvedEntity === 'song') {
+                openEditSongModal(id);
+            } else {
+                showNotification('Edit action not available for this item', 'warning');
+            }
+        }
+
+        // Suspend/Activate user
+        if (e.target.closest('.btn-action.suspend')) {
+            const button = e.target.closest('.btn-action.suspend');
             const id = button.dataset.id;
-            alert(`Edit item with ID: ${id}`);
+            const currentStatus = button.dataset.status || 'active';
+            toggleUserSuspend(id, currentStatus);
+        }
+
+        // Reset password
+        if (e.target.closest('.btn-action.reset')) {
+            const button = e.target.closest('.btn-action.reset');
+            const id = button.dataset.id;
+            openResetPasswordModal(id);
+        }
+
+        // Verify / Unverify artist
+        if (e.target.closest('.btn-action.verify')) {
+            const button = e.target.closest('.btn-action.verify');
+            const id = button.dataset.id;
+            verifyArtist(id);
+        }
+        if (e.target.closest('.btn-action.unverify')) {
+            const button = e.target.closest('.btn-action.unverify');
+            const id = button.dataset.id;
+            unverifyArtist(id);
+        }
+
+        // Ban / Unban artist
+        if (e.target.closest('.btn-action.ban')) {
+            const button = e.target.closest('.btn-action.ban');
+            const id = button.dataset.id;
+            const currentStatus = button.dataset.status || 'active';
+            toggleArtistBan(id, currentStatus);
+        }
+
+        // Approve / Reject song
+        if (e.target.closest('.btn-action.approve')) {
+            const button = e.target.closest('.btn-action.approve');
+            const id = button.dataset.id;
+            approveSong(id);
+        }
+        if (e.target.closest('.btn-action.reject')) {
+            const button = e.target.closest('.btn-action.reject');
+            const id = button.dataset.id;
+            rejectSong(id);
         }
 
         // Delete buttons
         if (e.target.closest('.btn-action.delete')) {
             const button = e.target.closest('.btn-action.delete');
             const id = button.dataset.id;
+            const entity = button.dataset.entity || '';
             const row = button.closest('tr');
             const itemName = row.querySelector('td:nth-child(2) strong')?.textContent ||
                 row.querySelector('td:nth-child(2)')?.textContent;
 
             if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
-                row.style.opacity = '0.5';
-                setTimeout(() => {
-                    row.remove();
-                    showNotification(`"${itemName}" has been deleted`, 'success');
-                }, 300);
+                deleteEntity(entity, id, itemName, row);
             }
         }
     });
@@ -1376,6 +1492,22 @@ function populateReportsTable(reports) {
     });
 }
 
+function getSampleItem(entity, id) {
+    const map = { user: 'users', artist: 'artists', song: 'songs' };
+    const list = window.sampleData?.[map[entity]] || [];
+    return list.find(item => item.id == id) || null;
+}
+
+
+
+function openResetPasswordModal(id) {
+    document.getElementById('resetPasswordUserId').value = id;
+    document.getElementById('resetPasswordNew').value = '';
+    document.getElementById('resetPasswordConfirm').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+    modal.show();
+}
+
 // Admin action functions
 async function approveArtist(artistId) {
     try {
@@ -1417,6 +1549,71 @@ async function rejectArtist(artistId) {
     }
 }
 
+async function verifyArtist(artistId) {
+    try {
+        const response = await fetch('backend/api/admin.php?action=verify_artist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ artist_id: artistId })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Artist verified successfully', 'success');
+            loadSampleData();
+        } else {
+            showNotification(data.message || 'Error verifying artist', 'error');
+        }
+    } catch (error) {
+        console.error('Error verifying artist:', error);
+        showNotification('Error verifying artist', 'error');
+    }
+}
+
+async function unverifyArtist(artistId) {
+    try {
+        const response = await fetch('backend/api/admin.php?action=unverify_artist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ artist_id: artistId })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Artist unverified', 'success');
+            loadSampleData();
+        } else {
+            showNotification(data.message || 'Error unverifying artist', 'error');
+        }
+    } catch (error) {
+        console.error('Error unverifying artist:', error);
+        showNotification('Error unverifying artist', 'error');
+    }
+}
+
+async function toggleArtistBan(artistId, currentStatus) {
+    const action = currentStatus === 'blocked' ? 'unban_artist' : 'ban_artist';
+    const label = currentStatus === 'blocked' ? 'unbanned' : 'banned';
+    if (!confirm(`Are you sure you want to ${label === 'banned' ? 'ban' : 'unban'} this artist?`)) {
+        return;
+    }
+    try {
+        const response = await fetch(`backend/api/admin.php?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ artist_id: artistId })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification(`Artist ${label} successfully`, 'success');
+            loadSampleData();
+        } else {
+            showNotification(data.message || 'Error updating artist status', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating artist status:', error);
+        showNotification('Error updating artist status', 'error');
+    }
+}
+
 async function approveSong(songId) {
     try {
         const response = await fetch('backend/api/admin.php?action=approve_song', {
@@ -1437,6 +1634,26 @@ async function approveSong(songId) {
     }
 }
 
+async function rejectSong(songId) {
+    try {
+        const response = await fetch('backend/api/admin.php?action=reject_song', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ song_id: songId })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Song rejected', 'success');
+            loadSampleData();
+        } else {
+            showNotification(data.message || 'Error rejecting song', 'error');
+        }
+    } catch (error) {
+        console.error('Error rejecting song:', error);
+        showNotification('Error rejecting song', 'error');
+    }
+}
+
 async function blockSong(songId) {
     try {
         const response = await fetch('backend/api/admin.php?action=block_song', {
@@ -1454,6 +1671,98 @@ async function blockSong(songId) {
     } catch (error) {
         console.error('Error blocking song:', error);
         alert('Error blocking song');
+    }
+}
+
+async function toggleUserSuspend(userId, currentStatus) {
+    const targetStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
+    const actionLabel = targetStatus === 'blocked' ? 'suspend' : 'activate';
+    if (!confirm(`Are you sure you want to ${actionLabel} this user?`)) {
+        return;
+    }
+    try {
+        const response = await fetch('backend/api/admin.php?action=change_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, status: targetStatus })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification(`User ${actionLabel}d successfully`, 'success');
+            loadSampleData();
+        } else {
+            showNotification(data.message || 'Error updating user status', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating user status:', error);
+        showNotification('Error updating user status', 'error');
+    }
+}
+
+async function resetUserPassword() {
+    const userId = document.getElementById('resetPasswordUserId').value;
+    const password = document.getElementById('resetPasswordNew').value;
+    const confirmPassword = document.getElementById('resetPasswordConfirm').value;
+
+    if (!password || password.length < 6) {
+        showNotification('Password must be at least 6 characters', 'error');
+        return;
+    }
+    if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('backend/api/admin.php?action=reset_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, password })
+        });
+        const data = await response.json();
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
+            modal.hide();
+            showNotification('Password reset successfully', 'success');
+        } else {
+            showNotification(data.message || 'Error resetting password', 'error');
+        }
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        showNotification('Error resetting password', 'error');
+    }
+}
+
+
+
+async function deleteEntity(entity, id, itemName, row) {
+    let endpoint = '';
+    if (entity === 'user') endpoint = `backend/api/users.php?id=${id}`;
+    if (entity === 'artist') endpoint = `backend/api/artists.php?id=${id}`;
+    if (entity === 'song') endpoint = `backend/api/songs.php?id=${id}`;
+
+    if (!endpoint) {
+        row?.remove();
+        showNotification(`"${itemName}" has been deleted`, 'success');
+        return;
+    }
+
+    try {
+        const response = await fetch(endpoint, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) {
+            showNotification(`"${itemName}" has been deleted`, 'success');
+            loadSampleData();
+        } else {
+            showNotification(data.message || 'Error deleting item', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        row.style.opacity = '0.5';
+        setTimeout(() => {
+            row.remove();
+            showNotification(`"${itemName}" has been deleted (local)`, 'success');
+        }, 300);
     }
 }
 
@@ -1563,7 +1872,6 @@ function addNewUser() {
     const password = document.getElementById('userPassword').value;
     const confirmPassword = document.getElementById('userConfirmPassword').value;
     const isActive = document.getElementById('userActive').checked;
-    const sendEmail = document.getElementById('userEmailNotifications').checked;
 
     // Validation
     if (!firstName || !lastName || !email || !userType || !password) {
@@ -1714,10 +2022,6 @@ function addNewArtist() {
     const genre = document.getElementById('artistGenre').value;
     const userId = document.getElementById('artistUserId').value;
     const bio = document.getElementById('artistBio').value.trim();
-    const followers = parseInt(document.getElementById('artistFollowers').value) || 0;
-    const songsCount = parseInt(document.getElementById('artistSongsCount').value) || 0;
-    const isVerified = document.getElementById('artistVerified').checked;
-
     // Validation
     if (!name || !genre) {
         showNotification('Please fill in all required fields', 'error');
@@ -1729,10 +2033,10 @@ function addNewArtist() {
         user_id: userId || null,
         name: name,
         genre: genre,
-        followers: followers,
-        songs_count: songsCount,
+        followers: 0,
+        songs_count: 0,
         status: 'pending',
-        verification: isVerified ? 'approved' : 'pending',
+        verification: 'pending',
         bio: bio
     };
 
@@ -1777,10 +2081,10 @@ function addNewArtist() {
                     user_id: userId || null,
                     name: name,
                     genre: genre,
-                    followers: followers,
-                    songs_count: songsCount,
+                    followers: 0,
+                    songs_count: 0,
                     status: 'pending',
-                    verification: isVerified ? 'approved' : 'pending',
+                    verification: 'pending',
                     bio: bio
                 };
                 window.sampleData.artists.unshift(localArtist);
@@ -1814,10 +2118,7 @@ function addNewSong() {
     const artistId = document.getElementById('songArtist').value;
     const genre = document.getElementById('songGenre').value;
     const duration = document.getElementById('songDuration').value;
-    const plays = parseInt(document.getElementById('songPlays').value) || 0;
-    const filePath = document.getElementById('songFilePath').value.trim();
-    const coverArt = document.getElementById('songCoverArt').value.trim();
-    const isActive = document.getElementById('songActive').checked;
+    const status = document.getElementById('songStatus').value;
 
     // Validation
     if (!title || !artistId || !genre || !duration) {
@@ -1838,11 +2139,11 @@ function addNewSong() {
         artist_id: artistId,
         genre: genre,
         duration: duration,
-        plays: plays,
+        plays: 0,
         likes: 0,
-        file_path: filePath,
-        cover_art: coverArt,
-        status: isActive ? 'active' : 'pending'
+        file_path: null,
+        cover_art: null,
+        status: status
     };
 
     // Show loading state
@@ -1887,11 +2188,11 @@ function addNewSong() {
                     artist_id: artistId,
                     genre: genre,
                     duration: duration,
-                    plays: plays,
+                    plays: 0,
                     likes: 0,
-                    file_path: filePath,
-                    cover_art: coverArt,
-                    status: isActive ? 'active' : 'pending'
+                    file_path: null,
+                    cover_art: null,
+                    status: status
                 };
                 window.sampleData.songs.unshift(localSong);
                 // Note: Data persistence is now handled server-side
@@ -1925,8 +2226,6 @@ function addNewSubscription() {
     const userId = document.getElementById('planUser').value;
     const startDate = document.getElementById('planStartDate').value;
     const endDate = document.getElementById('planEndDate').value;
-    const isActive = document.getElementById('planActive').checked;
-
     // Validation
     if (!planName || !amount || !userId || !startDate || !endDate) {
         showNotification('Please fill in all required fields', 'error');
@@ -1943,7 +2242,7 @@ function addNewSubscription() {
         user_id: userId,
         plan_name: planName,
         amount: amount,
-        status: isActive ? 'active' : 'pending',
+        status: 'active',
         start_date: startDate,
         end_date: endDate
     };
@@ -1989,7 +2288,7 @@ function addNewSubscription() {
                     user_id: userId,
                     plan_name: planName,
                     amount: amount,
-                    status: isActive ? 'active' : 'pending',
+                    status: 'active',
                     start_date: startDate,
                     end_date: endDate
                 };
@@ -2013,4 +2312,564 @@ function addNewSubscription() {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
+}
+
+// View User Details
+async function viewUserDetails(id) {
+    try {
+        let user = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.users) {
+            user = window.sampleData.users.find(u => u.id == id);
+        }
+
+        // If not found, fetch from API
+        if (!user) {
+            const response = await fetch(`backend/api/users.php?id=${id}`);
+            const data = await response.json();
+            if (data.success) user = data.data;
+        }
+
+        if (user) {
+            const modalBody = document.getElementById('viewUserModalBody');
+            modalBody.innerHTML = `
+                <div class="text-center mb-4">
+                    <div style="width: 100px; height: 100px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto; font-weight: bold; overflow: hidden;">
+                        ${user.avatar && (user.avatar.includes('/') || user.avatar.includes('.'))
+                    ? `<img src="${user.avatar}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                    : (user.avatar || user.name.charAt(0))}
+                    </div>
+                    <h4 class="mt-3">${user.name}</h4>
+                    <p>${user.email}</p>
+                    <span class="badge bg-${getTypeColor(user.type)}">${user.type}</span>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Status</label>
+                        <div class="fw-bold"><span class="status-badge status-${user.status}">${user.status}</span></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Joined Date</label>
+                        <div class="fw-bold">${user.joined}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Phone</label>
+                        <div class="fw-bold">${user.phone || 'N/A'}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">User ID</label>
+                        <div class="fw-bold">#${user.id}</div>
+                    </div>
+                </div>
+            `;
+            const modal = new bootstrap.Modal(document.getElementById('viewUserModal'));
+            modal.show();
+        } else {
+            showNotification('User not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error viewing user:', error);
+        showNotification('Error loading user details', 'error');
+    }
+}
+
+// View Song Details with Inline Editing
+async function viewSongDetails(id) {
+    try {
+        let song = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.songs) {
+            song = window.sampleData.songs.find(s => s.id == id);
+        }
+
+        // If not found, fetch from API
+        if (!song) {
+            const response = await fetch(`backend/api/songs.php?id=${id}`);
+            const data = await response.json();
+            if (data.success) song = data.data;
+        }
+
+        if (song) {
+            const modalBody = document.getElementById('viewSongModalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <div style="width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover)); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <i class="fas fa-music fa-4x" style="color: rgba(255,255,255,0.3);"></i>
+                        </div>
+                        <button class="btn btn-sm btn-secondary mt-3" style="width: 100%;" onclick="playSongInModal(${song.id})">
+                            <i class="fas fa-play me-1"></i> Play Song
+                        </button>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="mb-4">
+                            <label class="small">SONG TITLE</label>
+                            <input type="text" class="form-control form-control-lg" id="viewEditSongTitle" value="${song.title}" style="background-color: #1a1a2e; border: 1px solid #444;">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="small">ARTIST</label>
+                                <input type="text" class="form-control" value="${song.artist || song.artist_name}" readonly style="background-color: #0a0a1e; border: 1px solid #333; cursor: not-allowed;">
+                                <input type="hidden" id="viewEditSongArtistId" value="${song.artist_id}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="small">GENRE</label>
+                                <select class="form-control" id="viewEditSongGenre" style="background-color: #1a1a2e; border: 1px solid #444;">
+                                    <option value="Makossa" ${song.genre === 'Makossa' ? 'selected' : ''}>Makossa</option>
+                                    <option value="Bikutsi" ${song.genre === 'Bikutsi' ? 'selected' : ''}>Bikutsi</option>
+                                    <option value="Afrobeat" ${song.genre === 'Afrobeat' ? 'selected' : ''}>Afrobeat</option>
+                                    <option value="Assiko" ${song.genre === 'Assiko' ? 'selected' : ''}>Assiko</option>
+                                    <option value="Traditional" ${song.genre === 'Traditional' ? 'selected' : ''}>Traditional</option>
+                                    <option value="Gospel" ${song.genre === 'Gospel' ? 'selected' : ''}>Gospel</option>
+                                    <option value="Bend Skin" ${song.genre === 'Bend Skin' ? 'selected' : ''}>Bend Skin</option>
+                                    <option value="Hip Hop" ${song.genre === 'Hip Hop' ? 'selected' : ''}>Hip Hop</option>
+                                    <option value="R&B" ${song.genre === 'R&B' ? 'selected' : ''}>R&B</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="small">DURATION</label>
+                                <input type="text" class="form-control" id="viewEditSongDuration" value="${song.duration || ''}" placeholder="4:32" style="background-color: #1a1a2e; border: 1px solid #444;">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="small">STATUS</label>
+                                <select class="form-control" id="viewEditSongStatus" style="background-color: #1a1a2e; border: 1px solid #444;">
+                                    <option value="active" ${song.status === 'active' ? 'selected' : ''}>Active/Published</option>
+                                    <option value="pending" ${song.status === 'pending' ? 'selected' : ''}>Pending Review</option>
+                                    <option value="blocked" ${song.status === 'blocked' ? 'selected' : ''}>Blocked</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3 pt-3" style="border-top: 1px solid #333;">
+                            <div class="col-6 mb-2">
+                                <label class="small">Total Plays</label>
+                                <div class="fw-bold text-success">${song.plays || 0}</div>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="small">Upload Date</label>
+                                <div class="fw-bold text-white">${song.date || song.created_at || 'N/A'}</div>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="small">Song ID</label>
+                                <div class="fw-bold text-white">#${song.id}</div>
+                                <input type="hidden" id="viewEditSongId" value="${song.id}">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="small">File Path</label>
+                                <div class="fw-bold text-white" style="font-size: 11px; word-break: break-all;">${song.file_path || 'Not uploaded'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Update modal footer to include Save button
+            const modal = document.getElementById('viewSongModal');
+            const modalFooter = modal.querySelector('.modal-footer');
+            modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveFromViewModal('song')">
+                    <i class="fas fa-save me-1"></i>Save Changes
+                </button>
+            `;
+
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+        } else {
+            showNotification('Song not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error viewing song:', error);
+        showNotification('Error loading song details', 'error');
+    }
+}
+
+// View Artist Details
+async function viewArtistDetails(id) {
+    try {
+        let artist = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.artists) {
+            artist = window.sampleData.artists.find(a => a.id == id);
+        }
+
+        // If not found, fetch from API
+        if (!artist) {
+            const response = await fetch(`backend/api/artists.php?id=${id}`);
+            const data = await response.json();
+            if (data.success) artist = data.data;
+        }
+
+        if (artist) {
+            const modalBody = document.getElementById('viewArtistModalBody');
+            modalBody.innerHTML = `
+                <div class="text-center mb-4">
+                    <div style="width: 100px; height: 100px; background-color: var(--secondary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto; font-weight: bold; overflow: hidden;">
+                        ${(artist.image || artist.photo)
+                    ? `<img src="${artist.image || artist.photo}" alt="${artist.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                    : artist.name.charAt(0)}
+                    </div>
+                    <h4 class="mt-3">${artist.name}</h4>
+                    <p>${artist.email || ''}</p>
+                    <div><span class="badge" style="background-color: #${getGenreColor(artist.genre)}">${artist.genre}</span></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Verification Status</label>
+                        <div class="fw-bold"><span class="badge bg-${getVerificationColor(artist.verification)}">${artist.verification}</span></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Total Followers</label>
+                        <div class="fw-bold">${artist.followers}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Total Songs</label>
+                        <div class="fw-bold">${artist.songs}</div>
+                    </div>
+                     <div class="col-md-6 mb-3">
+                        <label class="small">Account Status</label>
+                        <div class="fw-bold"><span class="status-badge status-${artist.status}">${artist.status}</span></div>
+                    </div>
+                </div>
+            `;
+            const modal = new bootstrap.Modal(document.getElementById('viewArtistModal'));
+            modal.show();
+        } else {
+            showNotification('Artist not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error viewing artist:', error);
+        showNotification('Error loading artist details', 'error');
+    }
+}
+
+// View Subscription Details
+async function viewSubscriptionDetails(id) {
+    try {
+        let sub = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.subscriptions) {
+            sub = window.sampleData.subscriptions.find(s => s.id == id);
+        }
+
+        // If not found, fetch from API
+        if (!sub) {
+            const response = await fetch(`backend/api/subscriptions.php?id=${id}`);
+            const data = await response.json();
+            if (data.success) sub = data.data;
+        }
+
+        if (sub) {
+            const modalBody = document.getElementById('viewSubscriptionModalBody');
+            modalBody.innerHTML = `
+                <div class="text-center mb-4">
+                    <div class="display-4 text-primary mb-2"><i class="fas fa-crown"></i></div>
+                    <h4>${sub.plan_name}</h4>
+                    <div class="h3">$${sub.amount}</div>
+                    <span class="badge bg-${sub.status === 'active' ? 'success' : 'secondary'}">${sub.status}</span>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Subscriber</label>
+                        <div class="fw-bold">${sub.user_name}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Subscription ID</label>
+                        <div class="fw-bold">#${sub.id}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">Start Date</label>
+                        <div class="fw-bold">${sub.start_date}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">End Date</label>
+                        <div class="fw-bold">${sub.end_date}</div>
+                    </div>
+                </div>
+            `;
+            const modal = new bootstrap.Modal(document.getElementById('viewSubscriptionModal'));
+            modal.show();
+        } else {
+            showNotification('Subscription not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error viewing subscription:', error);
+        showNotification('Error loading subscription details', 'error');
+    }
+}
+
+// ==================================================
+// Edit Modal Functions
+// ==================================================
+
+/**
+ * Open edit user modal and populate with current data
+ */
+async function openEditUserModal(userId) {
+    try {
+        let user = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.users) {
+            user = window.sampleData.users.find(u => u.id == userId);
+        }
+
+        if (user) {
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserName').value = user.name || '';
+            document.getElementById('editUserEmail').value = user.email || '';
+            document.getElementById('editUserPhone').value = user.phone || '';
+            document.getElementById('editUserType').value = user.type || 'fan';
+            document.getElementById('editUserStatus').value = user.status || 'active';
+
+            const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            modal.show();
+        } else {
+            showNotification('User not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error opening edit user modal:', error);
+        showNotification('Error loading user data', 'error');
+    }
+}
+
+/**
+ * Save user edits via API
+ */
+async function saveUserEdit() {
+    try {
+        const userId = document.getElementById('editUserId').value;
+        const userData = {
+            id: userId,
+            name: document.getElementById('editUserName').value,
+            email: document.getElementById('editUserEmail').value,
+            phone: document.getElementById('editUserPhone').value,
+            type: document.getElementById('editUserType').value,
+            status: document.getElementById('editUserStatus').value
+        };
+
+        const response = await fetch('backend/api/users.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('User updated successfully', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            modal.hide();
+            // Refresh data
+            await refreshDashboardData();
+        } else {
+            showNotification(data.message || 'Failed to update user', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving user:', error);
+        showNotification('Error updating user', 'error');
+    }
+}
+
+/**
+ * Open edit artist modal and populate with current data
+ */
+async function openEditArtistModal(artistId) {
+    try {
+        let artist = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.artists) {
+            artist = window.sampleData.artists.find(a => a.id == artistId);
+        }
+
+        if (artist) {
+            document.getElementById('editArtistId').value = artist.id;
+            document.getElementById('editArtistName').value = artist.name || '';
+            document.getElementById('editArtistGenre').value = artist.genre || 'Afrobeat';
+            document.getElementById('editArtistStatus').value = artist.status || 'pending';
+            document.getElementById('editArtistVerification').value = artist.verification || 'pending';
+            document.getElementById('editArtistBio').value = artist.bio || '';
+            document.getElementById('editArtistInstagram').value = artist.instagram_url || '';
+            document.getElementById('editArtistTwitter').value = artist.twitter_url || '';
+            document.getElementById('editArtistFacebook').value = artist.facebook_url || '';
+            document.getElementById('editArtistYoutube').value = artist.youtube_url || '';
+
+            const modal = new bootstrap.Modal(document.getElementById('editArtistModal'));
+            modal.show();
+        } else {
+            showNotification('Artist not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error opening edit artist modal:', error);
+        showNotification('Error loading artist data', 'error');
+    }
+}
+
+/**
+ * Save artist edits via API
+ */
+async function saveArtistEdit() {
+    try {
+        const artistId = document.getElementById('editArtistId').value;
+        const artistData = {
+            id: artistId,
+            name: document.getElementById('editArtistName').value,
+            genre: document.getElementById('editArtistGenre').value,
+            status: document.getElementById('editArtistStatus').value,
+            verification: document.getElementById('editArtistVerification').value,
+            bio: document.getElementById('editArtistBio').value,
+            instagram_url: document.getElementById('editArtistInstagram').value,
+            twitter_url: document.getElementById('editArtistTwitter').value,
+            facebook_url: document.getElementById('editArtistFacebook').value,
+            youtube_url: document.getElementById('editArtistYoutube').value,
+            // Keep existing values for these fields to avoid nullifying them
+            followers: window.sampleData.artists.find(a => a.id == artistId)?.followers || 0,
+            songs_count: window.sampleData.artists.find(a => a.id == artistId)?.songs_count || 0
+        };
+
+        const response = await fetch('backend/api/artists.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(artistData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('Artist updated successfully', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editArtistModal'));
+            modal.hide();
+            // Refresh data
+            await refreshDashboardData();
+        } else {
+            showNotification(data.message || 'Failed to update artist', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving artist:', error);
+        showNotification('Error updating artist', 'error');
+    }
+}
+
+/**
+ * Open edit song modal and populate with current data
+ */
+async function openEditSongModal(songId) {
+    try {
+        let song = null;
+        // Try to find in loaded data first
+        if (window.sampleData && window.sampleData.songs) {
+            song = window.sampleData.songs.find(s => s.id == songId);
+        }
+
+        if (song) {
+            document.getElementById('editSongId').value = song.id;
+            document.getElementById('editSongArtistId').value = song.artist_id;
+            document.getElementById('editSongTitle').value = song.title || '';
+            document.getElementById('editSongArtist').value = song.artist_name || '';
+            document.getElementById('editSongGenre').value = song.genre || 'Afrobeat';
+            document.getElementById('editSongDuration').value = song.duration || '';
+            document.getElementById('editSongStatus').value = song.status || 'pending';
+
+            const modal = new bootstrap.Modal(document.getElementById('editSongModal'));
+            modal.show();
+        } else {
+            showNotification('Song not found', 'error');
+        }
+    } catch (error) {
+        console.error('Error opening edit song modal:', error);
+        showNotification('Error loading song data', 'error');
+    }
+}
+
+/**
+ * Save song edits via API
+ */
+async function saveSongEdit() {
+    try {
+        const songId = document.getElementById('editSongId').value;
+        const artistId = document.getElementById('editSongArtistId').value;
+        const songData = {
+            id: songId,
+            title: document.getElementById('editSongTitle').value,
+            artist_id: artistId, // Keep artist unchanged (read-only field)
+            genre: document.getElementById('editSongGenre').value,
+            duration: document.getElementById('editSongDuration').value,
+            status: document.getElementById('editSongStatus').value
+        };
+
+        const response = await fetch('backend/api/songs.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(songData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('Song updated successfully', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editSongModal'));
+            modal.hide();
+            // Refresh data
+            await refreshDashboardData();
+        } else {
+            showNotification(data.message || 'Failed to update song', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving song:', error);
+        showNotification('Error updating song', 'error');
+    }
+}
+
+/**
+ * Save changes from view/edit modal (comprehensive modal with inline editing)
+ */
+async function saveFromViewModal(entityType) {
+    try {
+        if (entityType === 'song') {
+            const songId = document.getElementById('viewEditSongId').value;
+            const artistId = document.getElementById('viewEditSongArtistId').value;
+            const songData = {
+                id: songId,
+                title: document.getElementById('viewEditSongTitle').value,
+                artist_id: artistId,
+                genre: document.getElementById('viewEditSongGenre').value,
+                duration: document.getElementById('viewEditSongDuration').value,
+                status: document.getElementById('viewEditSongStatus').value
+            };
+
+            const response = await fetch('backend/api/songs.php', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(songData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification('Song updated successfully', 'success');
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('viewSongModal'));
+                modal.hide();
+                // Refresh data
+                await refreshDashboardData();
+            } else {
+                showNotification(data.message || 'Failed to update song', 'error');
+            }
+        } else if (entityType === 'user') {
+            // User save logic (to be implemented)
+            showNotification('User save not yet implemented', 'warning');
+        } else if (entityType === 'artist') {
+            // Artist save logic (to be implemented)
+            showNotification('Artist save not yet implemented', 'warning');
+        }
+    } catch (error) {
+        console.error('Error saving from view modal:', error);
+        showNotification('Error saving changes', 'error');
+    }
 }
