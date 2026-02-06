@@ -1,0 +1,117 @@
+[2026-02-04 04:52:26] Upload request started. Type: profile_image
+[2026-02-04 04:52:26] FILES: Array
+(
+    [profile_image] => Array
+        (
+            [name] => testimonials-3.jpg
+            [full_path] => testimonials-3.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php18A.tmp
+            [error] => 0
+            [size] => 17247
+        )
+
+)
+
+[2026-02-04 04:52:26] POST: Array
+(
+    [upload_type] => profile_image
+)
+
+[2026-02-04 04:52:26] Response: {"success":true,"message":"Profile photo updated successfully","data":{"file_path":"uploads\/avatars\/avatar_6982c27aa57c99.70164129.jpg"}}
+[2026-02-04 04:59:43] Upload request started. Type: profile_image
+[2026-02-04 04:59:43] FILES: Array
+(
+    [profile_image] => Array
+        (
+            [name] => testimonials-2.jpg
+            [full_path] => testimonials-2.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\phpAA32.tmp
+            [error] => 0
+            [size] => 57584
+        )
+
+)
+
+[2026-02-04 04:59:43] POST: Array
+(
+    [upload_type] => profile_image
+)
+
+[2026-02-04 04:59:43] Response: {"success":true,"message":"Profile photo updated successfully","data":{"file_path":"uploads\/avatars\/avatar_6982c42f1019f3.44604428.jpg"}}
+[2026-02-05 18:07:19] Upload request started. Type: profile_image
+[2026-02-05 18:07:19] FILES: Array
+(
+    [profile_image] => Array
+        (
+            [name] => testimonials-3.jpg
+            [full_path] => testimonials-3.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php246D.tmp
+            [error] => 0
+            [size] => 17247
+        )
+
+)
+
+[2026-02-05 18:07:19] POST: Array
+(
+    [upload_type] => profile_image
+)
+
+[2026-02-05 18:07:19] Response: {"success":true,"message":"Profile photo updated successfully","data":{"file_path":"uploads\/avatars\/avatar_6984ce47182362.94089481.jpg"}}
+[2026-02-05 18:34:38] Upload request started. Type: profile_image
+[2026-02-05 18:34:38] FILES: Array
+(
+    [profile_image] => Array
+        (
+            [name] => testimonials-1.jpg
+            [full_path] => testimonials-1.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php2937.tmp
+            [error] => 0
+            [size] => 39727
+        )
+
+)
+
+[2026-02-05 18:34:38] POST: Array
+(
+    [upload_type] => profile_image
+)
+
+[2026-02-05 18:34:38] Response: {"success":true,"message":"Profile photo updated successfully","data":{"file_path":"uploads\/avatars\/avatar_6984d4ae803bb3.50760525.jpg"}}
+[2026-02-06 04:25:30] Upload request started. Type: song
+[2026-02-06 04:25:30] FILES: Array
+(
+    [song_file] => Array
+        (
+            [name] => Fally_Ipupa__-__Oublier___paroles_lyrics___%5B_Bonus_Track_%5D(360p)_low_quality.mp3
+            [full_path] => Fally_Ipupa__-__Oublier___paroles_lyrics___%5B_Bonus_Track_%5D(360p)_low_quality.mp3
+            [type] => audio/mpeg
+            [tmp_name] => C:\xampp\tmp\php1E82.tmp
+            [error] => 0
+            [size] => 1103137
+        )
+
+    [cover_art] => Array
+        (
+            [name] => mozzarella.jpg
+            [full_path] => mozzarella.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php1EB2.tmp
+            [error] => 0
+            [size] => 40147
+        )
+
+)
+
+[2026-02-06 04:25:30] POST: Array
+(
+    [upload_type] => song
+    [title] => CAREBEAN
+    [genre] => R&B
+)
+
+[2026-02-06 04:25:30] Response: {"success":true,"message":"Song uploaded successfully and pending review","data":{"cover_art":"uploads\/artwork\/cover_69855f2ae02789.20471984.jpg"}}

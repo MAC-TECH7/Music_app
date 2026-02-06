@@ -238,16 +238,27 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
 
         // Initialize navigation
-        const navItems = document.querySelectorAll('.list-group-item[data-view]');
+        const navItems = document.querySelectorAll('[data-view]');
         navItems.forEach(item => {
             item.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                // Remove active class from all items
-                navItems.forEach(nav => nav.classList.remove('active'));
+                // Remove active class from all items (primarily for sidebar)
+                const sidebarNavItems = document.querySelectorAll('.list-group-item[data-view]');
+                sidebarNavItems.forEach(nav => nav.classList.remove('active'));
 
-                // Add active class to clicked item
-                this.classList.add('active');
+                // Add active class if it's a sidebar item
+                if (this.classList.contains('list-group-item')) {
+                    this.classList.add('active');
+                } else {
+                    // If it's the "View All Notifications" link or other non-sidebar item,
+                    // find the corresponding sidebar item and activate it
+                    const view = this.getAttribute('data-view');
+                    const correspondingSidebarItem = document.querySelector(`.list-group-item[data-view="${view}"]`);
+                    if (correspondingSidebarItem) {
+                        correspondingSidebarItem.classList.add('active');
+                    }
+                }
 
                 // Get view from data attribute
                 const view = this.getAttribute('data-view');
@@ -1710,7 +1721,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                                 const response = await fetch('backend/api/upload.php', {
                                     method: 'POST',
-                                    body: formData
+                                    body: formData,
+                                    credentials: 'include'
                                 });
 
                                 progressBar.style.width = '80%';
@@ -1721,6 +1733,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                                     // Update images with new URL (add timestamp to bust cache)
                                     const newUrl = result.data.file_path; // Local path or full URL
+
+                                    // Update internal state
+                                    mockData.profile.avatar = newUrl;
 
                                     if (profileAvatar) profileAvatar.src = newUrl;
 
@@ -1763,11 +1778,16 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const selectedPrice = this.getAttribute('data-price');
 
                     // Update payment modal
-                    document.getElementById('selectedPlanName').textContent = selectedPlan;
-                    document.getElementById('selectedPlanPrice').textContent = selectedPrice;
+                    const planName = document.getElementById('selectedPlanName');
+                    if (planName) planName.textContent = selectedPlan;
+                    const planPrice = document.getElementById('selectedPlanPrice');
+                    if (planPrice) planPrice.textContent = selectedPrice;
+
+                    const paymentModalTitle = document.querySelector('#paymentModal .modal-title');
+                    if (paymentModalTitle) paymentModalTitle.textContent = 'Subscribe to ' + selectedPlan;
 
                     // Show payment modal
-                    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('paymentModal'));
                     modal.show();
                 });
             }
@@ -1854,9 +1874,58 @@ document.addEventListener('DOMContentLoaded', async function () {
         const manageBillingBtn = document.getElementById('manageBillingBtn');
         if (manageBillingBtn) {
             manageBillingBtn.addEventListener('click', function () {
-                // Show manage billing modal
-                const modal = new bootstrap.Modal(document.getElementById('manageBillingModal'));
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('manageBillingModal'));
                 modal.show();
+            });
+        }
+
+        // Shared function for opening payment method update
+        const openUpdatePayment = () => {
+            const billingModal = bootstrap.Modal.getInstance(document.getElementById('manageBillingModal'));
+            if (billingModal) billingModal.hide();
+
+            setTimeout(() => {
+                const paymentModalTitle = document.querySelector('#paymentModal .modal-title');
+                if (paymentModalTitle) paymentModalTitle.textContent = 'Update Payment Method';
+
+                const planName = document.getElementById('selectedPlanName');
+                if (planName) planName.textContent = 'Current Subscription';
+
+                const planPrice = document.getElementById('selectedPlanPrice');
+                if (planPrice) planPrice.textContent = 'Pro Rate';
+
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('paymentModal'));
+                modal.show();
+            }, 300);
+        };
+
+        // Update payment method button (on the page)
+        const viewUpdateBtn = document.getElementById('updatePaymentMethodBtn');
+        if (viewUpdateBtn) {
+            viewUpdateBtn.addEventListener('click', openUpdatePayment);
+        }
+
+        // Update payment method button (inside manage billing modal)
+        const modalUpdateBtn = document.getElementById('modalUpdatePaymentMethodBtn');
+        if (modalUpdateBtn) {
+            modalUpdateBtn.addEventListener('click', openUpdatePayment);
+        }
+
+        // Change plan button (inside modal)
+        const modalChangePlanBtn = document.getElementById('modalChangePlanBtn');
+        if (modalChangePlanBtn) {
+            modalChangePlanBtn.addEventListener('click', function () {
+                const billingModal = bootstrap.Modal.getInstance(document.getElementById('manageBillingModal'));
+                if (billingModal) billingModal.hide();
+
+                // Show notification and focus on plans
+                showNotification('Please select a new plan from the comparison list below', 'info');
+
+                // Scroll to plan cards
+                const planCards = document.querySelector('.plan-card');
+                if (planCards) {
+                    planCards.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             });
         }
     }
@@ -2383,7 +2452,50 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function attachSubscriptionListeners() {
-        // Already handled in initializePaymentOptions
+        console.log('Attaching subscription listeners for dynamic content');
+
+        // 1. Manage Billing Button (Dynamic)
+        const manageBillingBtn = document.getElementById('manageBillingBtn');
+        if (manageBillingBtn) {
+            manageBillingBtn.addEventListener('click', function () {
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('manageBillingModal'));
+                modal.show();
+            });
+        }
+
+        // 2. Update Payment Method Button (Dynamic on page)
+        const viewUpdateBtn = document.getElementById('updatePaymentMethodBtn');
+        if (viewUpdateBtn) {
+            viewUpdateBtn.addEventListener('click', function () {
+                // If it exists globally, use it
+                if (window.openUpdatePaymentFromModal) {
+                    window.openUpdatePaymentFromModal();
+                }
+            });
+        }
+
+        // 3. Plan Selection Buttons (Dynamic)
+        document.querySelectorAll('.plan-card .btn').forEach(btn => {
+            if (!btn.classList.contains('disabled')) {
+                btn.addEventListener('click', function () {
+                    const selectedPlan = this.getAttribute('data-plan');
+                    const selectedPrice = this.getAttribute('data-price');
+
+                    // Update payment modal
+                    const planNameLabel = document.getElementById('selectedPlanName');
+                    if (planNameLabel) planNameLabel.textContent = selectedPlan;
+                    const planPriceLabel = document.getElementById('selectedPlanPrice');
+                    if (planPriceLabel) planPriceLabel.textContent = selectedPrice;
+
+                    const paymentModalTitle = document.querySelector('#paymentModal .modal-title');
+                    if (paymentModalTitle) paymentModalTitle.textContent = 'Subscribe to ' + selectedPlan;
+
+                    // Show payment modal
+                    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('paymentModal'));
+                    modal.show();
+                });
+            }
+        });
     }
 
     function attachNotificationsListeners() {
@@ -2416,8 +2528,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (clearNotificationsBtn) {
             clearNotificationsBtn.addEventListener('click', function () {
                 if (confirm('Clear all notifications?')) {
+                    // Clear state
+                    mockData.notifications = [];
+
+                    // Update UI list
                     const notificationsList = document.getElementById('notificationsList');
-                    notificationsList.innerHTML = '<p class="text-center text-muted py-4">No notifications</p>';
+                    if (notificationsList) {
+                        notificationsList.innerHTML = '<p class="text-center text-muted py-4">No notifications</p>';
+                    }
+
+                    // Update badges and dropdown
+                    updateNotificationDropdown();
+
                     showNotification('All notifications cleared', 'success');
                 }
             });
@@ -2432,13 +2554,47 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (notification) {
                     notification.read = true;
                     const notificationEl = this.closest('.notification-item');
-                    notificationEl.classList.remove('unread');
+                    if (notificationEl) notificationEl.classList.remove('unread');
                     this.remove();
 
                     // Update dropdown
                     updateNotificationDropdown();
 
                     showNotification('Notification marked as read', 'success');
+                }
+            });
+        });
+
+        // Delete individual notification buttons
+        document.querySelectorAll('.delete-notification-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const notificationId = this.getAttribute('data-id');
+
+                // Remove from state
+                const index = mockData.notifications.findIndex(n => n.id == notificationId);
+                if (index !== -1) {
+                    mockData.notifications.splice(index, 1);
+
+                    // Remove from DOM
+                    const notificationEl = this.closest('.notification-item');
+                    if (notificationEl) {
+                        notificationEl.style.opacity = '0';
+                        notificationEl.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            notificationEl.remove();
+
+                            // If list is empty, show empty message
+                            const notificationsList = document.getElementById('notificationsList');
+                            if (notificationsList && mockData.notifications.length === 0) {
+                                notificationsList.innerHTML = '<p class="text-center text-muted py-4">No notifications</p>';
+                            }
+                        }, 300);
+                    }
+
+                    // Update badges and dropdown
+                    updateNotificationDropdown();
+
+                    showNotification('Notification deleted', 'info');
                 }
             });
         });

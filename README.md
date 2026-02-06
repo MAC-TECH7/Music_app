@@ -300,9 +300,11 @@ XAMPP is like a "web development kit" that lets your computer run websites local
 
 You already have the project files! They're in the folder where you found this README.
 
-### Step 3: Set Up the Database
+### Step 3: Set Up the Database 🚀
 
-The database is like a storage box for all the music, users, and other information.
+> [!IMPORTANT]
+> **This is the most critical step to get AfroRhythm running!**
+> You don't need to create the database manually in phpMyAdmin. Our automated script handles everything for you.
 
 1. **Open your web browser** (Chrome, Firefox, Edge, etc.)
 
@@ -310,14 +312,16 @@ The database is like a storage box for all the music, users, and other informati
    - Type this in your browser: `http://localhost/AfroRythm/backend/setup.php`
    - **Important**: Make sure XAMPP is running (Apache and MySQL should be green)
 
-3. **What happens**:
-   - The page will create a database called "music_app"
-   - It will create all the necessary tables (like boxes to store data)
-   - It might show some messages - that's normal!
+3. **Run the Setup**:
+   - Click the **"Run Database Setup"** button.
+   - The script will:
+     - ✅ Create the `music_app` database
+     - ✅ Create all necessary tables automatically
+     - ✅ Setup initial project structure
 
-4. **Check if it worked**:
-   - You should see messages like "Database created successfully"
-   - If you see errors, make sure MySQL is running in XAMPP
+4. **Check for Success**:
+   - You should see a "Setup Complete!" message with checkmarks.
+   - If you see errors, double-check that MySQL is started in your XAMPP Control Panel.
 
 ### Step 4: Access AfroRhythm
 
