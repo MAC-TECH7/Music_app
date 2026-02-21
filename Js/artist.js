@@ -76,6 +76,24 @@ async function checkAuth() {
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
+    // Load notification settings and set checkboxes
+    async function loadNotificationSettings() {
+        try {
+            const res = await fetch('backend/api/notification_settings.php', { credentials: 'include' });
+            const data = await res.json();
+            if (data.success && data.data) {
+                document.getElementById('notifNewFollowers').checked = !!data.data.notif_new_followers;
+                document.getElementById('notifComments').checked = !!data.data.notif_comments;
+                document.getElementById('notifStreamMilestones').checked = !!data.data.notif_stream_milestones;
+                document.getElementById('notifRevenueUpdates').checked = !!data.data.notif_revenue_updates;
+                document.getElementById('notifMarketing').checked = !!data.data.notif_marketing;
+            }
+        } catch (e) {
+            // Ignore errors, use defaults
+        }
+    }
+    // Call on page load
+    setTimeout(loadNotificationSettings, 500); // Delay to ensure checkboxes exist
     console.log('Artist Dashboard JavaScript loaded successfully!');
 
     // Check authentication first
@@ -89,28 +107,21 @@ document.addEventListener('DOMContentLoaded', async function () {
     let uploadedSongs = []; // Store uploaded songs data (loaded from backend)
 
     // Mock Data for notifications and profile; songs will come from backend
+    // Initial Data (Empty by default, populated from backend)
     const mockData = {
-        songs: [], // will be populated from backend
-        notifications: [
-            { id: 1, title: 'New Follower', message: '@musiclover123 started following you', time: '2 hours ago', read: false },
-            { id: 2, title: 'Stream Milestone', message: 'Your song "Midnight Pulse" reached 100K plays', time: '1 day ago', read: false },
-            { id: 3, title: 'Comment', message: 'New comment on "Dreamscape"', time: '2 days ago', read: true },
-            { id: 4, title: 'Revenue Update', message: 'Monthly payout processed: $8,450', time: '3 days ago', read: true },
-            { id: 5, title: 'Playlist Feature', message: 'Added to "Electronic Essentials" playlist', time: '1 week ago', read: true }
-        ],
-        stats: {
-            totalPlays: '24.5M',
-            totalLikes: '1.2M',
-            totalDownloads: '450K',
-            totalRevenue: '$245,820',
-            monthlyRevenue: '$18,240',
-            pendingPayouts: '$8,450',
-            availableForWithdrawal: '$12,540'
-        },
+        songs: [],
+        notifications: [],
+        stats: {},
         profile: {
-            name: 'Artist',
-            bio: 'Update your bio in the profile section to tell fans about yourself.',
-            avatar: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+            name: '',
+            real_name: '',
+            bio: '',
+            location: '',
+            website: '',
+            genre: '',
+            avatar: '',
+            followers: null,
+            social: {}
         }
     };
 
@@ -129,29 +140,29 @@ document.addEventListener('DOMContentLoaded', async function () {
         // First get the user ID from session to find the artist profile
         let artistId = null;
         try {
-            const sessionRes = await fetch('backend/api/session.php');
+            const sessionRes = await fetch('backend/api/session.php', { credentials: 'include' });
             const sessionData = await sessionRes.json();
             if (sessionData.success && sessionData.data.user) {
-                const userId = sessionData.data.user.id;
+
+                // Set initial name from session
+                mockData.profile.name = sessionData.data.user.name;
 
                 // Get artist profile
-                const artistRes = await fetch(`backend/api/artists.php?user_id=${userId}`);
+                const artistRes = await fetch(`backend/api/artists.php?user_id=${sessionData.data.user.id}`, { credentials: 'include' });
                 const artistJson = await artistRes.json();
 
                 if (artistJson.success && artistJson.data.length > 0) {
                     const artist = artistJson.data[0]; // Assuming user has one artist profile
                     artistId = artist.id;
-
-                    // Update mockData profile with real data
                     mockData.profile.name = artist.name;
-                    mockData.profile.bio = artist.bio || mockData.profile.bio;
-
-                    // Update avatar from session user data if available
-                    if (sessionData.data.user.avatar) {
-                        mockData.profile.avatar = sessionData.data.user.avatar;
-                    }
-
-                    // Store social links
+                    mockData.profile.real_name = artist.real_name || '';
+                    mockData.profile.bio = artist.bio || '';
+                    mockData.profile.genre = artist.genre || '';
+                    mockData.profile.location = artist.location || '';
+                    mockData.profile.website = artist.website || '';
+                    mockData.profile.avatar = artist.image || '';
+                    mockData.profile.avatarColor = artist.avatar_color || 'var(--primary-color)';
+                    mockData.profile.followers = artist.followers;
                     mockData.profile.social = {
                         instagram: artist.instagram_url || '',
                         twitter: artist.twitter_url || '',
@@ -159,20 +170,69 @@ document.addEventListener('DOMContentLoaded', async function () {
                         youtube: artist.youtube_url || ''
                     };
 
-                    // Update header
-                    const topBarName = document.getElementById('topBarArtistName');
-                    if (topBarName) topBarName.textContent = artist.name;
-
-                    const topBarImage = document.getElementById('topBarProfileImage');
-                    if (topBarImage && mockData.profile.avatar) topBarImage.src = mockData.profile.avatar;
-
+                    // Critical: Initialize stats from artists.php as a reliable fallback
+                    console.log("📊 Artist profile stats mapping:", {
+                        totalPlays: artist.total_plays,
+                        totalLikes: artist.total_likes,
+                        totalDownloads: artist.total_downloads
+                    });
+                    mockData.stats.totalPlays = artist.total_plays || 0;
+                    mockData.stats.totalLikes = artist.total_likes || 0;
+                    mockData.stats.totalDownloads = artist.total_downloads || 0;
                 }
+
+                // Update header elements immediately
+                const topBarName = document.getElementById('topBarArtistName');
+                if (topBarName) topBarName.textContent = mockData.profile.name;
+
+                const topBarImage = document.getElementById('topBarProfileImage');
+                if (topBarImage) topBarImage.src = mockData.profile.avatar;
+
             }
         } catch (e) {
-            console.error('Error loading artist profile:', e);
+            console.error('Error loading session/profile:', e);
         }
 
-        const res = await fetch('backend/api/songs.php');
+        // Fetch Real-Time Stats
+        try {
+            const statsRes = await fetch('backend/api/stats.php?type=artist', { credentials: 'include' });
+            const statsJson = await statsRes.json();
+            if (statsJson.success) {
+                mockData.stats = {
+                    ...mockData.stats,
+                    totalPlays: statsJson.data.total_plays,
+                    totalLikes: statsJson.data.total_likes,
+                    totalRevenue: statsJson.data.total_revenue,
+                    monthlyRevenue: statsJson.data.total_revenue, // Using total as monthly for now if not split
+                    chartData: statsJson.data.monthly_streams,
+                    revenueData: statsJson.data.monthly_revenue,
+                    demographics: statsJson.data.audience_demographics,
+                    recentActivity: statsJson.data.recent_activity || [],
+                    analyticsOverview: statsJson.data.analytics_overview || mockData.stats.analyticsOverview
+                };
+            }
+        } catch (e) {
+            console.warn('Stats fetch failed, using defaults', e);
+        }
+
+        // Fetch Notifications
+        try {
+            if (sessionData && sessionData.data && sessionData.data.user) {
+                const notifRes = await fetch(`backend/api/notifications.php?user_id=${sessionData.data.user.id}`, { credentials: 'include' });
+                const notifJson = await notifRes.json();
+                mockData.notifications = notifJson.data.map(n => ({
+                    id: n.id,
+                    title: 'Notification', // Title not in DB, use generic or enhance DB
+                    message: n.message,
+                    time: new Date(n.created_at).toLocaleDateString(), // Format as needed
+                    read: n.is_read == 1
+                }));
+            }
+        } catch (e) {
+            console.warn('Notifications fetch failed', e);
+        }
+
+        const res = await fetch('backend/api/songs.php', { credentials: 'include' });
         const json = await res.json();
         if (!json.success) {
             throw new Error(json.message || 'Failed to load songs');
@@ -181,8 +241,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Filter songs by artist when we know the artist ID; for now, show all active songs
         // If we found the artist ID, filter strictly by it. Otherwise, show all (dev mode fallback)
         let songs = json.data;
+
         if (artistId) {
-            songs = songs.filter(song => song.artist_id == artistId && (song.status === 'active' || song.status === 'pending'));
+            songs = songs.filter(song => {
+                const match = song.artist_id == artistId;
+                if (!match) { }
+                return match && (song.status === 'active' || song.status === 'pending');
+            });
         } else {
             songs = songs.filter(song => song.status === 'active' || song.status === 'pending');
         }
@@ -367,11 +432,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Initialize view-specific components
     function initializeViewComponents(view) {
         switch (view) {
+            case 'dashboard':
+                initializeDashboardCharts();
+                break;
             case 'music':
                 initializeAudioPlayers();
                 break;
             case 'profile':
                 initializeProfileImageUpload();
+                break;
+            case 'analytics':
+                attachAnalyticsListeners();
+                initializeAnalyticsCharts();
+                break;
+            case 'revenue':
+                attachRevenueListeners();
+                initializeRevenueCharts();
                 break;
             case 'subscription':
                 initializePaymentOptions();
@@ -386,7 +462,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     function getDashboardContent() {
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0 text-fix">Welcome back, Nova!</h1>
+                <h1 class="h3 mb-0 text-fix">Welcome back, ${mockData.profile.name}!</h1>
                 <div class="d-flex">
                     <button class="btn btn-outline-secondary me-2">
                         <i class="fas fa-download me-2"></i>Export Data
@@ -405,8 +481,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">Total Plays</h6>
-                                    <h3 class="mb-0">${mockData.stats.totalPlays}</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 12.5%</span>
+                                    <h3 class="mb-0" id="stat-total-plays">${mockData.stats.totalPlays !== undefined && mockData.stats.totalPlays !== null ? mockData.stats.totalPlays : 0}</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 0%</span>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-play-circle"></i>
@@ -421,8 +497,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">Total Likes</h6>
-                                    <h3 class="mb-0">${mockData.stats.totalLikes}</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 8.3%</span>
+                                    <h3 class="mb-0" id="stat-total-likes">${mockData.stats.totalLikes !== undefined && mockData.stats.totalLikes !== null ? mockData.stats.totalLikes : 0}</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 0%</span>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-heart"></i>
@@ -437,8 +513,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">Downloads</h6>
-                                    <h3 class="mb-0">450K</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 5.7%</span>
+                                    <h3 class="mb-0" id="stat-total-downloads">${mockData.stats.totalDownloads !== undefined && mockData.stats.totalDownloads !== null ? mockData.stats.totalDownloads : 0}</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 0%</span>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-download"></i>
@@ -452,9 +528,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-2">Current Revenue</h6>
-                                    <h3 class="mb-0">${mockData.stats.monthlyRevenue}</h3>
-                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 24.7%</span>
+                                    <h6 class="text-muted mb-2">Monthly Revenue</h6>
+                                    <h3 class="mb-0" id="stat-monthly-revenue">${mockData.stats.monthlyRevenue !== undefined && mockData.stats.monthlyRevenue !== null ? mockData.stats.monthlyRevenue : '$0.00'}</h3>
+                                    <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 0%</span>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-dollar-sign"></i>
@@ -473,18 +549,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <h5 class="card-title mb-0 text-fix">Monthly Streams</h5>
                         </div>
                         <div class="card-body">
-                            <div class="chart-placeholder">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
-                                    <h5 class="text-fix">Stream Analytics</h5>
-                                    <p class="text-muted text-secondary-fix">January 2024: 2.4M streams (+18.7% from Dec)</p>
-                                    <div class="d-flex justify-content-center mt-3">
-                                        <div class="progress w-75">
-                                            <div class="progress-bar" style="width: 75%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <canvas id="streamsChart" style="height: 300px; width: 100%;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -494,26 +559,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <h5 class="card-title mb-0 text-fix">Revenue Growth</h5>
                         </div>
                         <div class="card-body">
-                            <div class="chart-placeholder">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-chart-pie fa-4x text-muted mb-3"></i>
-                                    <h5 class="text-fix">Revenue Distribution</h5>
-                                    <div class="mt-3">
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-fix">Streaming</span>
-                                            <span class="text-primary">65%</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-fix">Downloads</span>
-                                            <span class="text-primary">25%</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="text-fix">Other</span>
-                                            <span class="text-primary">10%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <canvas id="revenueChart" style="height: 300px; width: 100%;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -542,26 +588,26 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="row">
                                 <div class="col-6 mb-3">
                                     <div class="text-center p-3 bg-dark rounded">
-                                        <div class="h4 mb-1 text-primary">48</div>
+                                        <div class="h4 mb-1 text-primary">${mockData.songs.length}</div>
                                         <small class="text-muted text-secondary-fix">Total Songs</small>
                                     </div>
                                 </div>
                                 <div class="col-6 mb-3">
                                     <div class="text-center p-3 bg-dark rounded">
-                                        <div class="h4 mb-1 text-success">2.4M</div>
+                                        <div class="h4 mb-1 text-success">${mockData.profile.followers || 0}</div>
                                         <small class="text-muted text-secondary-fix">Followers</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-center p-3 bg-dark rounded">
-                                        <div class="h4 mb-1 text-warning">86%</div>
-                                        <small class="text-muted text-secondary-fix">Completion Rate</small>
+                                        <div class="h4 mb-1 text-warning">100%</div>
+                                        <small class="text-muted text-secondary-fix">Profile Status</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-center p-3 bg-dark rounded">
-                                        <div class="h4 mb-1 text-info">42</div>
-                                        <small class="text-muted text-secondary-fix">Countries</small>
+                                        <div class="h4 mb-1 text-info">-</div>
+                                        <small class="text-muted text-secondary-fix">Rank</small>
                                     </div>
                                 </div>
                             </div>
@@ -590,37 +636,37 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             <div class="row">
                 <div class="col-lg-4 mb-4">
-                    <!-- Profile Card -->
-                    <div class="card">
-                        <div class="card-body text-center p-4">
-                            <div class="profile-avatar mb-3">
-                                <img src="${mockData.profile.avatar}" 
-                                     alt="${mockData.profile.name}" class="rounded-circle" width="120" height="120" id="profileAvatar">
-                                <button class="btn btn-sm btn-outline-primary mt-2" id="changeAvatarBtn">
-                                    <i class="fas fa-camera me-1"></i>Change Photo
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body text-center p-5">
+                            <div class="profile-avatar-container mb-4 position-relative d-inline-block">
+                                <div class="profile-avatar shadow" id="profileAvatarCircle" style="width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; background: ${mockData.profile.avatarColor || 'var(--primary-color)'}; border: 4px solid var(--bg-secondary);">
+                                    ${mockData.profile.avatar ? `<img src="${mockData.profile.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span class="h1 mb-0">${(mockData.profile.name || 'A').charAt(0).toUpperCase()}</span>`}
+                                </div>
+                                <button class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle shadow-sm" id="changeAvatarBtn" style="width: 35px; height: 35px; padding: 0;">
+                                    <i class="fas fa-camera"></i>
                                 </button>
-                                <div id="avatarUploadProgress" class="mt-2" style="display: none;">
-                                    <div class="progress" style="height: 5px;">
+                                <div id="avatarUploadProgress" class="position-absolute w-100 start-0" style="bottom: -15px; display: none;">
+                                    <div class="progress" style="height: 4px;">
                                         <div class="progress-bar" role="progressbar" style="width: 0%"></div>
                                     </div>
-                                    <small class="text-muted">Uploading...</small>
                                 </div>
                             </div>
-                            <h4 class="card-title" id="artistNameDisplay">${mockData.profile.name}</h4>
-                            <p class="text-muted">Electronic Music Producer</p>
-                            <div class="d-flex justify-content-center mb-3">
-                                <div class="text-center mx-3">
-                                    <div class="h5 mb-0">2.4M</div>
-                                    <small class="text-muted">Followers</small>
-                                </div>
-                                <div class="text-center mx-3">
-                                    <div class="h5 mb-0">48</div>
-                                    <small class="text-muted">Songs</small>
-                                </div>
-                                <div class="text-center mx-3">
-                                    <div class="h5 mb-0">124M</div>
-                                    <small class="text-muted">Plays</small>
-                                </div>
+                            <h4 class="card-title fw-bold mb-1" id="artistNameDisplay">${mockData.profile.name}</h4>
+                            <p class="text-muted small mb-4">${mockData.profile.genre || 'Electronic'} Music Producer</p>
+                            
+                            <div class="d-flex justify-content-center gap-5 mb-4">
+                                    <div class="text-center">
+                                        <div class="h5 mb-0 text-fix" id="mini-stat-followers">${mockData.profile.followers || 0}</div>
+                                        <small class="text-muted">Followers</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="h5 mb-0 text-fix" id="mini-stat-songs">${mockData.songs.length}</div>
+                                        <small class="text-muted">Songs</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="h5 mb-0 text-fix" id="mini-stat-plays">${mockData.stats.totalPlays || 0}</div>
+                                        <small class="text-muted">Plays</small>
+                                    </div>
                             </div>
                             <div class="artist-verification mb-3">
                                 <span class="badge bg-success">
@@ -677,31 +723,33 @@ document.addEventListener('DOMContentLoaded', async function () {
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Real Name</label>
-                                        <input type="text" class="form-control" value="Alex Johnson" id="realNameInput">
+                                        <input type="text" class="form-control" value="${mockData.profile.real_name || ''}" id="realNameInput">
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Bio</label>
-                                    <textarea class="form-control" rows="4" id="bioInput">${mockData.profile.bio}</textarea>
+                                    <textarea class="form-control" rows="4" id="bioInput">${mockData.profile.bio || ''}</textarea>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Location</label>
-                                        <input type="text" class="form-control" value="Los Angeles, CA" id="locationInput">
+                                        <input type="text" class="form-control" value="${mockData.profile.location || ''}" id="locationInput">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Website</label>
-                                        <input type="url" class="form-control" value="https://novarhythm.com" id="websiteInput">
+                                        <input type="url" class="form-control" value="${mockData.profile.website || ''}" id="websiteInput">
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Primary Genre *</label>
                                     <select class="form-select" id="genreSelect" required>
-                                        <option selected>Electronic</option>
-                                        <option>Ambient</option>
-                                        <option>Synthwave</option>
-                                        <option>House</option>
-                                        <option>Techno</option>
+                                        <option value="Electronic" ${mockData.profile.genre === 'Electronic' ? 'selected' : ''}>Electronic</option>
+                                        <option value="Ambient" ${mockData.profile.genre === 'Ambient' ? 'selected' : ''}>Ambient</option>
+                                        <option value="Synthwave" ${mockData.profile.genre === 'Synthwave' ? 'selected' : ''}>Synthwave</option>
+                                        <option value="House" ${mockData.profile.genre === 'House' ? 'selected' : ''}>House</option>
+                                        <option value="Techno" ${mockData.profile.genre === 'Techno' ? 'selected' : ''}>Techno</option>
+                                        <option value="Afrobeat" ${mockData.profile.genre === 'Afrobeat' ? 'selected' : ''}>Afrobeat</option>
+                                        <option value="Other" ${mockData.profile.genre === 'Other' ? 'selected' : ''}>Other</option>
                                     </select>
                                 </div>
                             </form>
@@ -883,7 +931,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div class="text-muted">
-                                    Showing ${uploadedSongs.length} of ${uploadedSongs.length + 43} songs
+                                    Showing ${uploadedSongs.length} songs
                                 </div>
                                 <nav>
                                     <ul class="pagination mb-0">
@@ -929,8 +977,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     <div class="card stat-card">
                         <div class="card-body text-center">
                             <h6 class="text-muted mb-2">Avg. Plays/Day</h6>
-                            <h3 class="mb-0">8.2K</h3>
-                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 12.3%</span>
+                            <h3 class="mb-0">${(mockData.stats.analyticsOverview && mockData.stats.analyticsOverview.avg_plays_daily !== undefined) ? mockData.stats.analyticsOverview.avg_plays_daily : '0'}</h3>
+                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> (Simulated)</span>
                         </div>
                     </div>
                 </div>
@@ -938,8 +986,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     <div class="card stat-card">
                         <div class="card-body text-center">
                             <h6 class="text-muted mb-2">Completion Rate</h6>
-                            <h3 class="mb-0">86%</h3>
-                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 2.1%</span>
+                            <h3 class="mb-0">${(mockData.stats.analyticsOverview && mockData.stats.analyticsOverview.completion_rate !== undefined) ? mockData.stats.analyticsOverview.completion_rate : 'N/A'}</h3>
+                            <span class="text-muted small">No data</span>
                         </div>
                     </div>
                 </div>
@@ -947,8 +995,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     <div class="card stat-card">
                         <div class="card-body text-center">
                             <h6 class="text-muted mb-2">Skip Rate</h6>
-                            <h3 class="mb-0">14%</h3>
-                            <span class="text-danger small"><i class="fas fa-arrow-down me-1"></i> 1.8%</span>
+                            <h3 class="mb-0">${(mockData.stats.analyticsOverview && mockData.stats.analyticsOverview.skip_rate !== undefined) ? mockData.stats.analyticsOverview.skip_rate : 'N/A'}</h3>
+                            <span class="text-muted small">No data</span>
                         </div>
                     </div>
                 </div>
@@ -956,8 +1004,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     <div class="card stat-card">
                         <div class="card-body text-center">
                             <h6 class="text-muted mb-2">Avg. Listen Time</h6>
-                            <h3 class="mb-0">2:45</h3>
-                            <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 5.2%</span>
+                            <h3 class="mb-0">${(mockData.stats.analyticsOverview && mockData.stats.analyticsOverview.avg_listen_time !== undefined) ? mockData.stats.analyticsOverview.avg_listen_time : '0:00'}</h3>
+                            <span class="text-muted small">No data</span>
                         </div>
                     </div>
                 </div>
@@ -1012,26 +1060,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <h5 class="card-title mb-0">Audience Demographics</h5>
                         </div>
                         <div class="card-body">
-                            <div class="chart-placeholder">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
-                                    <h5>Audience Insights</h5>
-                                    <div class="mt-3">
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>18-24</span>
-                                            <span class="text-primary">32%</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>25-34</span>
-                                            <span class="text-primary">45%</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span>35+</span>
-                                            <span class="text-primary">23%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <canvas id="demographicsChart" style="height: 300px; width: 100%;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1081,10 +1110,28 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function getRevenueContent() {
+        // Safe fallback for undefined/null revenue fields
+        const availableForWithdrawal = (mockData.stats.availableForWithdrawal !== undefined && mockData.stats.availableForWithdrawal !== null)
+            ? mockData.stats.availableForWithdrawal : '$0.00';
+        const totalRevenue = (mockData.stats.totalRevenue !== undefined && mockData.stats.totalRevenue !== null)
+            ? mockData.stats.totalRevenue : '$0.00';
+        const monthlyRevenue = (mockData.stats.monthlyRevenue !== undefined && mockData.stats.monthlyRevenue !== null)
+            ? mockData.stats.monthlyRevenue : '$0.00';
+        const pendingPayouts = (mockData.stats.pendingPayouts !== undefined && mockData.stats.pendingPayouts !== null)
+            ? mockData.stats.pendingPayouts : '$0.00';
+
+        let availableAmount = 0;
+        try {
+            availableAmount = parseFloat(availableForWithdrawal.replace(/[^0-9.-]+/g, ""));
+            if (isNaN(availableAmount)) availableAmount = 0;
+        } catch (e) {
+            availableAmount = 0;
+        }
+
         return `
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Revenue & Royalties</h1>
-                <button class="btn btn-primary" id="withdrawEarningsBtn" ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, "")) < 50 ? 'disabled' : ''}>
+                <button class="btn btn-primary" id="withdrawEarningsBtn" ${availableAmount < 50 ? 'disabled' : ''}>
                     <i class="fas fa-money-check-alt me-2"></i>Withdraw Earnings
                 </button>
             </div>
@@ -1097,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">Total Earnings</h6>
-                                    <h3 class="mb-0">${mockData.stats.totalRevenue}</h3>
+                                    <h3 class="mb-0">${totalRevenue}</h3>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-wallet"></i>
@@ -1112,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">This Month</h6>
-                                    <h3 class="mb-0">${mockData.stats.monthlyRevenue}</h3>
+                                    <h3 class="mb-0">${monthlyRevenue}</h3>
                                     <span class="text-success small"><i class="fas fa-arrow-up me-1"></i> 24.7%</span>
                                 </div>
                                 <div class="stat-icon">
@@ -1128,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">Pending Payout</h6>
-                                    <h3 class="mb-0">${mockData.stats.pendingPayouts}</h3>
+                                    <h3 class="mb-0">${pendingPayouts}</h3>
                                 </div>
                                 <div class="stat-icon">
                                     <i class="fas fa-clock"></i>
@@ -1143,8 +1190,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-2">Available for Withdrawal</h6>
-                                    <h3 class="mb-0">${mockData.stats.availableForWithdrawal}</h3>
-                                    ${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, "")) < 50 ?
+                                    <h3 class="mb-0">${availableForWithdrawal}</h3>
+                                    ${availableAmount < 50 ?
                 '<small class="text-warning">Min. $50 required</small>' :
                 '<span class="text-success small">Ready to withdraw</span>'}
                                 </div>
@@ -1165,27 +1212,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <h5 class="card-title mb-0">Revenue Overview</h5>
                         </div>
                         <div class="card-body">
-                            <div class="chart-placeholder">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
-                                    <h5>Monthly Revenue</h5>
-                                    <p class="text-muted">Steady growth of 18.7% month over month</p>
-                                    <div class="d-flex justify-content-center mt-3">
-                                        <div class="mx-3 text-center">
-                                            <div class="h4 mb-0 text-success">$245K</div>
-                                            <small class="text-muted">Total Revenue</small>
-                                        </div>
-                                        <div class="mx-3 text-center">
-                                            <div class="h4 mb-0 text-primary">$18.2K</div>
-                                            <small class="text-muted">Avg Monthly</small>
-                                        </div>
-                                        <div class="mx-3 text-center">
-                                            <div class="h4 mb-0 text-warning">24.7%</div>
-                                            <small class="text-muted">Growth Rate</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <canvas id="revenueOverviewChart" style="height: 300px; width: 100%;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1205,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                         <label class="form-label">Available Balance</label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
-                                            <input type="text" class="form-control" value="${mockData.stats.availableForWithdrawal.replace('$', '')}" readonly>
+                                            <input type="text" class="form-control" value="${availableForWithdrawal.replace('$', '')}" readonly>
                                             <button class="btn btn-outline-primary" type="button" id="withdrawAllBtn">Withdraw All</button>
                                         </div>
                                     </div>
@@ -1215,7 +1242,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control" id="withdrawAmount" 
                                                    min="50" 
-                                                   max="${parseFloat(mockData.stats.availableForWithdrawal.replace(/[^0-9.-]+/g, ""))}" 
+                                                   max="${availableAmount}" 
                                                    step="0.01"
                                                    placeholder="Enter amount">
                                         </div>
@@ -1262,46 +1289,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                                         <tr>
                                             <th>Source</th>
                                             <th>Streams/Plays</th>
-                                            <th>Rate</th>
-                                            <th>Earnings</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Beats Streaming</td>
-                                            <td>2.4M</td>
-                                            <td>$0.004/stream</td>
-                                            <td>$9,600</td>
-                                            <td><span class="badge bg-success">Paid</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Song Downloads</td>
-                                            <td>8,240</td>
-                                            <td>$0.99/download</td>
-                                            <td>$8,157</td>
-                                            <td><span class="badge bg-success">Paid</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>YouTube Content ID</td>
-                                            <td>450K</td>
-                                            <td>$0.001/view</td>
-                                            <td>$450</td>
-                                            <td><span class="badge bg-warning">Pending</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Sync Licensing</td>
-                                            <td>12</td>
-                                            <td>$500/license</td>
-                                            <td>$6,000</td>
-                                            <td><span class="badge bg-success">Paid</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Merchandise Sales</td>
-                                            <td>320</td>
-                                            <td>$25/sale</td>
-                                            <td>$8,000</td>
-                                            <td><span class="badge bg-warning">Pending</span></td>
+                                            <!-- Table headers for Royalties Breakdown -->
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1545,22 +1533,21 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Helper functions for generating content
     function getActivityTimeline() {
-        const activities = [
-            { time: '2 hours ago', action: 'Uploaded new song "Cosmic Drift"', type: 'upload' },
-            { time: '1 day ago', action: 'Reached 100K streams on "Midnight Pulse"', type: 'milestone' },
-            { time: '2 days ago', action: 'Gained 5,420 new followers', type: 'followers' },
-            { time: '1 week ago', action: 'Payment of $8,450 processed', type: 'payment' },
-            { time: '2 weeks ago', action: 'Featured on "Electronic Essentials" playlist', type: 'feature' }
-        ];
+        // Use real activity if available, otherwise simplified message
+        const activities = mockData.stats.recentActivity || [];
+
+        if (activities.length === 0) {
+            return '<p class="text-center text-muted py-3">No recent activity</p>';
+        }
 
         return activities.map(activity => `
             <div class="activity-item">
-                <div class="activity-icon ${activity.type}">
-                    <i class="fas fa-${activity.type === 'upload' ? 'upload' : activity.type === 'milestone' ? 'trophy' : activity.type === 'followers' ? 'users' : activity.type === 'payment' ? 'dollar-sign' : 'star'}"></i>
+                <div class="activity-icon ${activity.type || 'info'}">
+                    <i class="fas fa-${activity.type === 'upload' ? 'upload' : 'info-circle'}"></i>
                 </div>
                 <div class="activity-content">
-                    <p class="mb-1">${activity.action}</p>
-                    <small class="text-muted">${activity.time}</small>
+                    <p class="mb-1">${activity.action || activity.description}</p>
+                    <small class="text-muted">${new Date(activity.time).toLocaleDateString()}</small>
                 </div>
             </div>
         `).join('');
@@ -1732,12 +1719,17 @@ document.addEventListener('DOMContentLoaded', async function () {
                                     progressBar.style.width = '100%';
 
                                     // Update images with new URL (add timestamp to bust cache)
-                                    const newUrl = result.data.file_path; // Local path or full URL
+                                    const newUrl = `${result.data.file_path}?t=${new Date().getTime()}`;
 
                                     // Update internal state
                                     mockData.profile.avatar = newUrl;
 
-                                    if (profileAvatar) profileAvatar.src = newUrl;
+                                    // Fix: Target the circle container and swap initials for image
+                                    const avatarCircle = document.getElementById('profileAvatarCircle');
+                                    if (avatarCircle) {
+                                        avatarCircle.innerHTML = `<img src="${newUrl}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                                        avatarCircle.style.background = 'transparent'; // Remove background color when image is present
+                                    }
 
                                     const topBarImage = document.getElementById('topBarProfileImage');
                                     if (topBarImage) topBarImage.src = newUrl;
@@ -1968,7 +1960,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             saveProfileBtn.addEventListener('click', async function () {
                 // Get form values
                 const artistName = document.getElementById('artistNameInput')?.value || mockData.profile.name;
+                const realName = document.getElementById('realNameInput')?.value || '';
                 const bio = document.getElementById('bioInput')?.value || mockData.profile.bio;
+                const location = document.getElementById('locationInput')?.value || '';
+                const website = document.getElementById('websiteInput')?.value || '';
+                const genre = document.getElementById('genreSelect')?.value || '';
 
                 // Get Social values
                 const instagram = document.getElementById('instagramInput')?.value?.trim();
@@ -1977,10 +1973,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const youtube = document.getElementById('youtubeInput')?.value?.trim();
 
                 try {
-                    // We need artist ID. If not in mockData directly (it's in loadArtistSongsFromBackend local scope), we need to fetch or store it globally. 
-                    // Let's assume we can get it via same method or better, store it in mockData for now.
-                    // For this implementation, we'll refetch/find user.
-
                     const sessionRes = await fetch('backend/api/session.php');
                     const sessionData = await sessionRes.json();
 
@@ -1997,7 +1989,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const updateData = {
                         id: artistId,
                         name: artistName,
-                        genre: artistJson.data[0].genre, // Keep existing
+                        real_name: realName,
+                        genre: genre || artistJson.data[0].genre,
                         followers: artistJson.data[0].followers,
                         songs_count: artistJson.data[0].songs_count,
                         status: artistJson.data[0].status,
@@ -2006,7 +1999,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                         instagram_url: instagram,
                         twitter_url: twitter,
                         facebook_url: facebook,
-                        youtube_url: youtube
+                        youtube_url: youtube,
+                        website: website,
+                        location: location
                     };
 
                     const updateRes = await fetch('backend/api/artists.php', {
@@ -2031,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         const topBarName = document.getElementById('topBarArtistName');
                         if (topBarName) topBarName.textContent = artistName;
 
-                        showNotification('Profile updated successfully!', 'success');
+                        showNotification('Profile and social media links updated successfully!', 'success');
                     } else {
                         throw new Error(updateJson.message);
                     }
@@ -2046,8 +2041,30 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Save notification settings in profile
         const saveNotificationSettings = document.getElementById('saveNotificationSettings');
         if (saveNotificationSettings) {
-            saveNotificationSettings.addEventListener('click', function () {
-                showNotification('Notification settings saved successfully!', 'success');
+            saveNotificationSettings.addEventListener('click', async function () {
+                const payload = {
+                    notif_new_followers: document.getElementById('notifNewFollowers').checked,
+                    notif_comments: document.getElementById('notifComments').checked,
+                    notif_stream_milestones: document.getElementById('notifStreamMilestones').checked,
+                    notif_revenue_updates: document.getElementById('notifRevenueUpdates').checked,
+                    notif_marketing: document.getElementById('notifMarketing').checked
+                };
+                try {
+                    const res = await fetch('backend/api/notification_settings.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showNotification('Notification settings saved successfully!', 'success');
+                    } else {
+                        showNotification('Failed to save notification settings', 'danger');
+                    }
+                } catch (e) {
+                    showNotification('Failed to save notification settings', 'danger');
+                }
             });
         }
     }
@@ -2232,6 +2249,25 @@ document.addEventListener('DOMContentLoaded', async function () {
                         formData.append('cover_art', coverArtInput.files[0]);
                     }
 
+                    // Fetch artist_id from backend before upload
+                    let artistId = null;
+                    try {
+                        const sessionRes = await fetch('backend/api/session.php', { credentials: 'include' });
+                        const sessionData = await sessionRes.json();
+                        if (sessionData.success && sessionData.data.user) {
+                            const userId = sessionData.data.user.id;
+                            const artistRes = await fetch(`backend/api/artists.php?user_id=${userId}`);
+                            const artistJson = await artistRes.json();
+                            if (artistJson.success && artistJson.data.length > 0) {
+                                artistId = artistJson.data[0].id;
+                                formData.append('artist_id', artistId);
+                            }
+                        }
+                    } catch (fetchErr) {
+                        // If artistId cannot be fetched, rely on backend fallback
+                        console.warn('Could not fetch artist_id for upload:', fetchErr);
+                    }
+
                     // Make API call to upload
                     const response = await fetch('backend/api/upload.php', {
                         method: 'POST',
@@ -2249,9 +2285,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                         if (uploadForm) uploadForm.style.display = 'none';
 
                         // Optionally refresh the songs list
-                        // You might want to reload the page or refresh the songs table
                         setTimeout(() => {
-                            window.location.reload(); // Simple refresh for now
+                            window.location.reload();
                         }, 1500);
 
                     } else {
@@ -2632,5 +2667,152 @@ document.addEventListener('DOMContentLoaded', async function () {
                 notification.remove();
             }
         }, 3000);
+    }
+
+    // Chart Initialization Functions
+    function initializeDashboardCharts() {
+        if (!mockData.stats.chartData || !document.getElementById('streamsChart')) return;
+
+        const ctx = document.getElementById('streamsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: mockData.stats.chartData.labels,
+                datasets: [{
+                    label: 'Monthly Streams',
+                    data: mockData.stats.chartData.data,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#adb5bd' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#adb5bd' }
+                    }
+                }
+            }
+        });
+
+        if (mockData.stats.revenueData && document.getElementById('revenueChart')) {
+            const revCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revCtx, {
+                type: 'bar',
+                data: {
+                    labels: mockData.stats.revenueData.labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: mockData.stats.revenueData.data,
+                        backgroundColor: '#198754',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { display: false },
+                            ticks: { display: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false } // Minimalist view for dashboard card
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function initializeRevenueCharts() {
+        if (!mockData.stats.revenueData || !document.getElementById('revenueOverviewChart')) return;
+
+        const ctx = document.getElementById('revenueOverviewChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: mockData.stats.revenueData.labels,
+                datasets: [{
+                    label: 'Total Revenue',
+                    data: mockData.stats.revenueData.data,
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: {
+                            color: '#adb5bd',
+                            callback: function (value) { return '$' + value; }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#adb5bd' }
+                    }
+                }
+            }
+        });
+    }
+
+    function initializeAnalyticsCharts() {
+        if (!mockData.stats.demographics || !document.getElementById('demographicsChart')) return;
+
+        const ctx = document.getElementById('demographicsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: mockData.stats.demographics.labels,
+                datasets: [{
+                    data: mockData.stats.demographics.data,
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#6610f2',
+                        '#6f42c1',
+                        '#d63384'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#adb5bd' }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
     }
 });

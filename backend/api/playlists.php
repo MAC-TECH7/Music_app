@@ -1,14 +1,8 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once '../cors.php';
 
 require_once '../db.php';
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -54,7 +48,21 @@ switch ($method) {
                 echo json_encode(['success' => true, 'data' => $playlist]);
             } else {
                 // Get all playlists or user's playlists
-                if ($user_id) {
+                $type = $_GET['type'] ?? '';
+
+                if ($type === 'public') {
+                     $stmt = $pdo->query("
+                        SELECT p.*, u.name as creator_name,
+                        COUNT(ps.song_id) as song_count
+                        FROM playlists p
+                        LEFT JOIN users u ON p.user_id = u.id
+                        LEFT JOIN playlist_songs ps ON p.id = ps.playlist_id
+                        WHERE p.is_public = 1
+                        GROUP BY p.id, u.name
+                        ORDER BY p.likes DESC, p.created_at DESC
+                        LIMIT 20
+                    ");
+                } elseif ($user_id) {
                     $stmt = $pdo->prepare("
                         SELECT p.*, u.name as creator_name,
                         COUNT(ps.song_id) as song_count
@@ -62,7 +70,7 @@ switch ($method) {
                         LEFT JOIN users u ON p.user_id = u.id
                         LEFT JOIN playlist_songs ps ON p.id = ps.playlist_id
                         WHERE p.user_id = ? OR p.is_public = 1
-                        GROUP BY p.id
+                        GROUP BY p.id, u.name
                         ORDER BY p.created_at DESC
                     ");
                     $stmt->execute([$user_id]);
@@ -73,7 +81,7 @@ switch ($method) {
                         FROM playlists p
                         LEFT JOIN users u ON p.user_id = u.id
                         LEFT JOIN playlist_songs ps ON p.id = ps.playlist_id
-                        GROUP BY p.id
+                        GROUP BY p.id, u.name
                         ORDER BY p.created_at DESC
                     ");
                 }

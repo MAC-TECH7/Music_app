@@ -152,20 +152,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 showSuccess('Login successful! Redirecting to dashboard...');
 
-                // Store minimal user data in localStorage for frontend routing
-                localStorage.setItem('afroUser', JSON.stringify({
-                    id: user.id,
-                    email: user.email,
-                    name: user.name,
-                    phone: user.phone,
-                    role: user.type,
-                    status: user.status,
-                    joined: user.joined,
-                    avatar: user.avatar,
-                    isLoggedIn: true,
-                    loginTime: new Date().toISOString()
-                }));
-
                 setTimeout(() => {
                     const path = window.location.pathname;
                     const directory = path.substring(0, path.lastIndexOf('/'));
@@ -261,76 +247,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 1000);
     });
 
-    // Demo Credentials Quick-Fill
-    const demoPills = document.querySelectorAll('.demo-pill');
-    demoPills.forEach(pill => {
-        pill.addEventListener('click', function () {
-            const email = this.getAttribute('data-email');
-            const pass = this.getAttribute('data-pass');
-
-            emailInput.value = email;
-            passwordInput.value = pass;
-
-            // Highlight the inputs briefly
-            emailInput.classList.add('is-valid');
-            passwordInput.classList.add('is-valid');
-
-            // Scroll to the submit button to make it obvious
-            loginBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            // Pulse the login button
-            loginBtn.style.transform = 'scale(1.05)';
-            setTimeout(() => {
-                loginBtn.style.transform = 'scale(1)';
-            }, 300);
-
-            setTimeout(() => {
-                emailInput.classList.remove('is-valid');
-                passwordInput.classList.remove('is-valid');
-            }, 1000);
-
-            showSuccess(`Filled credentials for ${this.querySelector('span').textContent}. Click Login to continue.`);
-        });
-    });
-
-    // Handle initial role from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const role = urlParams.get('role');
-    if (role) {
-        let pillToClick = null;
-        if (role === 'fan') {
-            pillToClick = document.querySelector('.demo-pill[data-email*="john.mbarga"]');
-        } else if (role === 'artist') {
-            pillToClick = document.querySelector('.demo-pill[data-email*="marie.ndongo"]');
-        } else if (role === 'admin') {
-            pillToClick = document.querySelector('.demo-pill[data-email*="thomas.n"]');
-        }
-
-        if (pillToClick) {
-            setTimeout(() => {
-                pillToClick.click();
-                showSuccess(`Context detected: ${role.charAt(0).toUpperCase() + role.slice(1)} Login. Credentials pre-filled.`);
-            }, 500);
-        }
-    }
-
-    // Add shake animation CSS
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        .shake {
-            animation: shake 0.5s ease-in-out;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Demo credentials hint
-    console.log('Demo Credentials:');
-    console.log('Fan: john.mbarga@email.com, Password: password123');
-    console.log('Artist: marie.ndongo@email.com, Password: password123');
-    console.log('Admin: thomas.n@email.com, Password: password123');
+    // Demo credentials autofill logic removed
 });

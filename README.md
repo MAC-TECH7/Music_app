@@ -488,3 +488,5 @@ All endpoints return JSON responses with `success` and `data` fields.
 - `GET/POST/PUT/DELETE /backend/api/artists.php`
 - `GET/POST/PUT/DELETE /backend/api/songs.php`
 - `GET/POST/PUT/DELETE /backend/api/subscriptions.php`
+
+UMLS PLAN GUIDE. Promt agent to analayze the system and generate the codes of the umls the system needs, then go to draw.io and paste the code to generate the diagrams.

@@ -1,21 +1,7 @@
 <?php
 ob_start();
-header('Content-Type: application/json');
-
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-    header('Access-Control-Allow-Credentials: true');
-    header('Access-Control-Max-Age: 86400');
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");         
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-    exit(0);
-}
-
 session_start();
-
+require_once '../cors.php';
 function sendResponse($success, $message, $data = null, $httpCode = 200) {
     if (ob_get_length()) ob_clean();
     http_response_code($httpCode);
@@ -61,6 +47,9 @@ try {
     if ($user['status'] !== 'active') {
         sendResponse(false, 'Account is not active', null, 403);
     }
+
+    // Regenerate session ID to prevent session fixation attacks
+    session_regenerate_id(true);
 
     // Store user data in session
     $_SESSION['user'] = [

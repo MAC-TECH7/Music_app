@@ -1,5 +1,4 @@
 // ========== GLOBAL VARIABLES ==========
-console.log("🚀 Js/fan.js loaded");
 let globalAudioPlayer = null;
 let isPlaying = false;
 let currentSongIndex = 0;
@@ -33,65 +32,12 @@ let sampleArtists = [
     { id: 5, name: 'Douala Beats', followers: 22000, monthlyListeners: 112000, genre: 'Assiko', bio: 'Coastal rhythms and beats', avatarColor: '#9C27B0' }
 ];
 
-// Static playlist definitions referencing song IDs (will be resolved after songs load)
-const samplePlaylists = [
-    {
-        id: 101,
-        name: 'Morning Makossa',
-        description: 'Start your day with classic Makossa rhythms',
-        creator: 'AfroRhythm',
-        songs: [1, 2, 3],
-        plays: 12500,
-        likes: 890,
-        isPublic: true,
-        createdAt: '2023-01-15',
-        coverColor: '#FF6B35',
-        tags: ['morning', 'makossa', 'classic']
-    },
-    {
-        id: 102,
-        name: 'Workout Bikutsi',
-        description: 'High-energy Bikutsi beats for your workout',
-        creator: 'AfroRhythm',
-        songs: [2, 4, 5],
-        plays: 9800,
-        likes: 650,
-        isPublic: true,
-        createdAt: '2023-02-20',
-        coverColor: '#2E8B57',
-        tags: ['workout', 'energy', 'bikutsi']
-    },
-    {
-        id: 103,
-        name: 'Chill Afrobeat',
-        description: 'Relax and unwind with smooth Afrobeat vibes',
-        creator: 'AfroRhythm',
-        songs: [3, 6, 1],
-        plays: 15600,
-        likes: 1120,
-        isPublic: true,
-        createdAt: '2023-03-10',
-        coverColor: '#4A6CF7',
-        tags: ['chill', 'relax', 'afrobeat']
-    },
-    {
-        id: 104,
-        name: 'Party Mix',
-        description: 'The ultimate party playlist with Cameroon\'s best',
-        creator: 'AfroRhythm',
-        songs: [1, 2, 3, 4, 5, 6],
-        plays: 23400,
-        likes: 1870,
-        isPublic: true,
-        createdAt: '2023-04-05',
-        coverColor: '#9C27B0',
-        tags: ['party', 'dance', 'mix']
-    }
-];
+// Playlists will be fetched dynamically
+let samplePlaylists = [];
+
 
 // ========== MAIN INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("🎵 AfroRhythm Fan Dashboard Initializing...");
 
     // Check authentication
     if (!checkAuth()) {
@@ -122,22 +68,15 @@ document.addEventListener('DOMContentLoaded', function () {
         showNotification("Running from file system. Backend unavailable.", "warning");
     }
 
-    console.log("🚀 Initializing Fan Dashboard...");
-
     // Load songs and artists from backend
     loadBackendData().then(async () => {
-        console.log("✅ Backend data loaded successfully");
-
         // Attempt to load user data if logged in
         if (checkAuth()) {
             await loadUserData();
-        } else {
-            console.log("ℹ️ No user logged in, skipping user-specific data load");
         }
     }).catch(err => {
         console.error('❌ Backend load failed, using fallback data:', err);
         showNotification("Backend unavailable. Using offline mode.", "warning");
-        // Fallback data is already in place (restored in previous step)
     }).finally(() => {
         // Initialize UI regardless of data source
         setupNavigation();
@@ -146,30 +85,26 @@ document.addEventListener('DOMContentLoaded', function () {
         setupNotifications();
         setupSearch();
         loadViewContent('discover');
-        // initializeAudio(); // Removed to prevent conflict with player.js
         updateUserProfileUI();
         updateQuickStats();
         setupProfileUpload();
-
-        console.log("✅ Fan Dashboard fully initialized!");
     });
 });
 
 // Fetch songs and artists from backend APIs
 async function loadBackendData() {
-    console.log("📡 Fetching data from backend...");
 
+    // Define endpoints - assumes script is running at root/fan.html or similar
     // Define endpoints - assumes script is running at root/fan.html or similar
     const songsUrl = 'backend/api/songs.php';
     const artistsUrl = 'backend/api/artists.php';
-
-    console.log(`fetching: ${songsUrl}`);
-    console.log(`fetching: ${artistsUrl}`);
+    const playlistsUrl = 'backend/api/playlists.php?type=public';
 
     try {
-        const [songsRes, artistsRes] = await Promise.all([
+        const [songsRes, artistsRes, playlistsRes] = await Promise.all([
             fetch(songsUrl),
-            fetch(artistsUrl)
+            fetch(artistsUrl),
+            fetch(playlistsUrl)
         ]);
 
         if (!songsRes.ok) throw new Error(`Songs API error: ${songsRes.status} ${songsRes.statusText}`);
@@ -178,16 +113,23 @@ async function loadBackendData() {
         const songsJson = await songsRes.json();
         const artistsJson = await artistsRes.json();
 
+        let playlistsJson = { success: false, data: [] };
+        if (playlistsRes.ok) {
+            try {
+                playlistsJson = await playlistsRes.json();
+            } catch (e) {
+                console.warn("Failed to parse playlists JSON", e);
+            }
+        }
+
         if (!songsJson.success) throw new Error(songsJson.message || 'Songs API returned failure');
         if (!artistsJson.success) throw new Error(artistsJson.message || 'Artists API returned failure');
-
-        console.log(`✅ Loaded ${songsJson.data.length} songs from backend`);
-        console.log(`✅ Loaded ${artistsJson.data.length} artists from backend`);
 
         // Map backend songs
         if (songsJson.data && songsJson.data.length > 0) {
             sampleSongs = songsJson.data.map(song => ({
                 id: parseInt(song.id),
+                artistId: parseInt(song.artist_id),
                 title: song.title,
                 artist: song.artist_name || 'Unknown Artist',
                 genre: song.genre || 'Unknown',
@@ -200,20 +142,47 @@ async function loadBackendData() {
 
         // Map backend artists
         if (artistsJson.data && artistsJson.data.length > 0) {
-            sampleArtists = artistsJson.data.map(artist => ({
-                id: parseInt(artist.id),
-                name: artist.name,
-                followers: parseInt(artist.followers) || 0,
-                monthlyListeners: parseInt(artist.followers) * 5 || 0, // Mock calc
-                genre: artist.genre || 'Unknown',
-                bio: artist.bio || 'No biography available',
-                avatarColor: getTimeBasedColor(artist.id + 100),
-                social: {
-                    instagram: artist.instagram_url,
-                    twitter: artist.twitter_url,
-                    facebook: artist.facebook_url,
-                    youtube: artist.youtube_url
-                }
+            sampleArtists = artistsJson.data.map(artist => {
+                const mappedArtist = {
+                    id: parseInt(artist.id),
+                    name: (artist.name || artist.user_name),
+                    followers: parseInt(artist.followers) || 0,
+                    monthlyListeners: parseInt(artist.followers) * 5 || 0,
+                    genre: artist.genre || 'Unknown',
+                    bio: artist.bio || 'No biography available',
+                    avatarColor: getTimeBasedColor(artist.id + 100),
+                    social: {
+                        instagram: artist.instagram_url || null,
+                        twitter: artist.twitter_url || null,
+                        facebook: artist.facebook_url || null,
+                        youtube: artist.youtube_url || null
+                    },
+                    website: artist.website || null,
+                    location: artist.location || null,
+                    image: artist.image || null,
+                    totalPlays: parseInt(artist.total_plays) || 0,
+                    totalLikes: parseInt(artist.total_likes) || 0,
+                    totalDownloads: parseInt(artist.total_downloads) || 0
+                };
+
+                return mappedArtist;
+            });
+        }
+
+        // Map backend playlists
+        if (playlistsJson.success && playlistsJson.data) {
+            samplePlaylists = playlistsJson.data.map(p => ({
+                id: parseInt(p.id),
+                name: p.name,
+                description: p.description || '',
+                creator: p.creator_name || 'AfroRhythm',
+                songs: p.songs ? p.songs.map(s => parseInt(s.id)) : [],
+                plays: p.plays || 0, // Backend might not have plays for playlists yet, use 0
+                likes: p.likes || 0, // Backend might not have likes
+                isPublic: !!p.is_public,
+                createdAt: p.created_at,
+                coverColor: getTimeBasedColor(p.id + 200),
+                tags: [] // Backend doesn't support tags yet
             }));
         }
 
@@ -232,7 +201,6 @@ function getTimeBasedColor(seed) {
 
 // ========== AUTHENTICATION ==========
 async function checkAuth() {
-    console.log("🔐 Checking authentication...");
 
     try {
         const response = await fetch('backend/api/session.php', {
@@ -244,16 +212,12 @@ async function checkAuth() {
             const data = await response.json();
             if (data.success) {
                 currentUser = data.data.user;
-                console.log(`✅ User authenticated: ${currentUser.name}`);
                 return true;
             }
         }
 
         // If we get here, user is not authenticated
         const loginUrl = '/AfroRythm/auth/login.html';
-
-        console.log("⚠️ User not authenticated.");
-        console.log("🔄 Redirecting to login:", loginUrl);
 
         window.location.href = loginUrl;
         return false;
@@ -263,7 +227,6 @@ async function checkAuth() {
 
         const loginUrl = '/AfroRythm/auth/login.html';
 
-        console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
         window.location.href = loginUrl;
         return false;
     }
@@ -366,7 +329,6 @@ async function handleProfileUpload(file) {
 
 // ========== USER DATA MANAGEMENT ==========
 async function loadUserData() {
-    console.log("💾 Loading user data from backend...");
 
     if (!currentUser || !currentUser.id) {
         console.warn("⚠️ No user ID found, skipping backend data load");
@@ -390,7 +352,6 @@ async function loadUserData() {
             const favoritesJson = await favoritesRes.json();
             if (favoritesJson.success) {
                 userFavorites.songs = favoritesJson.data.map(fav => fav.song_id);
-                console.log(`✅ Loaded ${userFavorites.songs.length} favorite songs`);
             }
         }
 
@@ -399,7 +360,6 @@ async function loadUserData() {
             const followsJson = await followsRes.json();
             if (followsJson.success) {
                 userFollowing = followsJson.data.map(follow => follow.artist_id);
-                console.log(`✅ Loaded ${userFollowing.length} followed artists`);
             }
         }
 
@@ -418,7 +378,6 @@ async function loadUserData() {
                     createdAt: playlist.created_at,
                     coverColor: '#FF6B35'
                 }));
-                console.log(`✅ Loaded ${userPlaylists.length} playlists`);
             }
         }
 
@@ -446,14 +405,11 @@ async function loadUserData() {
                     read: notif.is_read == 1,
                     timestamp: notif.created_at
                 }));
-                console.log(`✅ Loaded ${notifications.length} notifications`);
             }
         }
 
         // Update notifications badge
         updateNotificationsBadge();
-
-        console.log("✅ All user data loaded from backend");
     } catch (error) {
         console.error('Error loading user data from backend:', error);
         // Fallback to empty arrays
@@ -465,46 +421,8 @@ async function loadUserData() {
     }
 }
 
-function generateDefaultNotifications() {
-    return [
-        {
-            id: 1,
-            type: 'new_release',
-            title: 'New Song Released',
-            message: 'Manu Dibango Legacy released "Soul Revival"',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-            read: false,
-            artistId: 1,
-            songId: 1
-        },
-        {
-            id: 2,
-            type: 'concert',
-            title: 'Upcoming Concert',
-            message: 'Yaoundé Music Festival starts this weekend',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-            read: false
-        },
-        {
-            id: 3,
-            type: 'artist_joined',
-            title: 'New Artist Joined',
-            message: 'New Gen Collective just joined AfroRhythm',
-            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-            read: true,
-            artistId: 6
-        },
-        {
-            id: 4,
-            type: 'playlist_update',
-            title: 'Playlist Updated',
-            message: 'New songs added to "Morning Makossa"',
-            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-            read: true,
-            playlistId: 101
-        }
-    ];
-}
+// Notifications are now fetched from backend via notifications.php
+
 
 // Note: saveUserData() is deprecated - data is now saved directly to backend via API calls
 // Keeping for backward compatibility but it does nothing
@@ -515,7 +433,6 @@ function saveUserData() {
 
 // ========== NAVIGATION SYSTEM ==========
 function setupNavigation() {
-    console.log("🔗 Setting up navigation...");
 
     // Mobile menu toggle
     const menuToggle = document.getElementById('menuToggle');
@@ -551,7 +468,6 @@ function setupNavigation() {
         item.addEventListener('click', function (e) {
             e.preventDefault();
             const viewId = this.getAttribute('data-view');
-            console.log(`🖱️ Navigation clicked: ${viewId}`);
             switchDashboardView(viewId);
         });
     });
@@ -567,12 +483,9 @@ function setupNavigation() {
             }
         });
     });
-
-    console.log("✅ Navigation setup complete");
 }
 
 function switchDashboardView(viewId) {
-    console.log(`🔄 Switching to view: ${viewId}`);
 
     // Hide all views
     document.querySelectorAll('.dashboard-view').forEach(view => {
@@ -613,7 +526,6 @@ window.switchDashboardView = switchDashboardView;
 
 // ========== VIEW CONTENT LOADERS ==========
 function loadViewContent(viewId) {
-    console.log(`📂 Loading content for: ${viewId}`);
 
     switch (viewId) {
         case 'discover':
@@ -647,7 +559,6 @@ function loadViewContent(viewId) {
             loadSettingsView();
             break;
         default:
-            console.log(`⚠️ Unknown view: ${viewId}`);
     }
 
     // Update stats
@@ -656,7 +567,6 @@ function loadViewContent(viewId) {
 
 // ========== DISCOVER VIEW ==========
 function loadDiscoverView() {
-    console.log("🔍 Loading discover view...");
 
     // Load trending songs
     // Load New Releases (Latest 6 songs)
@@ -721,7 +631,19 @@ function loadDiscoverView() {
         });
     }
 
-    // Load favorite artists
+    // Load Trending Artists (New)
+    const trendingArtistsList = document.getElementById('trendingArtistsList');
+    if (trendingArtistsList) {
+        trendingArtistsList.innerHTML = '';
+        // Sort by followers and take top 6
+        const trendingArtists = [...sampleArtists].sort((a, b) => b.followers - a.followers).slice(0, 6);
+        trendingArtists.forEach(artist => {
+            const isFollowing = userFollowing.includes(artist.id);
+            trendingArtistsList.appendChild(renderArtistCard(artist, isFollowing ? 'following' : 'follow'));
+        });
+    }
+
+    // Load favorite artists 
     const favoriteArtists = document.getElementById('favoriteArtists');
     if (favoriteArtists) {
         loadFavoriteArtists();
@@ -795,7 +717,7 @@ function loadFavoriteArtists() {
         favoriteArtists.innerHTML = `
             <div class="artist-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                 <p>Follow artists to see them here!</p>
-                <button class="follow-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('browse')">
+                <button class="explore-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('browse')">
                     Discover Artists
                 </button>
             </div>
@@ -805,31 +727,7 @@ function loadFavoriteArtists() {
         userFollowing.slice(0, 4).forEach(artistId => {
             const artist = sampleArtists.find(a => a.id === artistId);
             if (!artist) return;
-
-            const artistCard = document.createElement('div');
-            artistCard.className = 'artist-card';
-
-            // Build social links HTML
-            let socialLinksHtml = '';
-            if (artist.social) {
-                socialLinksHtml = '<div class="artist-social-links mt-2" style="display: flex; justify-content: center; gap: 8px;">';
-                if (artist.social.instagram) socialLinksHtml += `<a href="${artist.social.instagram.startsWith('http') ? artist.social.instagram : `https://instagram.com/${artist.social.instagram.replace('@', '')}`}" target="_blank" class="text-white" title="Instagram"><i class="fab fa-instagram"></i></a>`;
-                if (artist.social.twitter) socialLinksHtml += `<a href="${artist.social.twitter.startsWith('http') ? artist.social.twitter : `https://twitter.com/${artist.social.twitter.replace('@', '')}`}" target="_blank" class="text-white" title="Twitter"><i class="fab fa-twitter"></i></a>`;
-                if (artist.social.facebook) socialLinksHtml += `<a href="${artist.social.facebook.startsWith('http') ? artist.social.facebook : `https://facebook.com/${artist.social.facebook}`}" target="_blank" class="text-white" title="Facebook"><i class="fab fa-facebook"></i></a>`;
-                if (artist.social.youtube) socialLinksHtml += `<a href="${artist.social.youtube.startsWith('http') ? artist.social.youtube : `https://youtube.com/${artist.social.youtube}`}" target="_blank" class="text-white" title="YouTube"><i class="fab fa-youtube"></i></a>`;
-                socialLinksHtml += '</div>';
-            }
-
-            artistCard.innerHTML = `
-                <div class="artist-avatar" style="background: ${artist.avatarColor || getRandomColor()};">${artist.name.charAt(0)}</div>
-                <h4>${artist.name}</h4>
-                <p>${artist.followers.toLocaleString()} followers</p>
-                <button class="follow-btn following" data-artist-id="${artist.id}">
-                    Following
-                </button>
-                ${socialLinksHtml}
-            `;
-            favoriteArtists.appendChild(artistCard);
+            favoriteArtists.appendChild(renderArtistCard(artist, 'following'));
         });
     }
 }
@@ -837,6 +735,17 @@ function loadFavoriteArtists() {
 // ========== BROWSE VIEW ==========
 function loadBrowseView() {
     console.log("🔍 Loading browse view...");
+
+    // Load artists first to help discovery
+    const browseArtists = document.getElementById('browseArtists');
+    if (browseArtists) {
+        browseArtists.innerHTML = '';
+        sampleArtists.slice(0, 8).forEach(artist => {
+            const isFollowing = userFollowing.includes(artist.id);
+            browseArtists.appendChild(renderArtistCard(artist, isFollowing ? 'following' : 'follow'));
+        });
+    }
+
     const browseSongs = document.getElementById('browseSongs');
     if (!browseSongs) return;
 
@@ -933,8 +842,8 @@ function loadMyMusicView() {
                     </div>
                     <h4>No favorite songs yet</h4>
                     <p>Start liking songs to build your collection</p>
-                    <button class="follow-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('discover')">
-                        Discover Songs
+                    <button class="explore-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('discover')">
+                        Discover More
                     </button>
                 </div>
             `;
@@ -1028,8 +937,8 @@ function loadHistoryView() {
                 <i class="fas fa-history" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
                 <h4>No listening history</h4>
                 <p>Start playing songs to build your history</p>
-                <button class="follow-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('discover')">
-                    Discover Music
+                <button class="explore-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('discover')">
+                    Explore New Music
                 </button>
             </div>
         `;
@@ -1084,8 +993,8 @@ function loadFollowingView() {
                     <i class="fas fa-user-friends" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
                     <h4>Not following any artists</h4>
                     <p>Follow artists to stay updated with their latest music</p>
-                    <button class="follow-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('browse')">
-                        Discover Artists
+                    <button class="explore-btn" style="width: auto; margin-top: 20px;" onclick="switchDashboardView('browse')">
+                        Explore All Artists
                     </button>
                 </div>
             `;
@@ -1094,18 +1003,7 @@ function loadFollowingView() {
             userFollowing.forEach(artistId => {
                 const artist = sampleArtists.find(a => a.id === artistId);
                 if (!artist) return;
-
-                const artistCard = document.createElement('div');
-                artistCard.className = 'artist-card';
-                artistCard.innerHTML = `
-                    <div class="artist-avatar" style="background: ${artist.avatarColor || getRandomColor()};">${artist.name.charAt(0)}</div>
-                    <h4>${artist.name}</h4>
-                    <p>${artist.followers.toLocaleString()} followers</p>
-                    <button class="follow-btn unfollow-btn" data-artist-id="${artist.id}">
-                        Unfollow
-                    </button>
-                `;
-                followingArtists.appendChild(artistCard);
+                followingArtists.appendChild(renderArtistCard(artist, 'unfollow'));
             });
         }
     }
@@ -1525,7 +1423,7 @@ function createSongCard(song, isFavorite = false) {
         </div>
         <div class="song-info">
             <h4>${song.title}</h4>
-            <p>${song.artist}</p>
+            <p class="artist-link" onclick="viewArtist(${song.artistId})" style="cursor: pointer; color: var(--text-secondary); transition: color 0.2s;">${song.artist}</p>
         </div>
         <div class="song-meta">
             <span>${song.plays.toLocaleString()} plays</span>
@@ -1542,6 +1440,79 @@ function createSongCard(song, isFavorite = false) {
                 <i class="fas fa-plus"></i>
             </button>
         </div>
+    `;
+    return card;
+}
+
+function renderArtistCard(artist, followStatus = 'follow') {
+    const card = document.createElement('div');
+    card.className = 'artist-card';
+    card.setAttribute('data-artist-id', artist.id);
+
+    // Build social links HTML
+    let socialLinksHtml = '';
+    const hasSocial = artist.social && (
+        artist.social.instagram || artist.social.twitter ||
+        artist.social.facebook || artist.social.youtube
+    );
+
+    if (hasSocial) {
+        socialLinksHtml = '<div class="artist-social-links mt-3" style="display: flex; justify-content: center; gap: 8px;">';
+
+        if (artist.social.instagram) {
+            const igLink = artist.social.instagram.trim();
+            if (igLink !== '' && igLink !== '@') {
+                const href = igLink.startsWith('http') ? igLink : `https://instagram.com/${igLink.replace('@', '')}`;
+                socialLinksHtml += `<a href="${href}" target="_blank" class="social-icon instagram" title="Instagram"><i class="fab fa-instagram"></i></a>`;
+            }
+        }
+
+        if (artist.social.twitter) {
+            const twLink = artist.social.twitter.trim();
+            if (twLink !== '' && twLink !== '@') {
+                const href = twLink.startsWith('http') ? twLink : `https://twitter.com/${twLink.replace('@', '')}`;
+                socialLinksHtml += `<a href="${href}" target="_blank" class="social-icon twitter" title="Twitter"><i class="fab fa-twitter"></i></a>`;
+            }
+        }
+
+        if (artist.social.facebook) {
+            const fbLink = artist.social.facebook.trim();
+            if (fbLink !== '') {
+                const href = fbLink.startsWith('http') ? fbLink : `https://facebook.com/${fbLink}`;
+                socialLinksHtml += `<a href="${href}" target="_blank" class="social-icon facebook" title="Facebook"><i class="fab fa-facebook"></i></a>`;
+            }
+        }
+
+        if (artist.social.youtube) {
+            const ytLink = artist.social.youtube.trim();
+            if (ytLink !== '') {
+                const href = ytLink.startsWith('http') ? ytLink : `https://youtube.com/${ytLink}`;
+                socialLinksHtml += `<a href="${href}" target="_blank" class="social-icon youtube" title="YouTube"><i class="fab fa-youtube"></i></a>`;
+            }
+        }
+
+        socialLinksHtml += '</div>';
+    }
+
+    const followBtnClass = followStatus === 'following' ? 'follow-btn following' : 'follow-btn';
+    const followBtnText = followStatus === 'following' ? 'Following' : (followStatus === 'unfollow' ? 'Unfollow' : 'Follow');
+
+    let avatarContent = artist.name.charAt(0);
+    let avatarStyle = `background: ${artist.avatarColor || getRandomColor()}; cursor: pointer;`;
+
+    if (artist.image) {
+        avatarStyle = `background: url('${artist.image}') center/cover no-repeat; cursor: pointer;`;
+        avatarContent = '';
+    }
+
+    card.innerHTML = `
+        <div class="artist-avatar" style="${avatarStyle}" onclick="viewArtist(${artist.id})">${avatarContent}</div>
+        <h4 style="cursor: pointer;" onclick="viewArtist(${artist.id})">${artist.name}</h4>
+        <p>${(artist.followers || 0).toLocaleString()} followers</p>
+        <button class="${followBtnClass}" data-artist-id="${artist.id}">
+            ${followBtnText}
+        </button>
+        ${socialLinksHtml}
     `;
     return card;
 }
@@ -1643,7 +1614,6 @@ function getRandomColor() {
 
 // ========== USER INTERACTIONS ==========
 function setupUserInteractions() {
-    console.log("🖱️ Setting up user interactions...");
 
     // Stats Toggle
     const statsToggleBtn = document.getElementById('statsToggleBtn');
@@ -1682,7 +1652,10 @@ function setupUserInteractions() {
             e.preventDefault();
             const btn = e.target.closest('.follow-btn');
             const artistId = parseInt(btn.getAttribute('data-artist-id'));
-            toggleFollowArtist(artistId, btn);
+
+            if (artistId) {
+                toggleFollowArtist(artistId, btn);
+            }
         }
 
         // Unfollow artist buttons
@@ -1690,7 +1663,7 @@ function setupUserInteractions() {
             e.preventDefault();
             const btn = e.target.closest('.unfollow-btn');
             const artistId = parseInt(btn.getAttribute('data-artist-id'));
-            toggleFollowArtist(artistId, btn);
+            if (artistId) toggleFollowArtist(artistId, btn);
         }
 
         // Play song buttons
@@ -1781,8 +1754,6 @@ function setupUserInteractions() {
             showNotificationDropdown();
         });
     }
-
-    console.log("✅ User interactions setup complete");
 }
 
 // ========== AUDIO PLAYER FUNCTIONS ==========
@@ -1908,7 +1879,6 @@ function startRealPlayback(song) {
 
         // Set up event listeners
         audioElement.onloadedmetadata = function () {
-            console.log('Audio loaded, duration:', audioElement.duration);
             updateTotalTime(audioElement.duration);
         };
 
@@ -2191,10 +2161,6 @@ async function playSong(songId) {
     // Delegate to the global player defined in Js/player.js
     if (window.afroPlayById) {
         window.afroPlayById(songId);
-
-        // Optimistically update UI specific to fan.js if needed (like favorites)
-        // But do not manage audio state here.
-        console.log(`Requested playback for song ${songId}`);
     } else {
         console.error("Audio player not initialized");
         showNotification("Player not ready, please wait...", "warning");
@@ -3289,7 +3255,7 @@ async function logout() {
             });
 
             if (response.ok) {
-                console.log("✅ Logged out successfully");
+                // Success
             } else {
                 console.warn("⚠️ Logout API call failed, but proceeding with client-side cleanup");
             }
@@ -3341,9 +3307,113 @@ window.removeFromHistory = function (songId) {
 };
 
 window.viewArtist = function (artistId) {
-    // In a real app, this would show artist details
-    showNotification(`Viewing artist details`, 'info');
-    // For now, just show a notification
+    const artist = sampleArtists.find(a => a.id === artistId);
+    if (!artist) {
+        showNotification('Artist details not found', 'error');
+        return;
+    }
+
+    // Populate Modal
+    const modalName = document.getElementById('modalArtistName');
+    const modalAvatar = document.getElementById('modalArtistAvatar');
+    const modalGenre = document.getElementById('modalArtistGenre');
+    const modalSocial = document.getElementById('modalArtistSocial');
+    const modalBio = document.getElementById('modalArtistBio');
+    const modalFollowBtn = document.getElementById('modalFollowBtn');
+
+    if (modalName) modalName.textContent = artist.name;
+    if (modalAvatar) {
+        if (artist.image) {
+            modalAvatar.style.background = `url('${artist.image}') center/cover no-repeat`;
+            modalAvatar.textContent = '';
+        } else {
+            modalAvatar.textContent = artist.name.charAt(0);
+            modalAvatar.style.background = artist.avatarColor || 'var(--primary-color)';
+        }
+    }
+    if (modalGenre) modalGenre.textContent = `${artist.genre} • ${(artist.followers || 0).toLocaleString()} followers`;
+
+    // Add Website and Location if available
+    const modalLocation = document.getElementById('modalArtistLocation');
+    const modalWebsite = document.getElementById('modalArtistWebsite');
+
+    if (modalLocation) {
+        modalLocation.innerHTML = artist.location ? `<i class="fas fa-map-marker-alt me-2"></i> ${artist.location}` : '';
+        modalLocation.style.display = artist.location ? 'block' : 'none';
+    }
+
+    if (modalWebsite) {
+        if (artist.website) {
+            let displayUrl = artist.website.replace(/^https?:\/\//, '');
+            let fullUrl = artist.website.startsWith('http') ? artist.website : `https://${artist.website}`;
+            modalWebsite.innerHTML = `<i class="fas fa-globe me-2"></i> <a href="${fullUrl}" target="_blank" style="color: var(--primary-color); text-decoration: none;">${displayUrl}</a>`;
+            modalWebsite.style.display = 'block';
+        } else {
+            modalWebsite.style.display = 'none';
+        }
+    }
+
+    if (modalBio) modalBio.textContent = artist.bio || 'No biography available for this artist yet.';
+
+    // Populate Social
+    if (modalSocial) {
+        let socialHtml = '';
+        if (artist.social) {
+            if (artist.social.instagram) {
+                const ig = artist.social.instagram;
+                const href = ig.startsWith('http') ? ig : `https://instagram.com/${ig.replace('@', '')}`;
+                socialHtml += `<a href="${href}" target="_blank" class="social-icon instagram" title="Instagram"><i class="fab fa-instagram"></i></a>`;
+            }
+            if (artist.social.twitter) {
+                const tw = artist.social.twitter;
+                const href = tw.startsWith('http') ? tw : `https://twitter.com/${tw.replace('@', '')}`;
+                socialHtml += `<a href="${href}" target="_blank" class="social-icon twitter" title="Twitter"><i class="fab fa-twitter"></i></a>`;
+            }
+            if (artist.social.facebook) {
+                const fb = artist.social.facebook;
+                const href = fb.startsWith('http') ? fb : `https://facebook.com/${fb}`;
+                socialHtml += `<a href="${href}" target="_blank" class="social-icon facebook" title="Facebook"><i class="fab fa-facebook"></i></a>`;
+            }
+            if (artist.social.youtube) {
+                const yt = artist.social.youtube;
+                const href = yt.startsWith('http') ? yt : `https://youtube.com/${yt}`;
+                socialHtml += `<a href="${href}" target="_blank" class="social-icon youtube" title="YouTube"><i class="fab fa-youtube"></i></a>`;
+            }
+        }
+        modalSocial.innerHTML = socialHtml || '<small style="color: #b3b3b3; opacity: 0.8;">No social links provided</small>';
+    }
+
+    // Update Follow Button
+    if (modalFollowBtn) {
+        const isFollowing = userFollowing.includes(artistId);
+        modalFollowBtn.textContent = isFollowing ? 'Following' : 'Follow';
+        modalFollowBtn.className = isFollowing ? 'follow-btn following' : 'follow-btn';
+        modalFollowBtn.setAttribute('data-artist-id', artistId);
+    }
+
+    // Populate Stats (using data from sampleSongs)
+    const artistSongs = sampleSongs.filter(s => {
+        // Find artist name from sampleArtists to match artist field in sampleSongs
+        return s.artist === artist.name;
+    });
+
+    const totalPlays = artistSongs.reduce((sum, s) => sum + (s.plays || 0), 0);
+    // Since sampleSongs doesn't have likes/downloads mapped from backend yet, we'll use 0 or fetch if needed
+    // However, loadBackendData maps plays. Let's assume we want real data.
+
+    document.getElementById('modalArtistPlays').textContent = totalPlays.toLocaleString();
+    // Default likes/downloads to something if not in song object
+    document.getElementById('modalArtistLikes').textContent = "0";
+    document.getElementById('modalArtistDownloads').textContent = "0";
+
+    // Better: If we want real stats, we should have them in the artist object
+    if (artist.totalPlays !== undefined) document.getElementById('modalArtistPlays').textContent = artist.totalPlays.toLocaleString();
+    if (artist.totalLikes !== undefined) document.getElementById('modalArtistLikes').textContent = artist.totalLikes.toLocaleString();
+    if (artist.totalDownloads !== undefined) document.getElementById('modalArtistDownloads').textContent = artist.totalDownloads.toLocaleString();
+
+    // Show Modal
+    const modal = new bootstrap.Modal(document.getElementById('artistDetailModal'));
+    modal.show();
 };
 
 window.logout = logout;

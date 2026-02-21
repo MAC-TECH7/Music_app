@@ -1,9 +1,7 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Credentials: true');
+require_once '../cors.php';
+
 
 // Disable error reporting to output to prevent JSON breakage
 ini_set('display_errors', 0);
@@ -30,14 +28,10 @@ if (!isset($_SESSION['user']) || !$_SESSION['user']['isLoggedIn']) {
     exit;
 }
 
-function debugLog($message) {
-    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '../backend_debug.log');
-}
-debugLog("Upload request started. Type: " . ($_POST['upload_type'] ?? 'unknown'));
-debugLog("FILES: " . print_r($_FILES, true));
-debugLog("POST: " . print_r($_POST, true));
+// Debug logging disabled in production
 
 require_once '../db.php';
+require_once '../audio_duration.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -152,8 +146,9 @@ try {
             }
         }
 
-        // Get duration from file (simplified - in production you'd use a proper audio library)
-        $duration = '0:00'; // Placeholder - would need audio processing library
+        // Extract real duration from the uploaded audio file
+        $durationSeconds = audio_duration_seconds($songPath);
+        $duration = audio_duration_format($durationSeconds);
 
         // Insert song into database
         $stmt = $pdo->prepare("INSERT INTO songs (title, artist_id, genre, duration, file_path, cover_art, status, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())");
@@ -177,7 +172,7 @@ try {
         ];
 
     } elseif ($uploadType === 'profile_image') {
-        // Handle profile image upload
+        // Handle profile image upload for artist
         if (!isset($_FILES['profile_image'])) {
             throw new Exception('Profile image file is required');
         }
@@ -195,21 +190,25 @@ try {
         }
 
         $extension = pathinfo($imageFile['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('avatar_', true) . '.' . $extension;
-        $avatarPath = $avatarsDir . $filename;
+        $filename = uniqid('artistimg_', true) . '.' . $extension;
+        $artistImgPath = $avatarsDir . $filename;
         $webPath = 'uploads/avatars/' . $filename;
 
-        if (!move_uploaded_file($imageFile['tmp_name'], $avatarPath)) {
+        if (!move_uploaded_file($imageFile['tmp_name'], $artistImgPath)) {
             throw new Exception('Failed to save profile image');
         }
 
-        // Update user record in database
+        // Update artist record in database
         $userId = $_SESSION['user']['id'];
-        $stmt = $pdo->prepare("UPDATE users SET avatar = ? WHERE id = ?");
-        $stmt->execute([$webPath, $userId]);
-        
-        // Update session
-        $_SESSION['user']['avatar'] = $webPath;
+        $stmt = $pdo->prepare("SELECT id FROM artists WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $artist = $stmt->fetch();
+        if (!$artist) {
+            throw new Exception('Artist profile not found for current user');
+        }
+        $artistId = $artist['id'];
+        $stmt = $pdo->prepare("UPDATE artists SET image = ? WHERE id = ?");
+        $stmt->execute([$webPath, $artistId]);
 
         $response = [
             'success' => true,
@@ -258,7 +257,6 @@ try {
     }
 
 } catch (Exception $e) {
-    debugLog("Exception: " . $e->getMessage());
     $response = [
         'success' => false,
         'message' => $e->getMessage()
@@ -273,6 +271,5 @@ try {
     }
 }
 
-debugLog("Response: " . json_encode($response));
 echo json_encode($response);
 ?>

@@ -1,0 +1,20 @@
+# .gitignore for AfroRythm
+
+# Environment / credentials — NEVER commit these
+.env
+
+# Debug & upload logs
+backend/backend_debug.log
+uploads/artist_upload_debug.log
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Node / package installs
+node_modules/
+
+# XAMPP session files
+/tmp/

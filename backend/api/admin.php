@@ -1,8 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+require_once '../cors.php';
 
 require_once '../db.php';
 
@@ -13,11 +11,16 @@ if ($method === 'OPTIONS') {
     exit(0);
 }
 
-// Basic authentication check (in production, use proper JWT or session)
+session_start();
+
+// Basic authentication check
 function checkAdminAccess() {
-    // For now, assume admin access if user_id is provided and is admin
-    // In production, implement proper authentication
-    return true;
+    if (!isset($_SESSION['user']) || !$_SESSION['user']['isLoggedIn']) {
+        return false;
+    }
+    
+    // Check if user is an admin
+    return isset($_SESSION['user']['type']) && $_SESSION['user']['type'] === 'admin';
 }
 
 if (!checkAdminAccess()) {
@@ -165,7 +168,7 @@ function handleGetRequests($action) {
                 $subscriptionRevenue = $stmt->fetch()['total'] ?? 0;
 
                 // Ad revenue
-                $stmt = $pdo->prepare("SELECT SUM(amount) as total FROM ad_revenue WHERE status = 'completed' $dateCondition");
+                $stmt = $pdo->prepare("SELECT SUM(amount) as total FROM ad_revenue WHERE status IN ('active','completed')" . str_replace('AND created_at', 'AND start_date', $dateCondition));
                 $stmt->execute();
                 $adRevenue = $stmt->fetch()['total'] ?? 0;
 
@@ -298,6 +301,18 @@ function handlePostRequests($action) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$data['status'], $data['user_id']]);
                 echo json_encode(['success' => true, 'message' => 'User status updated']);
+                break;
+            
+            case 'reset_password':
+                if (empty($data['password']) || strlen($data['password']) < 6) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid password']);
+                    break;
+                }
+                $sql = "UPDATE users SET password = ? WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+                $stmt->execute([$hashedPassword, $data['user_id']]);
+                echo json_encode(['success' => true, 'message' => 'Password reset successfully']);
                 break;
 
             case 'settings':

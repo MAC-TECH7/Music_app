@@ -1,14 +1,11 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+require_once '../cors.php';
 
 require_once '../db.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
+
 
 function logError($e){
     $logDir = __DIR__ . '/../logs';
@@ -33,6 +30,14 @@ try{
         $stmt = $pdo->prepare("UPDATE songs SET plays = plays + 1 WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['success'=>true,'message'=>'Play recorded']);
+        exit;
+    }
+
+    if ($action === 'download'){
+        // increment downloads
+        $stmt = $pdo->prepare("UPDATE songs SET downloads = downloads + 1 WHERE id = ?");
+        $stmt->execute([$id]);
+        echo json_encode(['success'=>true,'message'=>'Download recorded']);
         exit;
     }
 

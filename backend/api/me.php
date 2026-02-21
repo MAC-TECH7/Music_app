@@ -1,14 +1,11 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+require_once '../cors.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once '../db.php';
+
 
 $userId = $_SESSION['user_id'] ?? null;
 if (!$userId) {

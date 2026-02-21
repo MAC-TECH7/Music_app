@@ -88,8 +88,29 @@ if (isset($_POST['run_setup'])) {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY user_key (user_id, storage_key)
         )");
-        $status[] = "✅ `client_storage` table ensured.";
+        // 6. Seed Demo Users
+        $password_hash = password_hash('password123', PASSWORD_BCRYPT);
+        $demo_users = [
+            ['name' => 'John Mbarga', 'email' => 'john.mbarga@email.com', 'type' => 'fan'],
+            ['name' => 'Marie Ndongo', 'email' => 'marie.ndongo@email.com', 'type' => 'artist'],
+            ['name' => 'Thomas N.', 'email' => 'thomas.n@email.com', 'type' => 'admin']
+        ];
 
+        foreach ($demo_users as $user) {
+            $stmt = $pdo->prepare("INSERT INTO users (name, email, password, type, status, joined) VALUES (?, ?, ?, ?, 'active', CURDATE()) ON DUPLICATE KEY UPDATE status='active', type=VALUES(type)");
+            $stmt->execute([$user['name'], $user['email'], $password_hash, $user['type']]);
+        }
+
+        // Add Marie as artist
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute(['marie.ndongo@email.com']);
+        $marie_id = $stmt->fetchColumn();
+        if ($marie_id) {
+            $stmt = $pdo->prepare("INSERT INTO artists (user_id, name, genre, status, verification) VALUES (?, ?, ?, 'verified', 'approved') ON DUPLICATE KEY UPDATE name=name");
+            $stmt->execute([$marie_id, 'Marie Ndongo', 'Afrobeat']);
+        }
+
+        $status[] = "✅ Demo users and artist profile seeded.";
         $status[] = "🎉 Setup completed successfully!";
         $success = true;
 

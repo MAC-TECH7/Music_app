@@ -236,8 +236,17 @@
         // Download
         const downloadBtn = document.getElementById('downloadBtn');
         if (downloadBtn) {
-            downloadBtn.onclick = function () {
+            downloadBtn.onclick = async function () {
                 if (currentSong && currentSong.filePath) {
+                    // Report download to backend
+                    try {
+                        fetch('backend/api/track.php', {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'download', id: currentSong.id }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    } catch (e) { console.error("Track error:", e); }
+
                     const link = document.createElement('a');
                     link.href = currentSong.filePath;
                     link.download = `${currentSong.title}.mp3`;
@@ -279,6 +288,20 @@
 
         // Set audio source and play
         if (audio && song.filePath) {
+            // Report play and history to backend
+            try {
+                fetch('backend/api/track.php', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'play', id: song.id }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                fetch('backend/api/track.php', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'history', id: song.id }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } catch (e) { console.error("Track error:", e); }
+
             audio.src = song.filePath;
             audio.load();
             audio.play().catch(err => {

@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Map of setting keys (backend) to input IDs (frontend)
     const settingsMap = {
-        'site_name': 'platformName',
-        'site_description': 'platformDesc',
+        'platform_name': 'platformName',
+        'platform_description': 'platformDesc',
         'contact_email': 'contactEmail',
         'maintenance_mode': 'maintenanceMode',
         'auto_approve_artists': 'artistAutoApprove',
@@ -37,7 +37,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 for (const [key, inputId] of Object.entries(settingsMap)) {
                     const input = document.getElementById(inputId);
                     if (input && settings[key] !== undefined) {
-                        input.value = settings[key];
+                        if (input.type === 'checkbox') {
+                            input.checked = (settings[key] === '1' || settings[key] === true || settings[key] === 'true');
+                        } else {
+                            input.value = settings[key];
+                        }
                         console.log(`✅ Loaded ${key}: ${settings[key]}`);
                     }
                 }
@@ -63,7 +67,11 @@ document.addEventListener('DOMContentLoaded', function () {
         for (const [key, inputId] of Object.entries(settingsMap)) {
             const input = document.getElementById(inputId);
             if (input) {
-                data[key] = input.value;
+                if (input.type === 'checkbox') {
+                    data[key] = input.checked ? '1' : '0';
+                } else {
+                    data[key] = input.value;
+                }
             }
         }
 
@@ -81,6 +89,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (result.success) {
                 showFeedback('Settings saved successfully!', 'success');
                 console.log('✅ Settings saved successfully');
+
+                // Trigger global branding refresh
+                if (window.PLATFORM_SETTINGS && data.platform_name) {
+                    window.PLATFORM_SETTINGS.name = data.platform_name;
+                    if (window.refreshPlatformBranding) window.refreshPlatformBranding();
+                }
             } else {
                 showFeedback('Failed to save settings: ' + result.message, 'danger');
                 console.error('❌ Failed to save settings:', result.message);

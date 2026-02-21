@@ -393,8 +393,6 @@ async function loadSampleData() {
         const usersData = await usersResponse.json();
         let users = usersData.success ? usersData.data : [];
 
-        // No longer merging with localStorage - using API data only
-
         // Fetch artists
         const artistsResponse = await fetch('backend/api/artists.php');
         const artistsData = await artistsResponse.json();
@@ -407,8 +405,6 @@ async function loadSampleData() {
             status: artist.status,
             verification: artist.verification
         })) : [];
-
-        // No longer merging with localStorage - using API data only
 
         // Fetch songs
         const songsResponse = await fetch('backend/api/songs.php');
@@ -424,14 +420,10 @@ async function loadSampleData() {
             status: song.status === 'active' ? 'published' : song.status
         })) : [];
 
-        // No longer merging with localStorage - using API data only
-
         // Fetch subscriptions
         const subsResponse = await fetch('backend/api/subscriptions.php');
         const subsData = await subsResponse.json();
         let subscriptions = subsData.success ? subsData.data : [];
-
-        // No longer merging with localStorage - using API data only
 
         // Fetch admin data
         const adminAnalyticsResponse = await fetch('backend/api/admin.php?action=analytics');
@@ -446,6 +438,16 @@ async function loadSampleData() {
         const adminReportsData = await adminReportsResponse.json();
         const reports = adminReportsData.success ? adminReportsData.data : [];
 
+        // Fetch Real-time Stats
+        const statsResponse = await fetch('backend/api/stats.php?type=global');
+        const statsData = await statsResponse.json();
+        const stats = statsData.success ? statsData.data : null;
+
+        // Fetch platform settings
+        const settingsResponse = await fetch('backend/api/settings.php');
+        const settingsData = await settingsResponse.json();
+        const settings = settingsData.success ? settingsData.data : { platform_name: 'AfroRythm', platform_description: 'Promote Cameroonian Music' };
+
         // Populate all tables
         populateUsersTable(users);
         populateAllUsersTable(users);
@@ -457,19 +459,49 @@ async function loadSampleData() {
         populateTopArtistsList(artists);
         populateRecentSongsTable(songs.slice(0, 5));
 
+        // Update settings inputs
+        populateSettingsInputs(settings);
+
+        // Update charts if data is available
+        if (stats) {
+            updateDashboardCharts(stats);
+            animateStats(stats);
+        }
+
         // Populate admin-specific data
         populateAnalyticsStats(analytics);
         populateRevenueStats(revenue);
         populateReportsTable(reports);
 
         // Store data globally
-        window.sampleData = { users, artists, songs, subscriptions, analytics, revenue, reports };
+        window.sampleData = { users, artists, songs, subscriptions, analytics, revenue, reports, settings };
 
         console.log('Data loaded successfully from API');
     } catch (error) {
         console.error('Error loading data:', error);
         // Fallback to sample data if API fails
         loadFallbackData();
+    }
+}
+
+function populateSettingsInputs(settings) {
+    console.log('Populating settings inputs...', settings);
+    if (!settings) return;
+
+    if (document.getElementById('platformName')) {
+        document.getElementById('platformName').value = settings.platform_name || 'AfroRythm';
+    }
+    if (document.getElementById('platformDesc')) {
+        document.getElementById('platformDesc').value = settings.platform_description || '';
+    }
+    if (document.getElementById('contactEmail')) {
+        document.getElementById('contactEmail').value = settings.contact_email || 'contact@afrohythm.com';
+    }
+
+    // Auto-update branding if script is loaded
+    if (window.refreshPlatformBranding) {
+        window.PLATFORM_SETTINGS.name = settings.platform_name || 'AfroRythm';
+        window.refreshPlatformBranding();
     }
 }
 
@@ -801,8 +833,19 @@ function setupEventListeners() {
         searchInput.addEventListener('input', function (e) {
             const searchTerm = e.target.value.toLowerCase();
             console.log('Searching for:', searchTerm);
-            // Implement search across all tables
-            $('table').DataTable().search(searchTerm).draw();
+
+            // Filter all tables in the active view
+            const activeView = document.querySelector('.dashboard-view.active');
+            if (activeView) {
+                const tables = activeView.querySelectorAll('table');
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
         });
     }
 
@@ -866,10 +909,6 @@ function setupEventListeners() {
         alert('Generating report... This would create a comprehensive report');
     });
 
-    // Save settings button
-    document.getElementById('saveSettingsBtn')?.addEventListener('click', function () {
-        alert('Settings saved successfully!');
-    });
 
     // Refresh buttons
     document.getElementById('refreshSongsBtn')?.addEventListener('click', function () {
@@ -1117,22 +1156,22 @@ function updatePageTitle(view) {
     }
 }
 
-function animateStats() {
+function animateStats(fetchedStats = null) {
     console.log('Animating stats...');
 
     const stats = [
-        { id: 'totalUsers', target: 15200, duration: 2000 },
-        { id: 'totalArtists', target: 850, duration: 1500 },
-        { id: 'totalSongs', target: 4200, duration: 2500 },
-        { id: 'totalRevenue', target: 12500, duration: 2000 },
-        { id: 'activeUsers', target: 12456, duration: 1800 },
-        { id: 'artistUsers', target: 843, duration: 1600 },
-        { id: 'pendingUsers', target: 42, duration: 1200 },
-        { id: 'blockedUsers', target: 18, duration: 1000 },
-        { id: 'totalPlays', target: 152800000, duration: 2500, isLargeNumber: true },
-        { id: 'publishedSongs', target: 4156, duration: 2000 },
-        { id: 'pendingSongs', target: 44, duration: 1500 },
-        { id: 'rejectedSongs', target: 12, duration: 1000 }
+        { id: 'totalUsers', target: fetchedStats && fetchedStats.total_users ? parseInt(fetchedStats.total_users.toString().replace(/,/g, '')) : 0, duration: 2000 },
+        { id: 'totalArtists', target: fetchedStats && fetchedStats.total_artists ? parseInt(fetchedStats.total_artists.toString().replace(/,/g, '')) : 0, duration: 1500 },
+        { id: 'totalSongs', target: fetchedStats && fetchedStats.total_songs ? parseInt(fetchedStats.total_songs.toString().replace(/,/g, '')) : 0, duration: 2500 },
+        { id: 'totalRevenue', target: fetchedStats && fetchedStats.total_revenue ? parseInt(fetchedStats.total_revenue.toString().replace(/[^0-9]/g, '')) : 0, duration: 2000 },
+        { id: 'activeUsers', target: fetchedStats && fetchedStats.total_users ? Math.round(parseInt(fetchedStats.total_users.toString().replace(/,/g, '')) * 0.8) : 0, duration: 1800 }, // Heuristic remains until active_users is available
+        { id: 'artistUsers', target: fetchedStats && fetchedStats.total_artists ? parseInt(fetchedStats.total_artists.toString().replace(/,/g, '')) : 0, duration: 1600 },
+        { id: 'pendingUsers', target: fetchedStats ? (fetchedStats.pending_users || 0) : 0, duration: 1200 },
+        { id: 'blockedUsers', target: fetchedStats ? (fetchedStats.blocked_users || 0) : 0, duration: 1000 },
+        { id: 'totalPlays', target: fetchedStats && fetchedStats.analytics ? fetchedStats.analytics[0] : 0, duration: 2500, isLargeNumber: true },
+        { id: 'publishedSongs', target: fetchedStats ? (fetchedStats.published_songs || 0) : 0, duration: 2000 },
+        { id: 'pendingSongs', target: fetchedStats ? (fetchedStats.pending_songs || 0) : 0, duration: 1500 },
+        { id: 'rejectedSongs', target: fetchedStats ? (fetchedStats.rejected_songs || 0) : 0, duration: 1000 }
     ];
 
     stats.forEach(stat => {
@@ -1174,50 +1213,62 @@ function animateStats() {
     });
 }
 
+function updateDashboardCharts(stats) {
+    if (window.userGrowthChart && stats.user_growth) {
+        window.userGrowthChart.data.datasets[0].data = stats.user_growth;
+        window.userGrowthChart.update();
+    }
+
+    if (window.artistDistributionChart && stats.artist_distribution) {
+        window.artistDistributionChart.data.labels = stats.artist_distribution_labels;
+        window.artistDistributionChart.data.datasets[0].data = stats.artist_distribution;
+        window.artistDistributionChart.update();
+    }
+
+    if (window.analyticsChart && stats.analytics) {
+        // stats.analytics is [streams, downloads, shares, likes, comments]
+        window.analyticsChart.data.datasets[0].data = stats.analytics;
+        // Should we assume 'Last Month' is 0 or fetch it? Only 'This Month' is provided currently.
+        // For now, let's just update 'This Month' (dataset 0)
+        window.analyticsChart.update();
+    }
+
+    if (window.genreChart && stats.genre_distribution) {
+        window.genreChart.data.labels = stats.genre_distribution_labels;
+        window.genreChart.data.datasets[0].data = stats.genre_distribution;
+        window.genreChart.update();
+    }
+
+    if (window.revenueChart && stats.revenue_breakdown) {
+        window.revenueChart.data.labels = stats.revenue_breakdown_labels;
+        window.revenueChart.data.datasets[0].data = stats.revenue_breakdown;
+        window.revenueChart.update();
+    }
+
+    if (window.artistVerificationChart && stats.artist_verification) {
+        window.artistVerificationChart.data.labels = stats.artist_verification_labels;
+        window.artistVerificationChart.data.datasets[0].data = stats.artist_verification;
+        window.artistVerificationChart.update();
+    }
+}
+
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-function refreshDashboardData() {
+async function refreshDashboardData() {
     console.log('Refreshing dashboard data...');
 
     // Show loading state
     showNotification('Refreshing dashboard data...', 'info');
 
-    // Simulate API call delay
-    setTimeout(() => {
-        // Update random stats
-        const newUserCount = Math.floor(Math.random() * 200) + 15200;
-        const newArtistCount = Math.floor(Math.random() * 50) + 850;
-        const newSongCount = Math.floor(Math.random() * 100) + 4200;
-        const newRevenue = Math.floor(Math.random() * 1000) + 12500;
-
-        document.getElementById('totalUsers').textContent = formatNumber(newUserCount);
-        document.getElementById('totalArtists').textContent = formatNumber(newArtistCount);
-        document.getElementById('totalSongs').textContent = formatNumber(newSongCount);
-        document.getElementById('totalRevenue').textContent = '$' + formatNumber(newRevenue);
-
-        // Update charts
-        if (window.userGrowthChart) {
-            const chart = window.userGrowthChart;
-            const newDataPoint = newUserCount;
-            chart.data.datasets[0].data.push(newDataPoint);
-            chart.data.labels.push('Now');
-
-            // Keep only last 12 points
-            if (chart.data.datasets[0].data.length > 12) {
-                chart.data.datasets[0].data.shift();
-                chart.data.labels.shift();
-            }
-
-            chart.update();
-        }
-
-        // Refresh all DataTables
-        $('table').DataTable().ajax.reload();
-
+    try {
+        await loadSampleData();
         showNotification('Dashboard data refreshed successfully!', 'success');
-    }, 1500);
+    } catch (error) {
+        console.error('Error refreshing dashboard:', error);
+        showNotification('Failed to refresh data', 'error');
+    }
 }
 
 function addRefreshButton() {
@@ -1342,6 +1393,7 @@ window.refreshDashboardData = refreshDashboardData;
 window.showNotification = showNotification;
 window.markAllAsRead = markAllAsRead;
 window.saveAdminProfile = saveAdminProfile;
+window.saveFromViewModal = saveFromViewModal;
 window.addNewUser = addNewUser;
 window.addNewArtist = addNewArtist;
 window.addNewSong = addNewSong;
@@ -1734,6 +1786,85 @@ async function resetUserPassword() {
 }
 
 
+
+async function saveFromViewModal(entity) {
+    let id, data, endpoint;
+    const submitBtn = document.querySelector(`.modal.show .btn-primary`);
+    const originalText = submitBtn.innerHTML;
+
+    try {
+        if (entity === 'song') {
+            id = document.getElementById('viewEditSongId').value;
+            data = {
+                id: id,
+                title: document.getElementById('viewEditSongTitle').value,
+                artist_id: document.getElementById('viewEditSongArtistId').value,
+                genre: document.getElementById('viewEditSongGenre').value,
+                duration: document.getElementById('viewEditSongDuration').value,
+                status: document.getElementById('viewEditSongStatus').value,
+                // Keep these or fetch from existing if not in form
+                plays: window.sampleData?.songs?.find(s => s.id == id)?.plays || 0,
+                likes: window.sampleData?.songs?.find(s => s.id == id)?.likes || 0,
+                file_path: window.sampleData?.songs?.find(s => s.id == id)?.file_path || null,
+                cover_art: window.sampleData?.songs?.find(s => s.id == id)?.cover_art || null
+            };
+            endpoint = 'backend/api/songs.php';
+        } else if (entity === 'user') {
+            id = document.getElementById('viewEditUserId').value;
+            data = {
+                id: id,
+                name: document.getElementById('viewEditUserName').value,
+                email: document.getElementById('viewEditUserEmail').value,
+                phone: document.getElementById('viewEditUserPhone').value,
+                type: document.getElementById('viewEditUserType').value,
+                status: document.getElementById('viewEditUserStatus').value
+            };
+            endpoint = 'backend/api/users.php';
+        } else if (entity === 'artist') {
+            id = document.getElementById('viewEditArtistId').value;
+            data = {
+                id: id,
+                name: document.getElementById('viewEditArtistName').value,
+                genre: document.getElementById('viewEditArtistGenre').value,
+                status: document.getElementById('viewEditArtistStatus').value,
+                verification: document.getElementById('viewEditArtistVerification').value,
+                // Keep existing values
+                followers: window.sampleData?.artists?.find(a => a.id == id)?.followers || 0,
+                songs_count: window.sampleData?.artists?.find(a => a.id == id)?.songs || 0,
+                bio: window.sampleData?.artists?.find(a => a.id == id)?.bio || '',
+                instagram_url: window.sampleData?.artists?.find(a => a.id == id)?.instagram_url || null,
+                twitter_url: window.sampleData?.artists?.find(a => a.id == id)?.twitter_url || null,
+                facebook_url: window.sampleData?.artists?.find(a => a.id == id)?.facebook_url || null,
+                youtube_url: window.sampleData?.artists?.find(a => a.id == id)?.youtube_url || null
+            };
+            endpoint = 'backend/api/artists.php';
+        }
+
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+        submitBtn.disabled = true;
+
+        const response = await fetch(endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(`${entity.charAt(0).toUpperCase() + entity.slice(1)} updated successfully`, 'success');
+            bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+            refreshDashboardData();
+        } else {
+            showNotification(result.message || 'Error updating data', 'error');
+        }
+    } catch (error) {
+        console.error(`Error saving ${entity}:`, error);
+        showNotification('Failed to save changes', 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
 
 async function deleteEntity(entity, id, itemName, row) {
     let endpoint = '';
@@ -2339,31 +2470,53 @@ async function viewUserDetails(id) {
                     ? `<img src="${user.avatar}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
                     : (user.avatar || user.name.charAt(0))}
                     </div>
-                    <h4 class="mt-3">${user.name}</h4>
-                    <p>${user.email}</p>
-                    <span class="badge bg-${getTypeColor(user.type)}">${user.type}</span>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="small">Status</label>
-                        <div class="fw-bold"><span class="status-badge status-${user.status}">${user.status}</span></div>
+                        <label class="small">NAME</label>
+                        <input type="text" class="form-control" id="viewEditUserName" value="${user.name}">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="small">Joined Date</label>
-                        <div class="fw-bold">${user.joined}</div>
+                        <label class="small">EMAIL</label>
+                        <input type="email" class="form-control" id="viewEditUserEmail" value="${user.email}">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="small">Phone</label>
-                        <div class="fw-bold">${user.phone || 'N/A'}</div>
+                        <label class="small">PHONE</label>
+                        <input type="text" class="form-control" id="viewEditUserPhone" value="${user.phone || ''}">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="small">User ID</label>
+                        <label class="small">TYPE</label>
+                        <select class="form-control" id="viewEditUserType">
+                            <option value="fan" ${user.type === 'fan' ? 'selected' : ''}>Fan</option>
+                            <option value="artist" ${user.type === 'artist' ? 'selected' : ''}>Artist</option>
+                            <option value="admin" ${user.type === 'admin' ? 'selected' : ''}>Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">STATUS</label>
+                        <select class="form-control" id="viewEditUserStatus">
+                            <option value="active" ${user.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="pending" ${user.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="blocked" ${user.status === 'blocked' ? 'selected' : ''}>Blocked</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">USER ID</label>
                         <div class="fw-bold">#${user.id}</div>
+                        <input type="hidden" id="viewEditUserId" value="${user.id}">
                     </div>
                 </div>
             `;
-            const modal = new bootstrap.Modal(document.getElementById('viewUserModal'));
-            modal.show();
+            const modal = document.getElementById('viewUserModal');
+            const modalFooter = modal.querySelector('.modal-footer');
+            modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveFromViewModal('user')">
+                    <i class="fas fa-save me-1"></i>Save Changes
+                </button>
+            `;
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
         } else {
             showNotification('User not found', 'error');
         }
@@ -2513,31 +2666,53 @@ async function viewArtistDetails(id) {
                     ? `<img src="${artist.image || artist.photo}" alt="${artist.name}" style="width: 100%; height: 100%; object-fit: cover;">`
                     : artist.name.charAt(0)}
                     </div>
-                    <h4 class="mt-3">${artist.name}</h4>
-                    <p>${artist.email || ''}</p>
-                    <div><span class="badge" style="background-color: #${getGenreColor(artist.genre)}">${artist.genre}</span></div>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="small">Verification Status</label>
-                        <div class="fw-bold"><span class="badge bg-${getVerificationColor(artist.verification)}">${artist.verification}</span></div>
+                        <label class="small">NAME</label>
+                        <input type="text" class="form-control" id="viewEditArtistName" value="${artist.name}">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="small">Total Followers</label>
+                        <label class="small">GENRE</label>
+                        <input type="text" class="form-control" id="viewEditArtistGenre" value="${artist.genre}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">VERIFICATION</label>
+                        <select class="form-control" id="viewEditArtistVerification">
+                            <option value="pending" ${artist.verification === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="verified" ${artist.verification === 'verified' ? 'selected' : ''}>Verified</option>
+                            <option value="unverified" ${artist.verification === 'unverified' ? 'selected' : ''}>Unverified</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">STATUS</label>
+                        <select class="form-control" id="viewEditArtistStatus">
+                            <option value="active" ${artist.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="pending" ${artist.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="suspended" ${artist.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small">FOLLOWERS</label>
                         <div class="fw-bold">${artist.followers}</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="small">Total Songs</label>
-                        <div class="fw-bold">${artist.songs}</div>
-                    </div>
-                     <div class="col-md-6 mb-3">
-                        <label class="small">Account Status</label>
-                        <div class="fw-bold"><span class="status-badge status-${artist.status}">${artist.status}</span></div>
+                        <label class="small">ARTIST ID</label>
+                        <div class="fw-bold">#${artist.id}</div>
+                        <input type="hidden" id="viewEditArtistId" value="${artist.id}">
                     </div>
                 </div>
             `;
-            const modal = new bootstrap.Modal(document.getElementById('viewArtistModal'));
-            modal.show();
+            const modal = document.getElementById('viewArtistModal');
+            const modalFooter = modal.querySelector('.modal-footer');
+            modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveFromViewModal('artist')">
+                    <i class="fas fa-save me-1"></i>Save Changes
+                </button>
+            `;
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
         } else {
             showNotification('Artist not found', 'error');
         }

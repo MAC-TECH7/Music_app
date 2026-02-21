@@ -102,7 +102,7 @@
         timeEl.textContent = '0:00 / 0:00';
     }
 
-    // Server-side user id (from session). Fallback to localStorage if session not available.
+    // Server-side user id (from session).
     let serverUserId = null;
 
     // Play reporting: increment play count once per track play
@@ -177,7 +177,7 @@
                 serverUserId = mj.data.user.id;
             }
         } catch (e) {
-            // ignore — fallback to localStorage
+            console.warn('Player init user fetch failed', e);
         }
 
         const list = await fetchTracks();

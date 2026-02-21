@@ -1,8 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once '../cors.php';
 
 require_once '../db.php';
 
@@ -11,9 +9,22 @@ $method = $_SERVER['REQUEST_METHOD'];
 switch ($method) {
     case 'GET':
         try {
-            $stmt = $pdo->query("SELECT s.*, a.name as artist_name, a.instagram_url, a.twitter_url, a.facebook_url, a.youtube_url FROM songs s LEFT JOIN artists a ON s.artist_id = a.id ORDER BY s.id DESC");
-            $songs = $stmt->fetchAll();
-            echo json_encode(['success' => true, 'data' => $songs]);
+            $id = $_GET['id'] ?? null;
+            if ($id) {
+                $stmt = $pdo->prepare("SELECT s.*, a.name as artist_name, a.instagram_url, a.twitter_url, a.facebook_url, a.youtube_url FROM songs s LEFT JOIN artists a ON s.artist_id = a.id WHERE s.id = ?");
+                $stmt->execute([$id]);
+                $song = $stmt->fetch();
+                if ($song) {
+                    echo json_encode(['success' => true, 'data' => $song]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'Song not found']);
+                }
+            } else {
+                $stmt = $pdo->query("SELECT s.*, a.name as artist_name, a.instagram_url, a.twitter_url, a.facebook_url, a.youtube_url FROM songs s LEFT JOIN artists a ON s.artist_id = a.id ORDER BY s.id DESC");
+                $songs = $stmt->fetchAll();
+                echo json_encode(['success' => true, 'data' => $songs]);
+            }
         } catch(PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
@@ -22,9 +33,9 @@ switch ($method) {
     case 'POST':
         $data = json_decode(file_get_contents('php://input'), true);
         try {
-            $sql = "INSERT INTO songs (title, artist_id, genre, duration, plays, likes, file_path, cover_art, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO songs (title, artist_id, genre, duration, plays, likes, downloads, file_path, cover_art, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$data['title'], $data['artist_id'], $data['genre'], $data['duration'], $data['plays'] ?? 0, $data['likes'] ?? 0, $data['file_path'], $data['cover_art'], $data['status'] ?? 'active']);
+            $stmt->execute([$data['title'], $data['artist_id'], $data['genre'], $data['duration'], $data['plays'] ?? 0, $data['likes'] ?? 0, $data['downloads'] ?? 0, $data['file_path'], $data['cover_art'], $data['status'] ?? 'active']);
             echo json_encode(['success' => true, 'message' => 'Song created successfully']);
         } catch(PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -34,9 +45,9 @@ switch ($method) {
     case 'PUT':
         $data = json_decode(file_get_contents('php://input'), true);
         try {
-            $sql = "UPDATE songs SET title=?, artist_id=?, genre=?, duration=?, plays=?, likes=?, file_path=?, cover_art=?, status=? WHERE id=?";
+            $sql = "UPDATE songs SET title=?, artist_id=?, genre=?, duration=?, plays=?, likes=?, downloads=?, file_path=?, cover_art=?, status=? WHERE id=?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$data['title'], $data['artist_id'], $data['genre'], $data['duration'], $data['plays'], $data['likes'], $data['file_path'], $data['cover_art'], $data['status'], $data['id']]);
+            $stmt->execute([$data['title'], $data['artist_id'], $data['genre'], $data['duration'], $data['plays'], $data['likes'], $data['downloads'], $data['file_path'], $data['cover_art'], $data['status'], $data['id']]);
             echo json_encode(['success' => true, 'message' => 'Song updated successfully']);
         } catch(PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
