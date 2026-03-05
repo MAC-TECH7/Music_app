@@ -491,11 +491,12 @@
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
-                width: 200px;
+                transform: translateX(-240px);
+                transition: transform 0.3s ease;
             }
 
             .main-content {
-                margin-left: 200px;
+                margin-left: 0;
             }
 
             .stats-grid {
@@ -728,13 +729,19 @@
             border-color: var(--accent-primary);
         }
     </style>
+    <link rel="stylesheet" href="css/mobile.css">
 </head>
 
 <body>
-    <div class="app">
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <div class="app d-flex" id="wrapper">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar-wrapper">
             <div class="sidebar-header">
+                <button class="hamburger-btn d-lg-none" id="sidebarClose"
+                    style="position: absolute; right: 15px; top: 15px;">
+                    <i class="fas fa-times"></i>
+                </button>
                 <h1><i class="fas fa-drum"></i> <span class="platform-name">AfroRhythm</span></h1>
                 <p class="platform-description">Discover Cameroonian Music</p>
             </div>
@@ -773,12 +780,15 @@
         <!-- Main Content -->
         <div class="main-content">
             <!-- Top Bar -->
-            <div class="top-bar">
-                <div class="top-bar-left">
-                    <h1>Admin Dashboard Overview</h1>
+            <div class="top-bar d-flex justify-content-between align-items-center">
+                <div class="top-bar-left d-flex align-items-center">
+                    <button class="btn btn-outline-secondary d-lg-none me-3" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="mb-0 text-white fs-4 fs-md-3">Admin Dashboard Overview</h1>
                 </div>
-                <div class="top-bar-right">
-                    <input type="text" class="search-input" id="globalSearch"
+                <div class="top-bar-right d-flex align-items-center">
+                    <input type="text" class="search-input d-none d-md-block" id="globalSearch"
                         placeholder="Search users, artists, songs...">
                     <button class="icon-btn" id="notificationsBtn">
                         <i class="fas fa-bell"></i>
@@ -867,7 +877,7 @@
                                 <i class="fas fa-download"></i> Export
                             </button>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="usersTable">
                                 <thead>
                                     <tr>
@@ -894,7 +904,7 @@
                                 <i class="fas fa-sync-alt"></i> Refresh
                             </button>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="recentSongsTable">
                                 <thead>
                                     <tr>
@@ -935,7 +945,7 @@
                                 <input type="text" class="form-control" id="userSearch" placeholder="Search users...">
                             </div>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="allUsersTable">
                                 <thead>
                                     <tr>
@@ -1027,7 +1037,7 @@
                                     placeholder="Search artists...">
                             </div>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="artistsTable">
                                 <thead>
                                     <tr>
@@ -1092,7 +1102,7 @@
                                 <input type="text" class="form-control" id="songSearch" placeholder="Search songs...">
                             </div>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="songsTable">
                                 <thead>
                                     <tr>
@@ -1322,7 +1332,7 @@
                         <div class="table-header">
                             <h3>User Reports</h3>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="reportsTable">
                                 <thead>
                                     <tr>
@@ -1350,7 +1360,7 @@
                             <div class="table-header">
                                 <h3>Top Performing Songs</h3>
                             </div>
-                            <div class="table-content">
+                            <div class="table-content table-responsive-mobile">
                                 <table class="table table-dark table-striped" id="topSongsTable">
                                     <thead>
                                         <tr>
@@ -1389,7 +1399,7 @@
                             <div class="table-header">
                                 <h3>Top Artists</h3>
                             </div>
-                            <div class="table-content">
+                            <div class="table-content table-responsive-mobile">
                                 <table class="table table-dark table-striped" id="topArtistsTable">
                                     <thead>
                                         <tr>
@@ -1492,7 +1502,7 @@
                         <div class="table-header">
                             <h3>Subscription Plans</h3>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="subscriptionPlansTable">
                                 <thead>
                                     <tr>
@@ -1518,7 +1528,7 @@
                         <div class="table-header">
                             <h3>Recent Subscriptions</h3>
                         </div>
-                        <div class="table-content">
+                        <div class="table-content table-responsive-mobile">
                             <table class="table table-dark table-striped" id="recentSubscriptionsTable">
                                 <thead>
                                     <tr>

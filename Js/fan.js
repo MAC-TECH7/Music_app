@@ -438,26 +438,43 @@ function setupNavigation() {
     const menuToggle = document.getElementById('menuToggle');
     const menuToggle2 = document.getElementById('menuToggle2');
     const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-    if (menuToggle && sidebar) {
+    function toggleSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.toggle('open');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.toggle('active');
+        }
+    }
+
+    if (menuToggle) {
         menuToggle.addEventListener('click', function (e) {
             e.stopPropagation();
-            sidebar.classList.toggle('active');
+            toggleSidebar();
         });
     }
 
-    if (menuToggle2 && sidebar) {
+    if (menuToggle2) {
         menuToggle2.addEventListener('click', function (e) {
             e.stopPropagation();
-            sidebar.classList.toggle('active');
+            toggleSidebar();
+        });
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function () {
+            if (sidebar && sidebar.classList.contains('open')) {
+                toggleSidebar();
+            }
         });
     }
 
     // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function (e) {
-        if (sidebar && sidebar.classList.contains('active') && window.innerWidth <= 992) {
+        if (sidebar && sidebar.classList.contains('open') && window.innerWidth <= 992) {
             if (!sidebar.contains(e.target) && !e.target.closest('.menu-toggle')) {
-                sidebar.classList.remove('active');
+                toggleSidebar();
             }
         }
     });
@@ -513,8 +530,12 @@ function switchDashboardView(viewId) {
 
     // Close mobile sidebar
     const sidebar = document.getElementById('sidebar');
-    if (sidebar && window.innerWidth <= 992) {
-        sidebar.classList.remove('active');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    if (sidebar && (window.innerWidth <= 992 || sidebar.classList.contains('open'))) {
+        sidebar.classList.remove('open');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('active');
+        }
     }
 
     // Scroll to top

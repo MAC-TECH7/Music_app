@@ -167,12 +167,12 @@ try {
 
         // Revenue Trend (last 6 months from royalties table)
         $monthlyRev = $pdo->prepare("
-            SELECT DATE_FORMAT(created_at, '%b') as label, SUM(amount) as total
+            SELECT DATE_FORMAT(calculated_at, '%b') as label, SUM(amount) as total
             FROM royalties
             WHERE artist_id = ?
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-            GROUP BY YEAR(created_at), MONTH(created_at)
-            ORDER BY YEAR(created_at), MONTH(created_at)
+              AND calculated_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY YEAR(calculated_at), MONTH(calculated_at)
+            ORDER BY YEAR(calculated_at), MONTH(calculated_at)
         ");
         $monthlyRev->execute([$artistId]);
         $revRows = $monthlyRev->fetchAll(PDO::FETCH_ASSOC);
@@ -193,7 +193,7 @@ try {
         $activity = [];
         
         // Songs
-        $stmt = $pdo->prepare("SELECT title, created_at FROM songs WHERE artist_id = ? ORDER BY created_at DESC LIMIT 5");
+        $stmt = $pdo->prepare("SELECT title, uploaded_at FROM songs WHERE artist_id = ? ORDER BY uploaded_at DESC LIMIT 5");
         $stmt->execute([$artistId]);
         $songs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -201,7 +201,7 @@ try {
             $activity[] = [
                 'type' => 'upload',
                 'action' => 'Uploaded new song "' . $song['title'] . '"',
-                'time' => $song['created_at'] 
+                'time' => $song['uploaded_at'] 
             ];
         }
         
@@ -257,7 +257,8 @@ try {
         echo json_encode(['success' => false, 'message' => 'Unauthorized or invalid type']);
     }
 } catch (PDOException $e) {
+    error_log("❌ Stats API Error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Server error']);
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
 ?>

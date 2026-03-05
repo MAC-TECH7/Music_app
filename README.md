@@ -50,7 +50,7 @@ The AfroRhythm platform has completed Phase 1 (Security) and Phase 2 (File Uploa
 
 ## 🚀 Suggested Features & Improvements
 
-Here are exciting features you can add to make AfroRhythm even better! These suggestions are organized by priority and implementation complexity.
+Here are exciting features to be added to make AfroRhythm even better! These suggestions are organized by priority and implementation complexity.
 
 ### 🔥 **High Priority Features**
 

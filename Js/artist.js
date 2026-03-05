@@ -52,30 +52,27 @@ async function checkAuth() {
             }
         }
 
-        // If we get here, user is not authenticated or not an artist
-        const loginUrl = '/AfroRythm/auth/login.html';
-
-        console.log("⚠️ Artist authentication failed.");
-        console.log("🔄 Redirecting to login:", loginUrl);
-
-        window.location.href = loginUrl;
+        console.log("⚠️ Artist authentication failed, redirecting to login.");
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        } else {
+            window.location.href = '/AfroRythm/auth/login.html';
+        }
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
-
-        const path = window.location.pathname;
-        const directory = path.substring(0, path.lastIndexOf('/'));
-        const loginUrl = directory + '/auth/login.html';
-
-        console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
-        alert("🚨 ARTIST AUTH FAILED (CATCH)!\nPath: " + path + "\nDir: " + directory + "\nTarget: " + loginUrl);
-        window.location.href = loginUrl;
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        } else {
+            window.location.href = '/AfroRythm/auth/login.html';
+        }
         return false;
     }
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
+    console.log("🎬 DOMContentLoaded started");
     // Load notification settings and set checkboxes
     async function loadNotificationSettings() {
         try {
@@ -97,9 +94,25 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log('Artist Dashboard JavaScript loaded successfully!');
 
     // Check authentication first
-    if (!(await checkAuth())) {
-        return; // checkAuth will redirect if not authenticated
+    try {
+        if (!(await checkAuth())) {
+            console.log("🛑 Auth check failed - exiting initialization");
+            return; // checkAuth will redirect
+        }
+        console.log("✅ Auth check passed");
+    } catch (authError) {
+        console.error("❌ Auth process error:", authError);
+        // If auth fails hard, we still redirect
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        }
+        return;
     }
+
+    // Success: Reveal the page content
+    document.body.style.display = 'block';
+    console.log("✨ Dashboard visible");
+    console.log("📊 Chart library status:", typeof Chart !== 'undefined' ? "Available" : "Missing");
 
     // State management
     let currentView = 'dashboard';
@@ -107,7 +120,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     let uploadedSongs = []; // Store uploaded songs data (loaded from backend)
 
     // Mock Data for notifications and profile; songs will come from backend
-    // Initial Data (Empty by default, populated from backend)
     const mockData = {
         songs: [],
         notifications: [],
@@ -126,22 +138,35 @@ document.addEventListener('DOMContentLoaded', async function () {
     };
 
     // Load songs from backend first, then initialize dashboard
-    loadArtistSongsFromBackend().then(() => {
+    console.log("📡 Starting data load from backend...");
+    let sessionData = null; // Scope sessionData higher
+    try {
+        await loadArtistSongsFromBackend();
+        console.log("📦 Data load complete");
         initializeDashboard();
-    }).catch(err => {
-        console.error('Error loading artist songs, using empty list:', err);
-        uploadedSongs = [];
-        mockData.songs = [];
-        initializeDashboard();
-    });
+        console.log("🎯 Dashboard initialized");
+    } catch (err) {
+        console.error('❌ Error in initialization sequence:', err);
+        // Attempt a fallback initialization
+        try {
+            initializeDashboard();
+        } catch (initErr) {
+            console.error('Critical initialization failure:', initErr);
+            document.getElementById('main-content').innerHTML = `
+                <div class="alert alert-danger m-4">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Initialization Error</h5>
+                    <p>There was a problem loading your dashboard. Please try refreshing.</p>
+                </div>
+            `;
+        }
+    }
 
     async function loadArtistSongsFromBackend() {
-        // User authentication is now handled by session check
-        // First get the user ID from session to find the artist profile
-        let artistId = null;
+        console.log("🔍 Running loadArtistSongsFromBackend...");
         try {
             const sessionRes = await fetch('backend/api/session.php', { credentials: 'include' });
-            const sessionData = await sessionRes.json();
+            sessionData = await sessionRes.json();
+            console.log("👤 Session Data:", sessionData);
             if (sessionData.success && sessionData.data.user) {
 
                 // Set initial name from session
@@ -272,11 +297,36 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Initialize sidebar toggle
         const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const wrapper = document.getElementById('wrapper');
+        const sidebar = document.getElementById('sidebar-wrapper');
+
+        function toggleArtistSidebar() {
+            if (wrapper) wrapper.classList.toggle('toggled');
+            if (sidebar) sidebar.classList.toggle('open');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+        }
+
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', function (e) {
                 e.preventDefault();
-                const wrapper = document.getElementById('wrapper');
-                wrapper.classList.toggle('toggled');
+                toggleArtistSidebar();
+            });
+        }
+
+        if (sidebarClose) {
+            sidebarClose.addEventListener('click', function (e) {
+                e.preventDefault();
+                toggleArtistSidebar();
+            });
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function () {
+                if (sidebar && sidebar.classList.contains('open')) {
+                    toggleArtistSidebar();
+                }
             });
         }
 
@@ -322,6 +372,16 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const correspondingSidebarItem = document.querySelector(`.list-group-item[data-view="${view}"]`);
                     if (correspondingSidebarItem) {
                         correspondingSidebarItem.classList.add('active');
+                    }
+
+                    // Close mobile sidebar if open
+                    const wrapper = document.getElementById('wrapper');
+                    const sidebarOverlay = document.getElementById('sidebarOverlay');
+                    if (wrapper && wrapper.classList.contains('open') && window.innerWidth <= 992) {
+                        wrapper.classList.remove('open');
+                        if (sidebarOverlay) {
+                            sidebarOverlay.classList.remove('active');
+                        }
                     }
                 }
 
@@ -910,7 +970,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                             <h5 class="card-title mb-0">Your Songs</h5>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
+                            <div class="table-responsive table-responsive-mobile">
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>

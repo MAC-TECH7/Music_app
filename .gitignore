@@ -18,3 +18,7 @@ node_modules/
 
 # XAMPP session files
 /tmp/
+
+# Local design notes — never commit
+notes/
+diagrams/

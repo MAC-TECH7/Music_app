@@ -9,6 +9,7 @@
     <!-- Google Fonts - Matching index page -->
     <link rel="stylesheet" href="assets/lib/fonts/fonts.css">
     <link href="assets/lib/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="css/mobile.css" rel="stylesheet">
     <style>
         :root {
             /* Colors - Matching index page palette */
@@ -1164,12 +1165,17 @@
 </head>
 
 <body>
-    <div id="wrapper">
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
         <div id="sidebar-wrapper">
             <div class="sidebar-header">
-                <h1><i class="fas fa-drum"></i> <span class="platform-name">AfroRhythm</span></h1>
-                <p class="platform-description">Discover Cameroonian Music</p>
+                <button class="hamburger-btn d-lg-none" id="sidebarClose"
+                    style="position: absolute; right: 15px; top: 15px;">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h1><i class="fas fa-drum"></i> <span class="platform-name"></span></h1>
+                <p class="platform-description"></p>
             </div>
             <div class="list-group list-group-flush">
                 <a href="#" class="list-group-item list-group-item-action active" data-view="dashboard">
@@ -1571,7 +1577,7 @@
                         </div>
                         <div class="col-md-6 mb-4">
                             <h6 class="text-fix mb-3">Billing History</h6>
-                            <div class="table-responsive">
+                            <div class="table-responsive table-responsive-mobile">
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
@@ -1673,11 +1679,13 @@
     <script src="assets/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <!-- Font Awesome -->
     <script src="assets/lib/fontawesome/all.min.js"></script>
+    <!-- Charts Library -->
+    <script src="assets/lib/chartjs/chart.min.js"></script>
     <!-- Main JavaScript File -->
-    <script src="Js/utils.js"></script>
-    <script src="Js/platform-settings.js"></script>
-    <script src="Js/modal-player.js?v=4"></script>
-    <script src="Js/artist.js?v=5"></script>
+    <script src="Js/utils.js?v=6"></script>
+    <script src="Js/platform-settings.js?v=6"></script>
+    <script src="Js/modal-player.js?v=6"></script>
+    <script src="Js/artist.js?v=6"></script>
 </body>
 
 </html>
