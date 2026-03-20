@@ -56,7 +56,7 @@ async function checkAuth() {
         if (window.afro && window.afro.redirectTo) {
             window.afro.redirectTo('/auth/login.html');
         } else {
-            window.location.href = '/AfroRythm/auth/login.html';
+            window.location.href = 'auth/login.html';
         }
         return false;
 
@@ -65,7 +65,7 @@ async function checkAuth() {
         if (window.afro && window.afro.redirectTo) {
             window.afro.redirectTo('/auth/login.html');
         } else {
-            window.location.href = '/AfroRythm/auth/login.html';
+            window.location.href = 'auth/login.html';
         }
         return false;
     }
@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let currentView = 'dashboard';
     let currentPlan = 'Pro'; // Current subscription plan
     let uploadedSongs = []; // Store uploaded songs data (loaded from backend)
+    let artistId = null;
 
     // Mock Data for notifications and profile; songs will come from backend
     const mockData = {
@@ -462,7 +463,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             'analytics': 'Performance & Analytics',
             'revenue': 'Revenue & Royalties',
             'subscription': 'Subscription Plan',
-            'notifications': 'Notifications'
+            'notifications': 'Notifications',
+            'social': 'Social Interaction'
         };
         return titles[view] || 'Artist Dashboard';
     }
@@ -484,6 +486,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 return getSubscriptionContent();
             case 'notifications':
                 return getNotificationsContent();
+            case 'social':
+                return getSocialContent();
             default:
                 return getDashboardContent();
         }
@@ -504,6 +508,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             case 'analytics':
                 attachAnalyticsListeners();
                 initializeAnalyticsCharts();
+                loadTopFans();
                 break;
             case 'revenue':
                 attachRevenueListeners();
@@ -514,6 +519,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 break;
             case 'notifications':
                 updateNotificationDropdown();
+                break;
+            case 'social':
+                initializeSocialView();
                 break;
         }
     }
@@ -1073,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             <!-- Performance Charts -->
             <div class="row mb-4">
-                <div class="col-lg-8 mb-4">
+                <div class="col-lg-6 mb-4">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">Song Performance</h5>
@@ -1083,44 +1091,47 @@ document.addEventListener('DOMContentLoaded', async function () {
                                 <div class="text-center py-4">
                                     <i class="fas fa-chart-bar fa-4x text-muted mb-3"></i>
                                     <h5>Top Performing Songs</h5>
-                                    <div class="mt-4">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="flex-shrink-0 me-3">
-                                                <div class="bg-primary rounded" style="width: 80%; height: 20px;"></div>
+                                    <div class="mt-4" id="topSongsList">
+                                        <!-- Will be populated dynamicallly or keep static placeholders -->
+                                        ${uploadedSongs.slice(0, 3).map(song => `
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <small>${song.title}</small>
+                                                        <small class="text-primary">${song.plays} plays</small>
+                                                    </div>
+                                                    <div class="progress" style="height: 8px;">
+                                                        <div class="progress-bar" role="progressbar" style="width: ${Math.min(100, (parseInt(song.plays.replace(/,/g, '')) / 1000) * 100)}%"></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="flex-grow-1">
-                                                <small>Midnight Pulse - 245K plays</small>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="flex-shrink-0 me-3">
-                                                <div class="bg-primary rounded" style="width: 65%; height: 20px;"></div>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <small>Dreamscape - 182K plays</small>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-shrink-0 me-3">
-                                                <div class="bg-primary rounded" style="width: 50%; height: 20px;"></div>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <small>Solar Flare - 158K plays</small>
-                                            </div>
-                                        </div>
+                                        `).join('')}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 mb-4">
+                <div class="col-lg-3 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Audience Demographics</h5>
+                            <h5 class="card-title mb-0">Audience</h5>
                         </div>
                         <div class="card-body">
-                            <canvas id="demographicsChart" style="height: 300px; width: 100%;"></canvas>
+                            <canvas id="demographicsChart" style="height: 250px; width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Top Supporters</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="topSupportersList">
+                                <!-- Top fans will be loaded here -->
+                                <div class="p-3 text-center text-muted">Loading fans...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1531,48 +1542,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 </div>
             </div>
 
-            <!-- Notification Settings -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Notification Settings</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
-                                        <label class="form-check-label" for="emailNotifications">
-                                            Email Notifications
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
-                                        <label class="form-check-label" for="pushNotifications">
-                                            Push Notifications
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="smsNotifications">
-                                        <label class="form-check-label" for="smsNotifications">
-                                            SMS Notifications
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="btn btn-primary" id="saveNotificationSettingsBtn">
-                                <i class="fas fa-save me-2"></i>Save Settings
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Notifications List -->
             <div class="row">
                 <div class="col-12">
@@ -1589,6 +1558,226 @@ document.addEventListener('DOMContentLoaded', async function () {
                 </div>
             </div>
         `;
+    }
+
+    function getSocialContent() {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Social Interaction</h1>
+                <div class="alert alert-info py-2 px-3 mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Connect with your fans through comments and replies.
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header border-bottom-0">
+                            <h5 class="card-title mb-0">Your Tracks</h5>
+                        </div>
+                        <div class="list-group list-group-flush" id="socialSongsList" style="max-height: 600px; overflow-y: auto;">
+                            <!-- Songs will be loaded here -->
+                            <div class="p-4 text-center text-muted">Loading tracks...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card" id="commentsCard" style="min-height: 400px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0" id="commentsTrackTitle">Track Discussion</h5>
+                            <span class="badge bg-primary" id="commentsCount">0 Comments</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="artistCommentsList" class="d-flex flex-column gap-3">
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
+                                    <h5>Select a track to view fan comments</h5>
+                                    <p>Engaging with fans improves your visibility!</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer" id="replyFormArea" style="display: none;">
+                            <div class="input-group">
+                                <input type="text" id="artistReplyInput" class="form-control" placeholder="Write a public reply...">
+                                <button class="btn btn-primary" id="postArtistReplyBtn">Reply</button>
+                            </div>
+                            <input type="hidden" id="replyToCommentId" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function initializeSocialView() {
+        const songsList = document.getElementById('socialSongsList');
+        if (!songsList) return;
+
+        songsList.innerHTML = uploadedSongs.map(song => `
+            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3" onclick="loadTrackComments(${song.id}, '${song.title.replace(/'/g, "\\'")}')">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="fas fa-music text-white"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 text-white">${song.title}</h6>
+                        <small class="text-muted">${song.genre}</small>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-muted"></i>
+            </a>
+        `).join('');
+
+        // If songs exist, load the first one by default
+        if (uploadedSongs.length > 0) {
+            loadTrackComments(uploadedSongs[0].id, uploadedSongs[0].title);
+        }
+    }
+
+    window.loadTrackComments = async function(songId, songTitle) {
+        window.currentSelectedSongId = songId;
+        const commentsList = document.getElementById('artistCommentsList');
+        const countBadge = document.getElementById('commentsCount');
+        const titleEl = document.getElementById('commentsTrackTitle');
+        const replyArea = document.getElementById('replyFormArea');
+
+        titleEl.textContent = `Comments: ${songTitle}`;
+        commentsList.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+        replyArea.style.display = 'none';
+
+        try {
+            const res = await fetch(`backend/api/comments.php?song_id=${songId}`);
+            const json = await res.json();
+
+            if (json.success) {
+                countBadge.textContent = `${json.data.length} Comments`;
+                if (json.data.length === 0) {
+                    commentsList.innerHTML = '<div class="text-center py-5 text-muted">No comments found for this track.</div>';
+                } else {
+                    commentsList.innerHTML = json.data.map(comment => `
+                        <div class="p-3 rounded border" style="background: rgba(255,255,255,0.02);">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar overflow-hidden" style="width: 30px; height: 30px; font-size: 10px;">
+                                        ${comment.user_avatar ? `<img src="${comment.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (comment.user_name ? comment.user_name.substring(0,2).toUpperCase() : '??')}
+                                    </div>
+                                    <span class="fw-bold text-white">${comment.user_name}</span>
+                                </div>
+                                <small class="text-muted">${comment.created_at}</small>
+                            </div>
+                            <p class="mb-2 text-white" style="margin-left: 40px;">${comment.content}</p>
+                            <div class="d-flex justify-content-end gap-2">
+                                ${comment.is_pinned ? '<span class="badge bg-warning text-dark my-auto"><i class="fas fa-thumbtack me-1"></i>Pinned</span>' : ''}
+                                <button class="btn btn-sm btn-link text-primary p-0" onclick="prepareReply(${comment.id}, '${comment.user_name}')">
+                                    <i class="fas fa-reply me-1"></i>Reply
+                                </button>
+                                <button class="btn btn-sm btn-link ${comment.is_pinned ? 'text-warning' : 'text-muted'} p-0" onclick="togglePin(${comment.id}, ${comment.is_pinned ? 0 : 1})">
+                                    <i class="${comment.is_pinned ? 'fas' : 'far'} fa-thumbtack me-1"></i>${comment.is_pinned ? 'Unpin' : 'Pin'}
+                                </button>
+                                <button class="btn btn-sm btn-link text-danger p-0" onclick="deleteComment(${comment.id})">
+                                    <i class="fas fa-trash me-1"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (err) {
+            commentsList.innerHTML = '<div class="alert alert-danger">Error loading comments.</div>';
+        }
+    };
+
+    window.togglePin = async function(commentId, shouldPin) {
+        try {
+            const res = await fetch('backend/api/comments.php', {
+                method: 'PUT',
+                body: JSON.stringify({ id: commentId, pin: !!shouldPin }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const json = await res.json();
+            if (json.success) {
+                showNotification(json.message, 'success');
+                // Reload comments
+                const title = document.getElementById('commentsTrackTitle').textContent.replace('Comments: ', '');
+                loadTrackComments(window.currentSelectedSongId || uploadedSongs[0].id, title);
+            }
+        } catch (e) {
+            showNotification('Error updating pin status', 'danger');
+        }
+    };
+
+    window.deleteComment = async function(commentId) {
+        if (!confirm('Are you sure you want to delete this comment?')) return;
+        try {
+            const res = await fetch(`backend/api/comments.php?id=${commentId}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.success) {
+                showNotification('Comment deleted', 'success');
+                // Reload comments
+                const title = document.getElementById('commentsTrackTitle').textContent.replace('Comments: ', '');
+                loadTrackComments(window.currentSelectedSongId || uploadedSongs[0].id, title);
+            }
+        } catch (e) {
+            showNotification('Error deleting comment', 'danger');
+        }
+    };
+
+    window.prepareReply = function(commentId, userName) {
+        const replyArea = document.getElementById('replyFormArea');
+        const replyInput = document.getElementById('artistReplyInput');
+        const hiddenId = document.getElementById('replyToCommentId');
+        
+        replyArea.style.display = 'block';
+        replyInput.placeholder = `Replying to ${userName}...`;
+        replyInput.focus();
+        hiddenId.value = commentId;
+
+        // Scroll to reply area
+        replyArea.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Re-attach post listener for replies
+    function attachSocialListeners() {
+        const postBtn = document.getElementById('postArtistReplyBtn');
+        if (postBtn) {
+            postBtn.onclick = async () => {
+                const commentId = document.getElementById('replyToCommentId').value;
+                const content = document.getElementById('artistReplyInput').value;
+                
+                if (!content.trim()) return;
+
+                postBtn.disabled = true;
+                postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                try {
+                    // Logic to post reply - we'll treat it as a new comment with parent_id
+                    // Note: session.user.id is used by backend for author_id
+                    const res = await fetch('backend/api/comments.php', {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            song_id: window.currentSelectedSongId || uploadedSongs[0].id, 
+                            content: content,
+                            parent_id: commentId
+                        }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const json = await res.json();
+
+                    if (json.success) {
+                        showNotification('Reply posted!', 'success');
+                        document.getElementById('artistReplyInput').value = '';
+                        document.getElementById('replyFormArea').style.display = 'none';
+                        loadTrackComments(window.currentSelectedSongId || uploadedSongs[0].id, document.getElementById('commentsTrackTitle').textContent.replace('Comments: ', ''));
+                    }
+                } catch (e) {
+                    showNotification('Error posting reply', 'danger');
+                } finally {
+                    postBtn.disabled = false;
+                    postBtn.innerHTML = 'Reply';
+                }
+            };
+        }
     }
 
     // Helper functions for generating content
@@ -2009,6 +2198,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 break;
             case 'notifications':
                 attachNotificationsListeners();
+                break;
+            case 'social':
+                attachSocialListeners();
                 break;
         }
     }
@@ -2874,5 +3066,58 @@ document.addEventListener('DOMContentLoaded', async function () {
                 cutout: '70%'
             }
         });
+    }
+
+    async function loadTopFans() {
+        const list = document.getElementById('topSupportersList');
+        if (!list) return;
+
+        try {
+            // Need to ensure artistId is available
+            if (!artistId) {
+                const sessionRes = await fetch('backend/api/session.php');
+                const sessionJson = await sessionRes.json();
+                if (sessionJson.success && sessionJson.data.user) {
+                    const artistRes = await fetch(`backend/api/artists.php?user_id=${sessionJson.data.user.id}`);
+                    const artistJson = await artistRes.json();
+                    if (artistJson.success && artistJson.data.length > 0) {
+                        artistId = artistJson.data[0].id;
+                    }
+                }
+            }
+
+            if (!artistId) {
+                list.innerHTML = '<div class="p-3 text-center text-muted">Artist profile not found.</div>';
+                return;
+            }
+
+            const res = await fetch(`backend/api/follows.php?artist_id=${artistId}`);
+            const json = await res.json();
+
+            if (json.success) {
+                if (json.data.length === 0) {
+                    list.innerHTML = '<div class="p-3 text-center text-muted">No followers yet.</div>';
+                } else {
+                    list.innerHTML = json.data.slice(0, 5).map((fan, index) => `
+                        <div class="list-group-item d-flex align-items-center bg-transparent border-0 px-3 py-2">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; color: white; font-size: 12px;">
+                                    ${fan.user_name.substring(0,2).toUpperCase()}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 small text-white">${fan.user_name}</h6>
+                                <small class="text-muted">Loyal Fan</small>
+                            </div>
+                            <div class="ms-auto">
+                                <span class="badge bg-primary rounded-pill" style="font-size: 10px;">#${index+1}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (e) {
+            list.innerHTML = '<div class="p-3 text-center text-danger small">Error loading fans.</div>';
+        }
     }
 });

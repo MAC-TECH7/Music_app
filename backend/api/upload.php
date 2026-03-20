@@ -172,7 +172,7 @@ try {
         ];
 
     } elseif ($uploadType === 'profile_image') {
-        // Handle profile image upload for artist
+        // Handle profile image upload for the current user
         if (!isset($_FILES['profile_image'])) {
             throw new Exception('Profile image file is required');
         }
@@ -198,17 +198,20 @@ try {
             throw new Exception('Failed to save profile image');
         }
 
-        // Update artist record in database
         $userId = $_SESSION['user']['id'];
-        $stmt = $pdo->prepare("SELECT id FROM artists WHERE user_id = ?");
+
+        // Always update the user's avatar.
+        $stmt = $pdo->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+        $stmt->execute([$webPath, $userId]);
+
+        // If the user has an artist profile, keep the artist image in sync.
+        $stmt = $pdo->prepare("SELECT id FROM artists WHERE user_id = ? LIMIT 1");
         $stmt->execute([$userId]);
         $artist = $stmt->fetch();
-        if (!$artist) {
-            throw new Exception('Artist profile not found for current user');
+        if ($artist) {
+            $stmt = $pdo->prepare("UPDATE artists SET image = ? WHERE id = ?");
+            $stmt->execute([$webPath, $artist['id']]);
         }
-        $artistId = $artist['id'];
-        $stmt = $pdo->prepare("UPDATE artists SET image = ? WHERE id = ?");
-        $stmt->execute([$webPath, $artistId]);
 
         $response = [
             'success' => true,

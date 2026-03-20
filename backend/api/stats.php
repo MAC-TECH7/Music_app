@@ -2,15 +2,19 @@
 header('Content-Type: application/json');
 require_once '../cors.php';
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE)
+    session_start();
 
 require_once '../db.php';
 
 
 // Helper to format large numbers
-function formatNumber($num) {
-    if ($num >= 1000000) return round($num / 1000000, 1) . 'M';
-    if ($num >= 1000) return round($num / 1000, 1) . 'K';
+function formatNumber($num)
+{
+    if ($num >= 1000000)
+        return round($num / 1000000, 1) . 'M';
+    if ($num >= 1000)
+        return round($num / 1000, 1) . 'K';
     return $num;
 }
 
@@ -23,18 +27,18 @@ if (!$user) {
 $type = $_GET['type'] ?? 'global'; // 'global' or 'artist'
 
 try {
-    if ($type === 'global' && ($user['type'] === 'admin' || $user['type'] === 'moderator')) {
+    if ($type === 'global' && $user['type'] === 'admin') {
         // Global stats for admin
         $stats = [];
-        
+
         $stats['total_users'] = number_format($pdo->query("SELECT COUNT(*) FROM users")->fetchColumn());
         $stats['total_artists'] = number_format($pdo->query("SELECT COUNT(*) FROM artists")->fetchColumn());
         $stats['total_songs'] = number_format($pdo->query("SELECT COUNT(*) FROM songs")->fetchColumn());
-        
+
         // Revenue from successful payments
         $revenue = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'completed'")->fetchColumn() ?: 0;
         $stats['total_revenue'] = number_format($revenue ?? 0) . ' XAF';
-        
+
         // User growth (count users by month for the current year)
         $growth = $pdo->query("
             SELECT 
@@ -50,10 +54,10 @@ try {
             GROUP BY months.m
             ORDER BY months.m
         ")->fetchAll();
-        
+
         $stats['user_growth'] = array_column($growth, 'count');
         $stats['user_growth_labels'] = array_column($growth, 'month');
-        
+
         // Artist distribution by genre (pie chart)
         $dist = $pdo->query("SELECT genre, COUNT(*) as count FROM artists WHERE genre IS NOT NULL AND genre != '' GROUP BY genre LIMIT 5")->fetchAll();
         $stats['artist_distribution'] = array_column($dist, 'count');
@@ -62,35 +66,35 @@ try {
         // Analytics (aggregated from songs)
         $analyticsQuery = $pdo->query("SELECT SUM(plays) as streams, SUM(likes) as likes, SUM(downloads) as downloads FROM songs")->fetch();
         $stats['analytics'] = [
-            (int)($analyticsQuery['streams'] ?? 0),
-            (int)($analyticsQuery['downloads'] ?? 0),
+            (int) ($analyticsQuery['streams'] ?? 0),
+            (int) ($analyticsQuery['downloads'] ?? 0),
             0, // Shares placeholder
-            (int)($analyticsQuery['likes'] ?? 0),
+            (int) ($analyticsQuery['likes'] ?? 0),
             0  // Comments placeholder
         ];
-        
+
         // Revenue Breakdown
         $revBreakdown = [];
-        $revBreakdown['subscriptions'] = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'completed' AND type = 'subscription'")->fetchColumn() ?: 0;
-        $revBreakdown['ad_revenue'] = 0; 
-        $revBreakdown['fan_donations'] = 0; 
-        $revBreakdown['premium_features'] = 0; 
-        $revBreakdown['merchandise'] = 0; 
-        
+        $revBreakdown['subscriptions'] = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'completed'")->fetchColumn() ?: 0;
+        $revBreakdown['ad_revenue'] = 0;
+        $revBreakdown['fan_donations'] = 0;
+        $revBreakdown['premium_features'] = 0;
+        $revBreakdown['merchandise'] = 0;
+
         // Ensure all breakdown values are numbers
         foreach ($revBreakdown as $k => $v) {
-            $revBreakdown[$k] = $v !== null ? (float)$v : 0;
+            $revBreakdown[$k] = $v !== null ? (float) $v : 0;
         }
         $stats['revenue_breakdown'] = array_values($revBreakdown);
         $stats['revenue_breakdown_labels'] = ['Subscriptions', 'Ad Revenue', 'Fan Donations', 'Premium Features', 'Merchandise'];
 
         // Artist Verification Status
         // First initialize defaults
-        $verifStatus = ['verified' => 0, 'pending' => 0, 'unverified' => 0];
+        $verifStatus = ['approved' => 0, 'pending' => 0, 'rejected' => 0];
         $verifQuery = $pdo->query("SELECT verification, COUNT(*) as count FROM artists GROUP BY verification")->fetchAll(PDO::FETCH_KEY_PAIR);
         foreach ($verifQuery as $status => $count) {
-            if (isset($verifStatus[$status])) $verifStatus[$status] = (int)$count;
-            // Handle 'rejected' or others if they exist
+            if (isset($verifStatus[$status]))
+                $verifStatus[$status] = (int) $count;
         }
         $stats['artist_verification'] = array_values($verifStatus);
         $stats['artist_verification_labels'] = array_keys($verifStatus);
@@ -98,7 +102,7 @@ try {
         // Detailed Status Counts for Admin Dashboard
         $stats['pending_users'] = $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'pending'")->fetchColumn();
         $stats['blocked_users'] = $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'blocked'")->fetchColumn();
-        
+
         $stats['published_songs'] = $pdo->query("SELECT COUNT(*) FROM songs WHERE status = 'active'")->fetchColumn();
         $stats['pending_songs'] = $pdo->query("SELECT COUNT(*) FROM songs WHERE status = 'pending'")->fetchColumn();
         $stats['rejected_songs'] = $pdo->query("SELECT COUNT(*) FROM songs WHERE status = 'rejected'")->fetchColumn();
@@ -107,15 +111,15 @@ try {
         $genreDist = $pdo->query("SELECT genre, COUNT(*) as count FROM songs WHERE genre IS NOT NULL AND genre != '' GROUP BY genre LIMIT 7")->fetchAll(PDO::FETCH_ASSOC);
         $stats['genre_distribution'] = array_column($genreDist, 'count');
         $stats['genre_distribution_labels'] = array_column($genreDist, 'genre');
-        
+
         echo json_encode(['success' => true, 'data' => $stats]);
-        
+
     } else if ($type === 'artist' && $user['type'] === 'artist') {
         // Artist specific stats
         $stmt = $pdo->prepare("SELECT id FROM artists WHERE user_id = ?");
         $stmt->execute([$user['id']]);
         $artistId = $stmt->fetchColumn();
-        
+
         if (!$artistId) {
             error_log("📊 Stats Debug: Artist profile not found for user_id " . $user['id']);
             echo json_encode(['success' => false, 'message' => 'Artist profile not found']);
@@ -123,30 +127,30 @@ try {
         }
 
         error_log("📊 Stats Debug: Found artist_id $artistId for user_id " . $user['id']);
-        
+
         $stats = [];
-        
+
         // Aggregate song data
         $stmt = $pdo->prepare("SELECT SUM(plays) as plays, SUM(likes) as likes, SUM(downloads) as downloads FROM songs WHERE artist_id = ?");
         $stmt->execute([$artistId]);
         $totals = $stmt->fetch();
-        
-        $rawPlays = (int)($totals['plays'] ?? 0);
-        $rawLikes = (int)($totals['likes'] ?? 0);
-        $rawDownloads = (int)($totals['downloads'] ?? 0);
-        
+
+        $rawPlays = (int) ($totals['plays'] ?? 0);
+        $rawLikes = (int) ($totals['likes'] ?? 0);
+        $rawDownloads = (int) ($totals['downloads'] ?? 0);
+
         error_log("📊 Stats Debug: rawPlays=$rawPlays, rawLikes=$rawLikes, rawDownloads=$rawDownloads for artist_id $artistId");
-        
+
         $stats['total_plays'] = formatNumber($rawPlays);
         $stats['total_likes'] = formatNumber($rawLikes);
         $stats['total_downloads'] = formatNumber($rawDownloads);
-        
+
         // Revenue (Royalties)
         $stmt = $pdo->prepare("SELECT SUM(amount) FROM royalties WHERE artist_id = ?");
         $stmt->execute([$artistId]);
         $revenue = $stmt->fetchColumn() ?: 0;
         $stats['total_revenue'] = '$' . number_format($revenue ?? 0, 2);
-        
+
         // Monthly streams from listening_history (last 6 months)
         $monthlyStreams = $pdo->prepare("
             SELECT DATE_FORMAT(played_at, '%b') as label, COUNT(*) as count
@@ -162,7 +166,7 @@ try {
         $streamRows = $monthlyStreams->fetchAll(PDO::FETCH_ASSOC);
         $stats['monthly_streams'] = [
             'labels' => array_column($streamRows, 'label') ?: ['—'],
-            'data'   => array_map('intval', array_column($streamRows, 'count') ?: [0])
+            'data' => array_map('intval', array_column($streamRows, 'count') ?: [0])
         ];
 
         // Revenue Trend (last 6 months from royalties table)
@@ -178,7 +182,7 @@ try {
         $revRows = $monthlyRev->fetchAll(PDO::FETCH_ASSOC);
         $stats['monthly_revenue'] = [
             'labels' => array_column($revRows, 'label') ?: ['—'],
-            'data'   => array_map('floatval', array_column($revRows, 'total') ?: [0])
+            'data' => array_map('floatval', array_column($revRows, 'total') ?: [0])
         ];
 
 
@@ -187,24 +191,24 @@ try {
             'labels' => ['18-24', '25-34', '35-44', '45+'],
             'data' => [35, 45, 15, 5]
         ];
-        
+
         // Recent Activity
         // Combine song uploads and verification status changes
         $activity = [];
-        
+
         // Songs
         $stmt = $pdo->prepare("SELECT title, uploaded_at FROM songs WHERE artist_id = ? ORDER BY uploaded_at DESC LIMIT 5");
         $stmt->execute([$artistId]);
         $songs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        foreach($songs as $song) {
+
+        foreach ($songs as $song) {
             $activity[] = [
                 'type' => 'upload',
                 'action' => 'Uploaded new song "' . $song['title'] . '"',
-                'time' => $song['uploaded_at'] 
+                'time' => $song['uploaded_at']
             ];
         }
-        
+
         // Detailed Analytics Overview
         $stats['analytics_overview'] = [
             'avg_plays_daily' => '0', // Placeholder for now
@@ -212,25 +216,25 @@ try {
             'skip_rate' => 'N/A',
             'avg_listen_time' => '0:00'
         ];
-        
+
         // If we had a plays_history table, we could calculate avg_plays_daily
         // For now, let's just use total_plays / 30 if > 0, else 0
         if ($rawPlays > 0) {
-             $stats['analytics_overview']['avg_plays_daily'] = formatNumber(round($rawPlays / 30));
+            $stats['analytics_overview']['avg_plays_daily'] = formatNumber(round($rawPlays / 30));
         }
 
         $stats['recent_activity'] = $activity;
-        
+
         echo json_encode(['success' => true, 'data' => $stats]);
     } else if ($type === 'public') {
         // Public stats for landing page
         $stats = [];
-        
+
         // Counters
         $stats['total_artists'] = $pdo->query("SELECT COUNT(*) FROM artists")->fetchColumn();
         $stats['total_songs'] = $pdo->query("SELECT COUNT(*) FROM songs")->fetchColumn();
         // Mocking countries and listeners for now as we don't have accurate tracking yet
-        $stats['countries_reached'] = 15; 
+        $stats['countries_reached'] = 15;
         $stats['monthly_listeners'] = 250; // K+
 
         // Featured Artists (Top 4 by plays)
@@ -247,7 +251,7 @@ try {
             LIMIT 4
         ");
         $featured = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // If no featured artists (empty DB), provide fallback or empty
         $stats['featured_artists'] = $featured;
 

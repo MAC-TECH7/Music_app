@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     let targetUrl;
                     if (user.type === 'artist') {
                         targetUrl = projectRoot + '/artist.html';
-                    } else if (user.type === 'admin' || user.type === 'moderator') {
+                    } else if (user.type === 'admin') {
                         targetUrl = projectRoot + '/admin.html';
                     } else {
                         targetUrl = projectRoot + '/fan.html';

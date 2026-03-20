@@ -4,6 +4,13 @@ require_once '../cors.php';
 
 require_once '../db.php';
 
+function getExistingSong(PDO $pdo, int $id)
+{
+    $stmt = $pdo->prepare("SELECT * FROM songs WHERE id = ? LIMIT 1");
+    $stmt->execute([$id]);
+    return $stmt->fetch();
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
@@ -25,7 +32,7 @@ switch ($method) {
                 $songs = $stmt->fetchAll();
                 echo json_encode(['success' => true, 'data' => $songs]);
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         break;
@@ -37,7 +44,7 @@ switch ($method) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$data['title'], $data['artist_id'], $data['genre'], $data['duration'], $data['plays'] ?? 0, $data['likes'] ?? 0, $data['downloads'] ?? 0, $data['file_path'], $data['cover_art'], $data['status'] ?? 'active']);
             echo json_encode(['success' => true, 'message' => 'Song created successfully']);
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         break;
@@ -45,11 +52,36 @@ switch ($method) {
     case 'PUT':
         $data = json_decode(file_get_contents('php://input'), true);
         try {
+            if (empty($data['id'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Song ID is required']);
+                break;
+            }
+
+            $existingSong = getExistingSong($pdo, (int) $data['id']);
+            if (!$existingSong) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Song not found']);
+                break;
+            }
+
             $sql = "UPDATE songs SET title=?, artist_id=?, genre=?, duration=?, plays=?, likes=?, downloads=?, file_path=?, cover_art=?, status=? WHERE id=?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$data['title'], $data['artist_id'], $data['genre'], $data['duration'], $data['plays'], $data['likes'], $data['downloads'], $data['file_path'], $data['cover_art'], $data['status'], $data['id']]);
+            $stmt->execute([
+                $data['title'] ?? $existingSong['title'],
+                $data['artist_id'] ?? $existingSong['artist_id'],
+                $data['genre'] ?? $existingSong['genre'],
+                $data['duration'] ?? $existingSong['duration'],
+                $data['plays'] ?? $existingSong['plays'],
+                $data['likes'] ?? $existingSong['likes'],
+                $data['downloads'] ?? ($existingSong['downloads'] ?? 0),
+                $data['file_path'] ?? $existingSong['file_path'],
+                $data['cover_art'] ?? $existingSong['cover_art'],
+                $data['status'] ?? $existingSong['status'],
+                $data['id']
+            ]);
             echo json_encode(['success' => true, 'message' => 'Song updated successfully']);
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         break;
@@ -60,7 +92,7 @@ switch ($method) {
             $stmt = $pdo->prepare("DELETE FROM songs WHERE id = ?");
             $stmt->execute([$id]);
             echo json_encode(['success' => true, 'message' => 'Song deleted successfully']);
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         break;

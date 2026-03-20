@@ -8,6 +8,32 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+function setup_env(string $key, string $default = ''): string
+{
+    $value = getenv($key);
+    if ($value !== false) {
+        return $value;
+    }
+
+    static $envVars = null;
+    if ($envVars === null) {
+        $envVars = [];
+        $envFile = __DIR__ . '/../.env';
+        if (file_exists($envFile)) {
+            foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                $line = trim($line);
+                if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                    continue;
+                }
+                [$k, $v] = explode('=', $line, 2);
+                $envVars[trim($k)] = trim($v);
+            }
+        }
+    }
+
+    return $envVars[$key] ?? $default;
+}
+
 // Configuration - Load from db.php if possible
 $db_config_file = __DIR__ . '/db.php';
 $host = 'localhost';
@@ -18,10 +44,14 @@ $password = '';
 if (file_exists($db_config_file)) {
     // We read it as text to extract variables without actually executing if it fails
     $content = file_get_contents($db_config_file);
-    if (preg_match('/\$host\s*=\s*\'(.*)\'/', $content, $matches)) $host = $matches[1];
-    if (preg_match('/\$dbname\s*=\s*\'(.*)\'/', $content, $matches)) $dbname = $matches[1];
-    if (preg_match('/\$username\s*=\s*\'(.*)\'/', $content, $matches)) $username = $matches[1];
-    if (preg_match('/\$password\s*=\s*\'(.*)\'/', $content, $matches)) $password = $matches[1];
+    if (preg_match('/\$host\s*=\s*\'(.*)\'/', $content, $matches))
+        $host = $matches[1];
+    if (preg_match('/\$dbname\s*=\s*\'(.*)\'/', $content, $matches))
+        $dbname = $matches[1];
+    if (preg_match('/\$username\s*=\s*\'(.*)\'/', $content, $matches))
+        $username = $matches[1];
+    if (preg_match('/\$password\s*=\s*\'(.*)\'/', $content, $matches))
+        $password = $matches[1];
 }
 
 $status = [];
@@ -29,6 +59,10 @@ $success = false;
 
 if (isset($_POST['run_setup'])) {
     try {
+        $adminName = setup_env('ADMIN_NAME', 'System Admin');
+        $adminEmail = setup_env('ADMIN_EMAIL', 'admin@afrorhythm.local');
+        $adminPassword = setup_env('ADMIN_PASSWORD', 'AfroRhythm@2026!');
+
         // 1. Connect to MySQL (without database)
         $pdo = new PDO("mysql:host=$host", $username, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -40,7 +74,7 @@ if (isset($_POST['run_setup'])) {
         $status[] = "✅ Database `$dbname` checked/created.";
 
         // 3. Connect to the specific database
-        $pdo->exec("USE `$dbname` "); 
+        $pdo->exec("USE `$dbname` ");
         $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ]);
@@ -53,10 +87,10 @@ if (isset($_POST['run_setup'])) {
 
         if (file_exists($sqlFile)) {
             $sql = file_get_contents($sqlFile);
-            
+
             // Remove UTF-8 BOM if present
             $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql);
-            
+
             // If it's the UTF-16 version, we might need to convert it
             if (substr($sql, 0, 2) == "\xFF\xFE" || substr($sql, 0, 2) == "\xFE\xFF") {
                 $sql = mb_convert_encoding($sql, 'UTF-8', 'UTF-16');
@@ -89,16 +123,17 @@ if (isset($_POST['run_setup'])) {
             UNIQUE KEY user_key (user_id, storage_key)
         )");
         // 6. Seed Demo Users
-        $password_hash = password_hash('password123', PASSWORD_BCRYPT);
+        $defaultPasswordHash = password_hash('password123', PASSWORD_BCRYPT);
+        $adminPasswordHash = password_hash($adminPassword, PASSWORD_BCRYPT);
         $demo_users = [
-            ['name' => 'John Mbarga', 'email' => 'john.mbarga@email.com', 'type' => 'fan'],
-            ['name' => 'Marie Ndongo', 'email' => 'marie.ndongo@email.com', 'type' => 'artist'],
-            ['name' => 'Thomas N.', 'email' => 'thomas.n@email.com', 'type' => 'admin']
+            ['name' => 'John Mbarga', 'email' => 'john.mbarga@email.com', 'type' => 'fan', 'password_hash' => $defaultPasswordHash],
+            ['name' => 'Marie Ndongo', 'email' => 'marie.ndongo@email.com', 'type' => 'artist', 'password_hash' => $defaultPasswordHash],
+            ['name' => $adminName, 'email' => $adminEmail, 'type' => 'admin', 'password_hash' => $adminPasswordHash]
         ];
 
         foreach ($demo_users as $user) {
-            $stmt = $pdo->prepare("INSERT INTO users (name, email, password, type, status, joined) VALUES (?, ?, ?, ?, 'active', CURDATE()) ON DUPLICATE KEY UPDATE status='active', type=VALUES(type)");
-            $stmt->execute([$user['name'], $user['email'], $password_hash, $user['type']]);
+            $stmt = $pdo->prepare("INSERT INTO users (name, email, password, type, status, joined) VALUES (?, ?, ?, ?, 'active', CURDATE()) ON DUPLICATE KEY UPDATE name=VALUES(name), password=VALUES(password), status='active', type=VALUES(type)");
+            $stmt->execute([$user['name'], $user['email'], $user['password_hash'], $user['type']]);
         }
 
         // Add Marie as artist
@@ -111,6 +146,7 @@ if (isset($_POST['run_setup'])) {
         }
 
         $status[] = "✅ Demo users and artist profile seeded.";
+        $status[] = "🔐 Admin account seeded: " . htmlspecialchars($adminEmail, ENT_QUOTES, 'UTF-8');
         $status[] = "🎉 Setup completed successfully!";
         $success = true;
 
@@ -121,6 +157,7 @@ if (isset($_POST['run_setup'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -133,6 +170,7 @@ if (isset($_POST['run_setup'])) {
             --dark-bg: #121212;
             --surface-color: #1e1e1e;
         }
+
         body {
             background-color: var(--dark-bg);
             color: #e0e0e0;
@@ -143,6 +181,7 @@ if (isset($_POST['run_setup'])) {
             min-height: 100vh;
             margin: 0;
         }
+
         .setup-card {
             background-color: var(--surface-color);
             border: 1px solid #333;
@@ -150,8 +189,9 @@ if (isset($_POST['run_setup'])) {
             padding: 2.5rem;
             width: 100%;
             max-width: 600px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
+
         .logo {
             font-size: 2.5rem;
             font-weight: 800;
@@ -160,11 +200,13 @@ if (isset($_POST['run_setup'])) {
             margin-bottom: 0.5rem;
             letter-spacing: -1px;
         }
+
         .subtitle {
             text-align: center;
             color: #888;
             margin-bottom: 2rem;
         }
+
         .status-box {
             background: #000;
             border-radius: 8px;
@@ -176,9 +218,11 @@ if (isset($_POST['run_setup'])) {
             overflow-y: auto;
             border-left: 4px solid var(--primary-color);
         }
+
         .status-item {
             margin-bottom: 0.5rem;
         }
+
         .btn-primary {
             background-color: var(--primary-color);
             border: none;
@@ -188,10 +232,12 @@ if (isset($_POST['run_setup'])) {
             width: 100%;
             transition: all 0.3s ease;
         }
+
         .btn-primary:hover {
             background-color: #e63600;
             transform: translateY(-2px);
         }
+
         .btn-secondary {
             background-color: #333;
             border: none;
@@ -200,6 +246,7 @@ if (isset($_POST['run_setup'])) {
             border-radius: 8px;
             margin-top: 1rem;
         }
+
         .success-icon {
             font-size: 4rem;
             color: #4caf50;
@@ -209,6 +256,7 @@ if (isset($_POST['run_setup'])) {
         }
     </style>
 </head>
+
 <body>
     <div class="setup-card">
         <div class="logo">AfroRythm</div>
@@ -253,4 +301,5 @@ if (isset($_POST['run_setup'])) {
         <?php endif; ?>
     </div>
 </body>
+
 </html>

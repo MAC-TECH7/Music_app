@@ -37,10 +37,11 @@ let samplePlaylists = [];
 
 
 // ========== MAIN INITIALIZATION ==========
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
 
     // Check authentication
-    if (!checkAuth()) {
+    const isAuthenticated = await checkAuth();
+    if (!isAuthenticated) {
         return;
     }
 
@@ -70,10 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Load songs and artists from backend
     loadBackendData().then(async () => {
-        // Attempt to load user data if logged in
-        if (checkAuth()) {
-            await loadUserData();
-        }
+        await loadUserData();
     }).catch(err => {
         console.error('❌ Backend load failed, using fallback data:', err);
         showNotification("Backend unavailable. Using offline mode.", "warning");
@@ -217,17 +215,21 @@ async function checkAuth() {
         }
 
         // If we get here, user is not authenticated
-        const loginUrl = '/AfroRythm/auth/login.html';
-
-        window.location.href = loginUrl;
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        } else {
+            window.location.href = 'auth/login.html';
+        }
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
 
-        const loginUrl = '/AfroRythm/auth/login.html';
-
-        window.location.href = loginUrl;
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        } else {
+            window.location.href = 'auth/login.html';
+        }
         return false;
     }
 }
@@ -270,7 +272,10 @@ function updateUserProfileUI() {
         if (profileEmail) profileEmail.textContent = currentUser.email || 'fan@example.com';
 
         const memberSince = document.getElementById('memberSince');
-        if (memberSince) memberSince.textContent = currentUser.memberSince || '2023';
+        if (memberSince) {
+            const joinedYear = currentUser.joined ? new Date(currentUser.joined).getFullYear() : null;
+            memberSince.textContent = joinedYear || '2023';
+        }
     }
 }
 
@@ -315,7 +320,18 @@ async function handleProfileUpload(file) {
         const data = await response.json();
 
         if (data.success) {
-            currentUser.avatar = data.data.file_path;
+            const newUrl = `${data.data.file_path}?t=${new Date().getTime()}`;
+            currentUser.avatar = newUrl;
+            
+            // Update modal UI if it exists
+            const modalAvatar = document.getElementById('modalAvatar');
+            if (modalAvatar) {
+                modalAvatar.innerHTML = `<img src="${newUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                                       <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); height: 25px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white;">
+                                           <i class="fas fa-camera"></i>
+                                       </div>`;
+            }
+            
             updateUserProfileUI();
             showNotification('Profile photo updated successfully', 'success');
         } else {
@@ -578,6 +594,9 @@ function loadViewContent(viewId) {
             break;
         case 'settings':
             loadSettingsView();
+            break;
+        case 'song-detail':
+            loadSongDetailView(window.currentSongDetailId);
             break;
         default:
     }
@@ -1384,12 +1403,13 @@ function createAccountSettingsModal() {
             </div>
             
             <div style="display: flex; align-items: center; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
-                <div class="user-avatar" style="width: 80px; height: 80px; font-size: 24px; position: relative; cursor: pointer; overflow: hidden;" id="modalAvatar" onclick="document.getElementById('profileImageInput').click()">
-                    ${currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'FU'}
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); height: 30px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-camera" style="font-size: 14px;"></i>
+                <div class="user-avatar" style="width: 80px; height: 80px; font-size: 24px; position: relative; cursor: pointer; overflow: hidden; background: ${currentUser?.avatarColor || 'var(--primary-color)'};" id="modalAvatar" onclick="document.getElementById('profileImageInput').click()">
+                    ${currentUser?.avatar ? `<img src="${currentUser.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'FU')}
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); height: 25px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white;">
+                        <i class="fas fa-camera"></i>
                     </div>
                 </div>
+                <input type="file" id="profileImageInput" style="display: none;" accept="image/*" onchange="if(this.files[0]) handleProfileUpload(this.files[0])">
                 <div>
                     <h4>${currentUser?.name || 'Fan User'}</h4>
                     <p>${currentUser?.email || 'fan@example.com'}</p>
@@ -1439,11 +1459,11 @@ function createSongCard(song, isFavorite = false) {
     const card = document.createElement('div');
     card.className = 'song-card';
     card.innerHTML = `
-        <div class="song-cover" style="background: ${song.coverColor || 'var(--primary-color)'};">
+        <div class="song-cover" onclick="viewSongDetails(${song.id})" style="background: ${song.coverColor || 'var(--primary-color)'}; cursor: pointer;">
             <i class="fas fa-music"></i>
         </div>
         <div class="song-info">
-            <h4>${song.title}</h4>
+            <h4 style="cursor: pointer;" onclick="viewSongDetails(${song.id})">${song.title}</h4>
             <p class="artist-link" onclick="viewArtist(${song.artistId})" style="cursor: pointer; color: var(--text-secondary); transition: color 0.2s;">${song.artist}</p>
         </div>
         <div class="song-meta">
@@ -1463,6 +1483,128 @@ function createSongCard(song, isFavorite = false) {
         </div>
     `;
     return card;
+}
+
+// ========== SONG DETAIL & COMMENTS ==========
+function viewSongDetails(songId) {
+    window.currentSongDetailId = songId;
+    switchDashboardView('song-detail');
+}
+
+async function loadSongDetailView(songId) {
+    if (!songId) return;
+
+    const song = sampleSongs.find(s => s.id == songId);
+    if (!song) return;
+
+    // Update UI Elements
+    document.getElementById('detailSongTitle').textContent = song.title;
+    document.getElementById('detailSongArtist').textContent = song.artist;
+    document.getElementById('detailSongGenre').textContent = song.genre;
+    document.getElementById('detailSongPlays').textContent = song.plays.toLocaleString();
+    document.getElementById('detailSongDuration').textContent = song.duration;
+    
+    const cover = document.getElementById('detailSongCover');
+    cover.style.background = song.coverColor || 'var(--primary-color)';
+
+    // Play button
+    const playBtn = document.getElementById('detailPlayBtn');
+    playBtn.onclick = () => {
+        if (window.playSongInModal) window.playSongInModal(songId);
+    };
+
+    // Favorite button
+    const favBtn = document.getElementById('detailFavoriteBtn');
+    const isFavorite = userFavorites.songs.includes(parseInt(songId));
+    favBtn.className = isFavorite ? 'btn btn-primary' : 'btn btn-outline-light';
+    favBtn.innerHTML = `<i class="${isFavorite ? 'fas' : 'far'} fa-heart me-2"></i> ${isFavorite ? 'Favorited' : 'Favorite'}`;
+    
+    // Load Comments
+    loadComments(songId);
+
+    // Setup Comment Post Button
+    const postBtn = document.getElementById('postCommentBtn');
+    postBtn.onclick = () => {
+        const content = document.getElementById('commentInput').value;
+        if (content.trim()) {
+            postComment(songId, content);
+        }
+    };
+    
+    // Update Commenter Avatar
+    const commenterAvatar = document.getElementById('commentUserAvatar');
+    if (currentUser && commenterAvatar) {
+        // reuse logic from updateUserProfileUI
+        const initials = currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'FU';
+        commenterAvatar.textContent = initials;
+    }
+}
+
+async function loadComments(songId) {
+    const list = document.getElementById('commentsList');
+    list.innerHTML = `
+        <div class="text-center py-4 text-muted">
+            <i class="fas fa-spinner fa-spin mb-2"></i>
+            <p>Loading comments...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`backend/api/comments.php?song_id=${songId}`);
+        const json = await res.json();
+
+        if (json.success) {
+            if (json.data.length === 0) {
+                list.innerHTML = '<div class="text-center py-4 text-muted">No comments yet. Be the first to say something!</div>';
+            } else {
+                list.innerHTML = json.data.map(comment => `
+                    <div class="comment-item p-3 rounded mb-2 ${comment.is_pinned ? 'border-primary' : ''}" style="background: rgba(255,255,255,0.03); border: 1px solid ${comment.is_pinned ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)'}; position: relative;">
+                        ${comment.is_pinned ? '<div style="position: absolute; top: 10px; right: 10px; color: var(--primary-color); font-size: 0.7rem; font-weight: bold;"><i class="fas fa-thumbtack me-1"></i>PINNED</div>' : ''}
+                        <div class="d-flex justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar overflow-hidden" style="width: 30px; height: 30px; font-size: 10px;">
+                                    ${comment.user_avatar ? `<img src="${comment.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (comment.user_name ? comment.user_name.substring(0,2).toUpperCase() : '??')}
+                                </div>
+                                <span class="fw-bold" style="font-size: 0.9rem;">${comment.user_name}</span>
+                            </div>
+                            <small class="text-muted">${getTimeAgo(new Date(comment.created_at))}</small>
+                        </div>
+                        <p class="mb-0" style="padding-left: 38px; color: var(--text-secondary);">${comment.content}</p>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (err) {
+        list.innerHTML = '<div class="alert alert-danger">Failed to load comments.</div>';
+    }
+}
+
+async function postComment(songId, content) {
+    const postBtn = document.getElementById('postCommentBtn');
+    postBtn.disabled = true;
+    postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const res = await fetch('backend/api/comments.php', {
+            method: 'POST',
+            body: JSON.stringify({ song_id: songId, content: content }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const json = await res.json();
+
+        if (json.success) {
+            document.getElementById('commentInput').value = '';
+            loadComments(songId); // Reload
+            showNotification('Comment posted!', 'success');
+        } else {
+            showNotification(json.message || 'Failed to post comment', 'error');
+        }
+    } catch (err) {
+        showNotification('Error connecting to server', 'error');
+    } finally {
+        postBtn.disabled = false;
+        postBtn.innerHTML = 'Post Comment';
+    }
 }
 
 function renderArtistCard(artist, followStatus = 'follow') {
@@ -2565,7 +2707,7 @@ function showCreatePlaylistModal(songId = null) {
                 </div>
                 
                 <div style="margin-top: var(--spacing-lg);">
-                    <button onclick="createNewPlaylist(${songId})" style="background: var(--primary-color); color: white; border: none; padding: 12px 24px; border-radius: var(--radius-md); width: 100%; cursor: pointer; font-weight: 600;">
+                    <button id="savePlaylistBtn" onclick="createNewPlaylist(${songId})" style="background: var(--primary-color); color: white; border: none; padding: 12px 24px; border-radius: var(--radius-md); width: 100%; cursor: pointer; font-weight: 600;">
                         Create Playlist
                     </button>
                 </div>
@@ -2724,7 +2866,7 @@ function editPlaylist(playlistId) {
         if (preview && playlist.coverColor) preview.style.background = playlist.coverColor;
 
         // Change create button to update button
-        const createBtn = document.querySelector('.settings-modal button');
+        const createBtn = document.getElementById('savePlaylistBtn');
         if (createBtn) {
             createBtn.textContent = 'Update Playlist';
             createBtn.onclick = () => updatePlaylist(playlistId);
@@ -2732,7 +2874,7 @@ function editPlaylist(playlistId) {
     }, 100);
 }
 
-function updatePlaylist(playlistId) {
+async function updatePlaylist(playlistId) {
     const playlist = userPlaylists.find(p => p.id === playlistId);
     if (!playlist) return;
 
@@ -2742,25 +2884,51 @@ function updatePlaylist(playlistId) {
         return;
     }
 
-    playlist.name = name;
-    playlist.description = document.getElementById('playlistDescription')?.value || '';
-    playlist.coverColor = document.getElementById('selectedColor')?.value || playlist.coverColor;
+    const description = document.getElementById('playlistDescription')?.value || '';
+    const isPublic = document.querySelector('input[name="privacy"][value="public"]')?.checked || false;
+    const coverColor = document.getElementById('selectedColor')?.value || playlist.coverColor;
 
-    saveUserData();
-    showNotification(`Updated playlist "${name}"`, 'success');
+    try {
+        const response = await fetch('backend/api/playlists.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playlist_id: playlistId,
+                name,
+                description,
+                is_public: isPublic
+            })
+        });
 
-    // Close modal
-    const modal = document.querySelector('.modal-overlay');
-    if (modal) {
-        document.body.removeChild(modal);
-    }
+        const data = await response.json();
 
-    // Refresh views
-    if (document.getElementById('playlists-view')?.classList.contains('active')) {
-        loadPlaylistsView();
-    }
-    if (document.getElementById('mymusic-view')?.classList.contains('active')) {
-        loadMyMusicView();
+        if (!data.success) {
+            showNotification(data.message || 'Failed to update playlist', 'error');
+            return;
+        }
+
+        playlist.name = name;
+        playlist.description = description;
+        playlist.isPublic = isPublic;
+        playlist.coverColor = coverColor;
+
+        await loadUserData();
+        showNotification(`Updated playlist "${name}"`, 'success');
+
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            document.body.removeChild(modal);
+        }
+
+        if (document.getElementById('playlists-view')?.classList.contains('active')) {
+            loadPlaylistsView();
+        }
+        if (document.getElementById('mymusic-view')?.classList.contains('active')) {
+            loadMyMusicView();
+        }
+    } catch (error) {
+        console.error('Error updating playlist:', error);
+        showNotification('Error updating playlist', 'error');
     }
 }
 

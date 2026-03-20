@@ -1918,6 +1918,75 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Song Detail View (Engagement) -->
+                <div id="song-detail-view" class="dashboard-view">
+                    <button class="view-all mb-4" onclick="switchDashboardView('discover')">
+                        <i class="fas fa-arrow-left"></i> Back to Discover
+                    </button>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div id="detailSongCover" class="song-cover mb-4" style="height: 300px; font-size: 100px;">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button id="detailPlayBtn" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: none;">
+                                    <i class="fas fa-play me-2"></i> Play Now
+                                </button>
+                                <button id="detailFavoriteBtn" class="btn btn-outline-light">
+                                    <i class="far fa-heart me-2"></i> Favorite
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h1 id="detailSongTitle" style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">Song Title</h1>
+                            <h3 id="detailSongArtist" class="text-secondary mb-4" style="cursor: pointer;">Artist Name</h3>
+                            
+                            <div class="metadata-grid d-flex gap-4 mb-5 pb-4 border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                                <div>
+                                    <small class="text-muted d-block text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">Genre</small>
+                                    <span id="detailSongGenre" class="fw-bold">Afrobeats</span>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">Plays</small>
+                                    <span id="detailSongPlays" class="fw-bold">0</span>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">Duration</small>
+                                    <span id="detailSongDuration" class="fw-bold">0:00</span>
+                                </div>
+                            </div>
+
+                            <!-- Comments Section -->
+                            <div class="comments-section">
+                                <h4 class="mb-4"><i class="fas fa-comments me-2"></i> Discussion</h4>
+                                
+                                <!-- Comment Form -->
+                                <div class="comment-form mb-5 p-3 rounded" style="background: rgba(255,255,255,0.05);">
+                                    <div class="d-flex gap-3">
+                                        <div class="user-avatar" style="width: 40px; height: 40px; flex-shrink: 0;" id="commentUserAvatar">JD</div>
+                                        <div class="flex-grow-1">
+                                            <textarea id="commentInput" class="form-control mb-2" rows="2" placeholder="What do you think of this track?" style="background: var(--bg-tertiary); border: 1px solid rgba(255,255,255,0.1); color: white;"></textarea>
+                                            <div class="text-end">
+                                                <button id="postCommentBtn" class="btn btn-sm btn-primary" style="background: var(--primary-color); border: none;">Post Comment</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Comments List -->
+                                <div id="commentsList" class="d-flex flex-column gap-3">
+                                    <!-- Comments will be loaded here -->
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="fas fa-spinner fa-spin mb-2"></i>
+                                        <p>Loading comments...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 

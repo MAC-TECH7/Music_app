@@ -67,6 +67,14 @@
             background-clip: text;
         }
 
+        .text-muted {
+            color: rgba(248, 249, 250, 0.72) !important;
+        }
+
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
@@ -686,7 +694,7 @@
             </div>
 
             <div class="text-center mt-4">
-                <a href="artists.html" class="btn btn-outline-light">
+                <a href="browse.html" class="btn btn-outline-light">
                     View All Artists <i class="fas fa-arrow-right ms-2"></i>
                 </a>
             </div>
@@ -1058,7 +1066,7 @@
                         <li class="mb-2"><a href="#" class="text-muted">Careers</a></li>
                         <li class="mb-2"><a href="#" class="text-muted">Partnerships</a></li>
                         <li class="mb-2"><a href="#" class="text-muted">Press Kit</a></li>
-                        <li class="mb-2"><a href="contact.html" class="text-muted">Contact</a></li>
+                        <li class="mb-2"><a href="mailto:contact@afrorhythm.local" class="text-muted">Contact</a></li>
                     </ul>
                     <div class="mt-4">
                         <p class="text-muted mb-2">Stay updated on Cameroonian music</p>
@@ -1121,7 +1129,7 @@
                 if (user.type === 'artist') {
                     dashboardLink.href = 'artist.html';
                     dashboardLink.innerHTML = '<i class="fas fa-chart-line me-1"></i>Artist Dashboard';
-                } else if (user.type === 'admin' || user.type === 'moderator') {
+                } else if (user.type === 'admin') {
                     dashboardLink.href = 'admin.html';
                     dashboardLink.innerHTML = '<i class="fas fa-user-shield me-1"></i>Admin Dashboard';
                 } else {

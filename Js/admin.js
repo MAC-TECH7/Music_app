@@ -13,30 +13,36 @@ async function checkAuth() {
 
         if (response.ok) {
             const data = await response.json();
-            if (data.success && (data.data.user.type === 'admin' || data.data.user.type === 'moderator')) {
+            if (data.success && data.data.user.type === 'admin') {
                 console.log(`✅ Admin authenticated: ${data.data.user.name}`);
                 return true;
             }
         }
 
         // If we get here, user is not authenticated or not an admin
-        const loginUrl = '/AfroRythm/auth/login.html';
+        const loginUrl = 'auth/login.html';
 
         console.log("⚠️ Admin authentication failed.");
         console.log("🔄 Redirecting to login:", loginUrl);
 
-        window.location.href = loginUrl;
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        } else {
+            window.location.href = loginUrl;
+        }
         return false;
 
     } catch (error) {
         console.error("❌ Authentication check failed:", error);
 
-        const path = window.location.pathname;
-        const directory = path.substring(0, path.lastIndexOf('/'));
-        const loginUrl = directory + '/auth/login.html';
+        const loginUrl = 'auth/login.html';
 
         console.log("⚠️ Auth check failed, redirecting to login:", loginUrl);
-        window.location.href = loginUrl;
+        if (window.afro && window.afro.redirectTo) {
+            window.afro.redirectTo('/auth/login.html');
+        } else {
+            window.location.href = loginUrl;
+        }
         return false;
     }
 }
@@ -397,27 +403,28 @@ async function loadSampleData() {
         const artistsResponse = await fetch('backend/api/artists.php');
         const artistsData = await artistsResponse.json();
         let artists = artistsData.success ? artistsData.data.map(artist => ({
-            id: artist.id,
-            name: artist.name,
-            genre: artist.genre,
-            followers: artist.followers >= 1000 ? (artist.followers / 1000).toFixed(0) + 'K' : artist.followers.toString(),
-            songs: artist.songs_count,
-            status: artist.status,
-            verification: artist.verification
+            ...artist,
+            name: artist.name || artist.user_name || 'Unknown Artist',
+            genre: artist.genre || 'Unknown',
+            followers: Number(artist.followers || 0),
+            songs_count: Number(artist.songs_count ?? artist.real_songs_count ?? 0),
+            songs: Number(artist.songs_count ?? artist.real_songs_count ?? 0),
+            status: artist.status || 'pending',
+            verification: artist.verification || 'pending'
         })) : [];
 
         // Fetch songs
         const songsResponse = await fetch('backend/api/songs.php');
         const songsData = await songsResponse.json();
         let songs = songsData.success ? songsData.data.map(song => ({
-            id: song.id,
-            title: song.title,
-            artist: song.artist_name,
-            genre: song.genre,
-            plays: song.plays >= 1000000 ? (song.plays / 1000000).toFixed(1) + 'M' : song.plays >= 1000 ? (song.plays / 1000).toFixed(0) + 'K' : song.plays.toString(),
-            duration: song.duration,
-            date: song.uploaded_at.split(' ')[0],
-            status: song.status === 'active' ? 'published' : song.status
+            ...song,
+            artist: song.artist_name || 'Unknown Artist',
+            genre: song.genre || 'Unknown',
+            plays: Number(song.plays || 0),
+            likes: Number(song.likes || 0),
+            duration: song.duration || '0:00',
+            date: song.uploaded_at ? song.uploaded_at.split(' ')[0] : (song.created_at ? song.created_at.split(' ')[0] : 'N/A'),
+            display_status: song.status === 'active' ? 'published' : (song.status || 'pending')
         })) : [];
 
         // Fetch subscriptions
@@ -482,6 +489,24 @@ async function loadSampleData() {
         // Fallback to sample data if API fails
         loadFallbackData();
     }
+}
+
+function formatCompactNumber(value) {
+    const numericValue = Number(value || 0);
+
+    if (numericValue >= 1000000) {
+        return (numericValue / 1000000).toFixed(1) + 'M';
+    }
+
+    if (numericValue >= 1000) {
+        return (numericValue / 1000).toFixed(0) + 'K';
+    }
+
+    return numericValue.toString();
+}
+
+function getSongDisplayStatus(song) {
+    return song.display_status || (song.status === 'active' ? 'published' : (song.status || 'pending'));
 }
 
 function populateSettingsInputs(settings) {
@@ -589,8 +614,6 @@ function populateAllUsersTable(users) {
                     </button>
                     <select class="form-select form-select-sm" style="width: auto; display: inline-block; margin-right: 5px;" onchange="assignRole(${user.id}, this.value)">
                         <option value="">Change Role</option>
-                        <option value="admin" ${user.type === 'admin' ? 'selected' : ''}>Admin</option>
-                        <option value="moderator" ${user.type === 'moderator' ? 'selected' : ''}>Moderator</option>
                         <option value="artist" ${user.type === 'artist' ? 'selected' : ''}>Artist</option>
                         <option value="fan" ${user.type === 'fan' ? 'selected' : ''}>Fan</option>
                     </select>
@@ -606,6 +629,25 @@ function populateAllUsersTable(users) {
                 </div>
             </td>
         `;
+
+        if (user.type === 'admin') {
+            row.querySelector('.btn-action.suspend')?.setAttribute('disabled', 'true');
+            row.querySelector('.btn-action.reset')?.setAttribute('disabled', 'true');
+            row.querySelector('.btn-action.delete')?.setAttribute('disabled', 'true');
+
+            const roleSelect = row.querySelector('select[onchange^="assignRole"]');
+            if (roleSelect) {
+                roleSelect.disabled = true;
+                roleSelect.title = 'Admin role changes are restricted';
+            }
+
+            const statusSelect = row.querySelector('select[onchange^="changeUserStatus"]');
+            if (statusSelect) {
+                statusSelect.disabled = true;
+                statusSelect.title = 'Admin status changes are restricted';
+            }
+        }
+
         tbody.appendChild(row);
     });
 }
@@ -633,8 +675,8 @@ function populateArtistsTable(artists) {
                 </div>
             </td>
             <td><span class="badge" style="background-color: #${getGenreColor(artist.genre)}">${artist.genre}</span></td>
-            <td>${artist.followers}</td>
-            <td>${artist.songs}</td>
+            <td>${formatCompactNumber(artist.followers)}</td>
+            <td>${artist.songs_count ?? artist.songs ?? 0}</td>
             <td><span class="status-badge status-${artist.status}">${artist.status}</span></td>
             <td>
                 <span class="badge bg-${getVerificationColor(artist.verification)}">
@@ -690,10 +732,10 @@ function populateSongsTable(songs) {
             <td><strong>${song.title}</strong></td>
             <td>${song.artist}</td>
             <td><span class="badge" style="background-color: #${getGenreColor(song.genre)}">${song.genre}</span></td>
-            <td>${song.plays}</td>
+            <td>${formatCompactNumber(song.plays)}</td>
             <td>${song.duration}</td>
             <td>${song.date}</td>
-            <td><span class="status-badge status-${song.status}">${song.status}</span></td>
+            <td><span class="status-badge status-${song.status}">${getSongDisplayStatus(song)}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="btn-action view" data-entity="song" data-id="${song.id}" title="View">
@@ -732,8 +774,8 @@ function populateRecentSongsTable(songs) {
             <td><strong>${song.title}</strong></td>
             <td>${song.artist}</td>
             <td><span class="badge" style="background-color: #${getGenreColor(song.genre)}">${song.genre}</span></td>
-            <td>${song.plays}</td>
-            <td><span class="status-badge status-${song.status}">${song.status}</span></td>
+            <td>${formatCompactNumber(song.plays)}</td>
+            <td><span class="status-badge status-${song.status}">${getSongDisplayStatus(song)}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="btn-action view" data-entity="song" data-id="${song.id}" title="View">
@@ -754,11 +796,9 @@ function populateTopArtistsList(artists) {
     if (!container) return;
 
     // Sort by followers (convert "150K" to number for sorting)
-    const sortedArtists = [...artists].sort((a, b) => {
-        const aFollowers = parseFloat(a.followers) * (a.followers.includes('K') ? 1000 : 1);
-        const bFollowers = parseFloat(b.followers) * (b.followers.includes('K') ? 1000 : 1);
-        return bFollowers - aFollowers;
-    }).slice(0, 5);
+    const sortedArtists = [...artists]
+        .sort((a, b) => Number(b.followers || 0) - Number(a.followers || 0))
+        .slice(0, 5);
 
     container.innerHTML = '';
 
@@ -783,7 +823,7 @@ function populateTopArtistsList(artists) {
                 </div>
             </div>
             <div style="text-align: right;">
-                <div style="font-weight: 600; color: #1db954;">${artist.followers}</div>
+                <div style="font-weight: 600; color: #1db954;">${formatCompactNumber(artist.followers)}</div>
                 <div style="color: #b3b3b3; font-size: 12px;">followers</div>
             </div>
         `;
@@ -796,7 +836,6 @@ function getTypeColor(type) {
     const colors = {
         'fan': 'secondary',
         'artist': 'info',
-        'moderator': 'warning',
         'admin': 'danger'
     };
     return colors[type] || 'secondary';
@@ -1494,10 +1533,10 @@ function populateTopSongsTable(songs) {
             <td>${index + 1}</td>
             <td><strong>${song.title}</strong></td>
             <td>${song.artist}</td>
-            <td>${song.plays}</td>
-            <td>${song.likes}</td>
+            <td>${formatCompactNumber(song.plays)}</td>
+            <td>${formatCompactNumber(song.likes)}</td>
             <td>${song.duration}</td>
-            <td><span class="badge bg-${song.status === 'published' ? 'success' : 'warning'}">${song.status}</span></td>
+            <td><span class="badge bg-${getSongDisplayStatus(song) === 'published' ? 'success' : 'warning'}">${getSongDisplayStatus(song)}</span></td>
         `;
         tbody.appendChild(row);
     });

@@ -11,10 +11,7 @@ window.PLATFORM_SETTINGS = {
 
 async function fetchPlatformSettings() {
     try {
-        // Detect path to backend (relative or absolute)
-        const currentPath = window.location.pathname;
-        const rootPath = currentPath.split('/AfroRythm/')[0] + '/AfroRythm/';
-        const apiPath = rootPath + 'backend/api/settings.php';
+        const apiPath = new URL('backend/api/settings.php', window.location.href).toString();
 
         console.log("📂 Fetching platform settings from:", apiPath);
 

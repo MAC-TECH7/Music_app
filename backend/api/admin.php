@@ -14,11 +14,12 @@ if ($method === 'OPTIONS') {
 session_start();
 
 // Basic authentication check
-function checkAdminAccess() {
+function checkAdminAccess()
+{
     if (!isset($_SESSION['user']) || !$_SESSION['user']['isLoggedIn']) {
         return false;
     }
-    
+
     // Check if user is an admin
     return isset($_SESSION['user']['type']) && $_SESSION['user']['type'] === 'admin';
 }
@@ -26,6 +27,33 @@ function checkAdminAccess() {
 if (!checkAdminAccess()) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
+}
+
+function getUserById(PDO $pdo, int $userId): ?array
+{
+    $stmt = $pdo->prepare("SELECT id, type, status FROM users WHERE id = ? LIMIT 1");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch();
+    return $user ?: null;
+}
+
+function countAdmins(PDO $pdo, bool $activeOnly = false): int
+{
+    $sql = "SELECT COUNT(*) FROM users WHERE type = 'admin'";
+    if ($activeOnly) {
+        $sql .= " AND status = 'active'";
+    }
+    return (int) $pdo->query($sql)->fetchColumn();
+}
+
+function isAllowedRole(string $role): bool
+{
+    return in_array($role, ['fan', 'artist', 'admin'], true);
+}
+
+function isAllowedStatus(string $status): bool
+{
+    return in_array($status, ['active', 'pending', 'blocked'], true);
 }
 
 switch ($method) {
@@ -45,7 +73,8 @@ switch ($method) {
         echo json_encode(['success' => false, 'message' => 'Method not allowed']);
 }
 
-function handleGetRequests($action) {
+function handleGetRequests($action)
+{
     global $pdo;
 
     try {
@@ -217,7 +246,7 @@ function handleGetRequests($action) {
                     ]
                 ]);
                 break;
-                
+
             case 'settings':
                 $stmt = $pdo->query("SELECT setting_key, setting_value FROM settings");
                 $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -227,12 +256,13 @@ function handleGetRequests($action) {
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 
-function handlePostRequests($action) {
+function handlePostRequests($action)
+{
     global $pdo;
     $data = json_decode(file_get_contents('php://input'), true);
 
@@ -290,28 +320,113 @@ function handlePostRequests($action) {
                 break;
 
             case 'assign_role':
+                $targetUserId = (int) ($data['user_id'] ?? 0);
+                $newRole = (string) ($data['role'] ?? '');
+                $actorId = (int) ($_SESSION['user']['id'] ?? 0);
+
+                if ($targetUserId <= 0 || !isAllowedRole($newRole)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid role or user']);
+                    break;
+                }
+
+                if ($actorId === $targetUserId) {
+                    echo json_encode(['success' => false, 'message' => 'You cannot change your own role']);
+                    break;
+                }
+
+                $targetUser = getUserById($pdo, $targetUserId);
+                if (!$targetUser) {
+                    echo json_encode(['success' => false, 'message' => 'User not found']);
+                    break;
+                }
+
+                if ($newRole === 'admin' && $targetUser['type'] !== 'admin') {
+                    echo json_encode(['success' => false, 'message' => 'Admin promotion is restricted']);
+                    break;
+                }
+
+                if ($targetUser['type'] === 'admin' && $newRole !== 'admin') {
+                    if (countAdmins($pdo, false) <= 1) {
+                        echo json_encode(['success' => false, 'message' => 'Cannot demote the last admin']);
+                        break;
+                    }
+                }
+
                 $sql = "UPDATE users SET type = ? WHERE id = ?";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$data['role'], $data['user_id']]);
+                $stmt->execute([$newRole, $targetUserId]);
                 echo json_encode(['success' => true, 'message' => 'Role assigned successfully']);
                 break;
 
             case 'change_status':
-                $sql = "UPDATE users SET status = ? WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$data['status'], $data['user_id']]);
-                echo json_encode(['success' => true, 'message' => 'User status updated']);
-                break;
-            
-            case 'reset_password':
-                if (empty($data['password']) || strlen($data['password']) < 6) {
-                    echo json_encode(['success' => false, 'message' => 'Invalid password']);
+                $targetUserId = (int) ($data['user_id'] ?? 0);
+                $newStatus = (string) ($data['status'] ?? '');
+                $actorId = (int) ($_SESSION['user']['id'] ?? 0);
+
+                if ($targetUserId <= 0 || !isAllowedStatus($newStatus)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid status or user']);
                     break;
                 }
+
+                if ($actorId === $targetUserId) {
+                    echo json_encode(['success' => false, 'message' => 'You cannot change your own status']);
+                    break;
+                }
+
+                $targetUser = getUserById($pdo, $targetUserId);
+                if (!$targetUser) {
+                    echo json_encode(['success' => false, 'message' => 'User not found']);
+                    break;
+                }
+
+                if ($targetUser['type'] === 'admin' && $newStatus !== 'active') {
+                    if (countAdmins($pdo, true) <= 1) {
+                        echo json_encode(['success' => false, 'message' => 'Cannot block the last active admin']);
+                        break;
+                    }
+                }
+
+                $sql = "UPDATE users SET status = ? WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$newStatus, $targetUserId]);
+                echo json_encode(['success' => true, 'message' => 'User status updated']);
+                break;
+
+            case 'reset_password':
+                $targetUserId = (int) ($data['user_id'] ?? 0);
+                $newPassword = (string) ($data['password'] ?? '');
+                $actorId = (int) ($_SESSION['user']['id'] ?? 0);
+
+                if ($targetUserId <= 0) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid user']);
+                    break;
+                }
+
+                if ($actorId === $targetUserId) {
+                    echo json_encode(['success' => false, 'message' => 'Use profile settings to change your own password']);
+                    break;
+                }
+
+                if (strlen($newPassword) < 8 || !preg_match('/[A-Z]/', $newPassword) || !preg_match('/[a-z]/', $newPassword) || !preg_match('/\d/', $newPassword)) {
+                    echo json_encode(['success' => false, 'message' => 'Password must be 8+ chars with upper, lower, and number']);
+                    break;
+                }
+
+                $targetUser = getUserById($pdo, $targetUserId);
+                if (!$targetUser) {
+                    echo json_encode(['success' => false, 'message' => 'User not found']);
+                    break;
+                }
+
+                if ($targetUser['type'] === 'admin') {
+                    echo json_encode(['success' => false, 'message' => 'Admin password reset is restricted']);
+                    break;
+                }
+
                 $sql = "UPDATE users SET password = ? WHERE id = ?";
                 $stmt = $pdo->prepare($sql);
-                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-                $stmt->execute([$hashedPassword, $data['user_id']]);
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $stmt->execute([$hashedPassword, $targetUserId]);
                 echo json_encode(['success' => true, 'message' => 'Password reset successfully']);
                 break;
 
@@ -333,23 +448,48 @@ function handlePostRequests($action) {
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 
-function handlePutRequests($action) {
+function handlePutRequests($action)
+{
     // Similar to POST, for updates
     handlePostRequests($action);
 }
 
-function handleDeleteRequests($action) {
+function handleDeleteRequests($action)
+{
     global $pdo;
 
     try {
         switch ($action) {
             case 'user':
-                $id = $_GET['id'];
+                $id = (int) ($_GET['id'] ?? 0);
+                $actorId = (int) ($_SESSION['user']['id'] ?? 0);
+
+                if ($id <= 0) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid user id']);
+                    break;
+                }
+
+                if ($actorId === $id) {
+                    echo json_encode(['success' => false, 'message' => 'You cannot delete your own account']);
+                    break;
+                }
+
+                $targetUser = getUserById($pdo, $id);
+                if (!$targetUser) {
+                    echo json_encode(['success' => false, 'message' => 'User not found']);
+                    break;
+                }
+
+                if ($targetUser['type'] === 'admin' && countAdmins($pdo, false) <= 1) {
+                    echo json_encode(['success' => false, 'message' => 'Cannot delete the last admin']);
+                    break;
+                }
+
                 $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
                 $stmt->execute([$id]);
                 echo json_encode(['success' => true, 'message' => 'User deleted successfully']);
@@ -365,7 +505,7 @@ function handleDeleteRequests($action) {
             default:
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
         }
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
