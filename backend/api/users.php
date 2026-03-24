@@ -187,9 +187,9 @@ switch ($method) {
                 break;
             }
 
-            $sql = "UPDATE users SET name=?, email=?, phone=?, type=?, status=? WHERE id=?";
+            $sql = "UPDATE users SET type=?, status=? WHERE id=?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$data['name'], $data['email'], $data['phone'], $newType, $newStatus, $targetUserId]);
+            $stmt->execute([$newType, $newStatus, $targetUserId]);
             echo json_encode(['success' => true, 'message' => 'User updated successfully']);
         } catch (PDOException $e) {
             http_response_code(500);

@@ -67,6 +67,11 @@ function ensure_schema_compatibility(PDO $pdo): void
         'location' => 'VARCHAR(255) DEFAULT NULL AFTER `website`',
         'image' => 'VARCHAR(500) DEFAULT NULL AFTER `bio`'
     ]);
+    
+    ensure_table_columns($pdo, 'notifications', [
+        'type' => "VARCHAR(50) DEFAULT 'system' AFTER `message` ",
+        'target_id' => 'INT DEFAULT NULL AFTER `type` '
+    ]);
 }
 
 try {

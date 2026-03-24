@@ -86,30 +86,63 @@ document.addEventListener('DOMContentLoaded', async function () {
         updateUserProfileUI();
         updateQuickStats();
         setupProfileUpload();
+
+        // Setup notification polling (every 10 seconds)
+        if (!window.fanNotificationInterval) {
+            window.fanNotificationInterval = setInterval(refreshUserNotifications, 10000);
+        }
     });
 });
+
+async function refreshUserNotifications() {
+    if (!currentUser || !currentUser.id) return;
+    try {
+        const res = await fetch(`backend/api/notifications.php?user_id=${currentUser.id}`);
+        const json = await res.json();
+        if (json && json.success) {
+            notifications = json.data.map(notif => ({
+                id: notif.id,
+                message: notif.message,
+                read: notif.is_read == 1,
+                timestamp: notif.created_at,
+                type: notif.type || 'system',
+                target_id: notif.target_id
+            }));
+            updateNotificationsBadge();
+            
+            // If currently viewing notifications page, refresh it
+            if (document.getElementById('notifications-view')?.classList.contains('active')) {
+                loadNotificationsView();
+            }
+        }
+    } catch (e) {
+        console.warn('Silent fan notification refresh failed', e);
+    }
+}
 
 // Fetch songs and artists from backend APIs
 async function loadBackendData() {
 
-    // Define endpoints - assumes script is running at root/fan.html or similar
     // Define endpoints - assumes script is running at root/fan.html or similar
     const songsUrl = 'backend/api/songs.php';
     const artistsUrl = 'backend/api/artists.php';
     const playlistsUrl = 'backend/api/playlists.php?type=public';
 
     try {
-        const [songsRes, artistsRes, playlistsRes] = await Promise.all([
+        const [songsRes, artistsRes, playlistsRes, statsRes] = await Promise.all([
             fetch(songsUrl),
             fetch(artistsUrl),
-            fetch(playlistsUrl)
+            fetch(playlistsUrl),
+            fetch('backend/api/stats.php?type=fan')
         ]);
 
         if (!songsRes.ok) throw new Error(`Songs API error: ${songsRes.status} ${songsRes.statusText}`);
         if (!artistsRes.ok) throw new Error(`Artists API error: ${artistsRes.status} ${artistsRes.statusText}`);
+        if (!statsRes.ok) throw new Error(`Stats API error: ${statsRes.status} ${statsRes.statusText}`);
 
         const songsJson = await songsRes.json();
         const artistsJson = await artistsRes.json();
+        const statsJson = await statsRes.json();
 
         let playlistsJson = { success: false, data: [] };
         if (playlistsRes.ok) {
@@ -122,6 +155,7 @@ async function loadBackendData() {
 
         if (!songsJson.success) throw new Error(songsJson.message || 'Songs API returned failure');
         if (!artistsJson.success) throw new Error(artistsJson.message || 'Artists API returned failure');
+        if (!statsJson.success) throw new Error(statsJson.message || 'Stats API returned failure');
 
         // Map backend songs
         if (songsJson.data && songsJson.data.length > 0) {
@@ -143,6 +177,7 @@ async function loadBackendData() {
             sampleArtists = artistsJson.data.map(artist => {
                 const mappedArtist = {
                     id: parseInt(artist.id),
+                    userId: parseInt(artist.user_id),
                     name: (artist.name || artist.user_name),
                     followers: parseInt(artist.followers) || 0,
                     monthlyListeners: parseInt(artist.followers) * 5 || 0,
@@ -182,6 +217,18 @@ async function loadBackendData() {
                 coverColor: getTimeBasedColor(p.id + 200),
                 tags: [] // Backend doesn't support tags yet
             }));
+        }
+
+        // Update dashboard stats
+        if (statsJson.success && statsJson.data) {
+            const stats = statsJson.data;
+            const dailyPlaysCount = document.getElementById('heroDailyPlays');
+            const newReleasesCount = document.getElementById('heroNewReleases');
+            const trendingArtistsCount = document.getElementById('heroTrendingArtists');
+
+            if (dailyPlaysCount) dailyPlaysCount.textContent = stats.daily_plays || 0;
+            if (newReleasesCount) newReleasesCount.textContent = stats.new_releases || 0;
+            if (trendingArtistsCount) trendingArtistsCount.textContent = stats.trending_artists || 0;
         }
 
         return true;
@@ -235,48 +282,61 @@ async function checkAuth() {
 }
 
 function updateUserProfileUI() {
-    const userAvatar = document.getElementById('userAvatar');
+    if (!currentUser) return;
+
     const userName = document.getElementById('userName');
     const userEmail = document.getElementById('userEmail');
-    const profileAvatar = document.getElementById('profileAvatar');
+    const userAvatar = document.getElementById('userAvatar');
     const profileName = document.getElementById('profileName');
     const profileEmail = document.getElementById('profileEmail');
+    const memberSince = document.getElementById('memberSince');
+    const welcomeMessage = document.getElementById('welcomeMessage');
 
-    if (currentUser) {
-        const initials = currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'FU';
+    if (userName) userName.textContent = currentUser.name || 'Fan User';
+    if (userEmail) userEmail.textContent = currentUser.email || 'fan@example.com';
+    if (profileName) profileName.textContent = currentUser.name || 'Fan User';
+    if (profileEmail) profileEmail.textContent = currentUser.email || 'fan@example.com';
 
-        const updateElement = (element) => {
-            if (!element) return;
-            if (currentUser.avatar && currentUser.avatar.startsWith('uploads/')) {
-                element.style.backgroundImage = `url('${currentUser.avatar}?t=${new Date().getTime()}')`;
-                element.style.backgroundSize = 'cover';
-                element.style.backgroundPosition = 'center';
-                element.textContent = '';
-            } else {
-                element.style.backgroundImage = 'none';
-                element.textContent = initials;
-                if (currentUser.avatarColor) {
-                    element.style.background = currentUser.avatarColor;
-                }
+    if (welcomeMessage) {
+        // Check if user is "old" - joined more than 24h ago
+        let prefix = "Welcome";
+        if (currentUser.joined) {
+            const joinedDate = new Date(currentUser.joined);
+            const now = new Date();
+            const diffMs = now - joinedDate;
+            const diffDays = diffMs / (1000 * 60 * 60 * 24);
+            if (diffDays > 1) {
+                prefix = "Welcome back";
             }
-        };
-
-        updateElement(userAvatar);
-        updateElement(profileAvatar);
-        updateElement(document.getElementById('modalAvatar'));
-
-        if (userName) userName.textContent = currentUser.name || 'Fan User';
-        if (userEmail) userEmail.textContent = currentUser.email || 'fan@example.com';
-
-        if (profileName) profileName.textContent = currentUser.name || 'Fan User';
-        if (profileEmail) profileEmail.textContent = currentUser.email || 'fan@example.com';
-
-        const memberSince = document.getElementById('memberSince');
-        if (memberSince) {
-            const joinedYear = currentUser.joined ? new Date(currentUser.joined).getFullYear() : null;
-            memberSince.textContent = joinedYear || '2023';
         }
+        welcomeMessage.textContent = `${prefix}, ${currentUser.name || 'Fan User'}!`;
     }
+
+    if (memberSince && currentUser.joined) {
+        memberSince.textContent = new Date(currentUser.joined).getFullYear();
+    }
+
+    const initials = currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'FU';
+
+    const updateElement = (element) => {
+        if (!element) return;
+        if (currentUser.avatar && currentUser.avatar.startsWith('uploads/')) {
+            element.style.backgroundImage = `url('${currentUser.avatar}?t=${new Date().getTime()}')`;
+            element.style.backgroundSize = 'cover';
+            element.style.backgroundPosition = 'center';
+            element.textContent = '';
+        } else {
+            element.style.backgroundImage = 'none';
+            element.textContent = initials;
+            if (currentUser.avatarColor) {
+                element.style.background = currentUser.avatarColor;
+            }
+        }
+    };
+
+    updateElement(userAvatar);
+    updateElement(profileAvatar);
+    updateElement(document.getElementById('modalAvatar'));
 }
 
 function setupProfileUpload() {
@@ -589,6 +649,9 @@ function loadViewContent(viewId) {
         case 'notifications':
             loadNotificationsView();
             break;
+        case 'community':
+            loadCommunityFeed('communityPageFeed');
+            break;
         case 'profile':
             loadProfileView();
             break;
@@ -687,6 +750,11 @@ function loadDiscoverView() {
     const favoriteArtists = document.getElementById('favoriteArtists');
     if (favoriteArtists) {
         loadFavoriteArtists();
+    }
+
+    // Load Community Feed (Home section)
+    if (document.getElementById('communityFeed')) {
+        loadCommunityFeed('communityFeed');
     }
 }
 
@@ -1190,15 +1258,18 @@ function loadNotificationsView() {
 
     sortedNotifications.forEach(notification => {
         const notificationItem = document.createElement('div');
-        notificationItem.className = `activity-item ${notification.read ? '' : 'unread'}`;
+        const isRead = notification.is_read !== undefined ? notification.is_read : notification.read;
+        const timestamp = notification.created_at || notification.timestamp;
+        
+        notificationItem.className = `activity-item ${isRead ? '' : 'unread'}`;
         notificationItem.innerHTML = `
             <div class="activity-icon">
                 <i class="${getNotificationIcon(notification.type)}"></i>
             </div>
             <div class="activity-content">
-                <p><strong>${notification.title}</strong><br>${notification.message}</p>
+                <p><strong>${notification.title || 'New Update'}</strong><br>${notification.message}</p>
                 <div class="activity-meta">
-                    <span class="activity-time">${getTimeAgo(new Date(notification.timestamp))}</span>
+                    <span class="activity-time">${getTimeAgo(new Date(timestamp))}</span>
                     <span class="activity-action" onclick="handleNotificationClick(${notification.id})">
                         ${getNotificationAction(notification.type)}
                     </span>
@@ -1211,22 +1282,32 @@ function loadNotificationsView() {
 
 function getNotificationIcon(type) {
     switch (type) {
-        case 'new_release': return 'fas fa-music';
+        case 'new_release':
+        case 'song': return 'fas fa-music';
         case 'concert': return 'fas fa-calendar-alt';
-        case 'artist_joined': return 'fas fa-user-plus';
+        case 'artist_joined':
+        case 'artist': return 'fas fa-user-plus';
         case 'playlist_update': return 'fas fa-list';
-        case 'social': return 'fas fa-share-alt';
+        case 'social':
+        case 'community':
+        case 'comment': return 'fas fa-comments';
+        case 'follow': return 'fas fa-user-friends';
         default: return 'fas fa-bell';
     }
 }
 
 function getNotificationAction(type) {
     switch (type) {
-        case 'new_release': return 'Listen';
+        case 'new_release':
+        case 'song': return 'Listen';
         case 'concert': return 'View Event';
-        case 'artist_joined': return 'Follow';
+        case 'artist_joined':
+        case 'artist': return 'View Artist';
         case 'playlist_update': return 'View Playlist';
-        default: return 'View';
+        case 'community':
+        case 'comment': return 'Join Chat';
+        case 'follow': return 'View Profile';
+        default: return 'Interact';
     }
 }
 
@@ -1557,21 +1638,63 @@ async function loadComments(songId) {
             if (json.data.length === 0) {
                 list.innerHTML = '<div class="text-center py-4 text-muted">No comments yet. Be the first to say something!</div>';
             } else {
-                list.innerHTML = json.data.map(comment => `
-                    <div class="comment-item p-3 rounded mb-2 ${comment.is_pinned ? 'border-primary' : ''}" style="background: rgba(255,255,255,0.03); border: 1px solid ${comment.is_pinned ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)'}; position: relative;">
-                        ${comment.is_pinned ? '<div style="position: absolute; top: 10px; right: 10px; color: var(--primary-color); font-size: 0.7rem; font-weight: bold;"><i class="fas fa-thumbtack me-1"></i>PINNED</div>' : ''}
-                        <div class="d-flex justify-content-between mb-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="user-avatar overflow-hidden" style="width: 30px; height: 30px; font-size: 10px;">
-                                    ${comment.user_avatar ? `<img src="${comment.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (comment.user_name ? comment.user_name.substring(0,2).toUpperCase() : '??')}
+                // Group by parent_id
+                const mainComments = json.data.filter(c => !c.parent_id);
+                const replies = json.data.filter(c => c.parent_id);
+
+                // Sort main comments: pinned first, then by date desc
+                mainComments.sort((a, b) => (b.is_pinned - a.is_pinned) || (new Date(b.created_at) - new Date(a.created_at)));
+
+                list.innerHTML = mainComments.map(comment => {
+                    const threadReplies = replies.filter(r => r.parent_id == comment.id);
+                    const isArtist = comment.user_type === 'artist';
+
+                    return `
+                    <div class="comment-item-wrapper mb-3">
+                        <div class="comment-item p-3 rounded ${comment.is_pinned ? 'border-primary' : ''}" 
+                             style="background: rgba(255,255,255,0.05); border: 1px solid ${comment.is_pinned ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)'};">
+                            ${comment.is_pinned ? '<div style="color: var(--primary-color); font-size: 0.7rem; font-weight: bold; margin-bottom: 8px;"><i class="fas fa-thumbtack me-1"></i>PINNED</div>' : ''}
+                            <div class="d-flex justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar overflow-hidden" style="width: 32px; height: 32px; font-size: 11px;">
+                                        ${comment.user_avatar ? `<img src="${comment.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (comment.user_name ? comment.user_name.substring(0, 2).toUpperCase() : '??')}
+                                    </div>
+                                    <span class="fw-bold d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                                        ${comment.user_name}
+                                        ${isArtist ? '<span class="badge bg-primary px-2" style="font-size: 0.6rem; letter-spacing: 0.5px;">ARTIST</span>' : ''}
+                                    </span>
                                 </div>
-                                <span class="fw-bold" style="font-size: 0.9rem;">${comment.user_name}</span>
+                                <small class="text-muted">${getTimeAgo(new Date(comment.created_at))}</small>
                             </div>
-                            <small class="text-muted">${getTimeAgo(new Date(comment.created_at))}</small>
+                            <p class="mb-0" style="padding-left: 40px; color: var(--text-secondary); line-height: 1.5;">${comment.content}</p>
                         </div>
-                        <p class="mb-0" style="padding-left: 38px; color: var(--text-secondary);">${comment.content}</p>
+                        
+                        <!-- Replies -->
+                        <div class="replies-container ms-4 mt-2">
+                            ${threadReplies.map(reply => {
+                        const replyIsArtist = reply.user_type === 'artist';
+                        return `
+                                <div class="reply-item p-3 rounded mb-2" style="background: rgba(255,255,255,0.02); border-left: 3px solid ${replyIsArtist ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)'};">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="user-avatar overflow-hidden" style="width: 28px; height: 28px; font-size: 10px;">
+                                                ${reply.user_avatar ? `<img src="${reply.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (reply.user_name ? reply.user_name.substring(0, 2).toUpperCase() : '??')}
+                                            </div>
+                                            <span class="fw-bold d-flex align-items-center gap-2" style="font-size: 0.85rem; color: ${replyIsArtist ? 'var(--primary-color)' : 'white'};">
+                                                ${reply.user_name}
+                                                ${replyIsArtist ? '<span class="badge bg-primary px-2" style="font-size: 0.6rem; letter-spacing: 0.5px;">ARTIST RESPONSE</span>' : ''}
+                                            </span>
+                                        </div>
+                                        <small class="text-muted" style="font-size: 0.75rem;">${getTimeAgo(new Date(reply.created_at))}</small>
+                                    </div>
+                                    <p class="mb-0" style="padding-left: 36px; color: var(--text-secondary); line-height: 1.4; font-size: 0.9rem;">${reply.content}</p>
+                                </div>
+                            `;
+                    }).join('')}
+                        </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             }
         }
     } catch (err) {
@@ -1604,6 +1727,83 @@ async function postComment(songId, content) {
     } finally {
         postBtn.disabled = false;
         postBtn.innerHTML = 'Post Comment';
+    }
+}
+
+async function loadCommunityFeed(containerId = 'communityFeed') {
+    const feed = document.getElementById(containerId);
+    if (!feed) return;
+
+    // Show loading state
+    feed.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Loading platform activity...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch('backend/api/comments.php?type=recent');
+        const json = await res.json();
+
+        if (json.success) {
+            if (json.data.length === 0) {
+                feed.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <div class="p-5 rounded-4" style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1);">
+                            <i class="fas fa-comments mb-4" style="font-size: 3rem; opacity: 0.2;"></i>
+                            <h3 class="text-white mb-2">The Hub is quiet... for now!</h3>
+                            <p class="text-muted mb-4">Be the first to spark a conversation. Comment on your favorite tracks to see them here.</p>
+                            <button class="btn btn-primary px-4 py-2" style="border-radius: 25px;" onclick="switchDashboardView('discover')">
+                                Explore Music <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            feed.innerHTML = json.data.map(comment => {
+                const isArtist = comment.user_type === 'artist';
+                return `
+                    <div class="col-xl-4 col-md-6 mb-4">
+                        <div class="comment-card p-3 rounded h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); transition: transform 0.2s ease, border-color 0.2s ease;"
+                           onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='rgba(255,255,255,0.2)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255,255,255,0.08)';">
+                            <div class="d-flex justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar overflow-hidden" style="width: 32px; height: 32px; font-size: 11px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);">
+                                        ${comment.user_avatar ? `<img src="${comment.user_avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : (comment.user_name ? comment.user_name.substring(0, 2).toUpperCase() : '??')}
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                                            ${comment.user_name}
+                                            ${isArtist ? '<span class="badge bg-primary" style="font-size: 0.6rem; letter-spacing: 0.5px;">ARTIST</span>' : ''}
+                                        </span>
+                                        <small class="text-muted" style="font-size: 0.65rem;">${getTimeAgo(new Date(comment.created_at || comment.timestamp))}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mb-4 text-white" style="font-size: 0.95rem; font-style: italic; line-height: 1.5; min-height: 50px; opacity: 0.8;">
+                                "${comment.content}"
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top" style="border-top-color: rgba(255,255,255,0.05) !important;">
+                                <div class="d-flex flex-column" style="max-width: 65%;">
+                                    <small class="text-muted" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">Discussing</small>
+                                    <span class="text-primary truncate fw-bold" style="font-size: 0.8rem;"><i class="fas fa-music me-1"></i> ${comment.song_title || 'Untitled Song'}</span>
+                                </div>
+                                <button class="btn btn-sm btn-primary py-1 px-3" style="font-size: 0.75rem; border-radius: 20px;" onclick="viewSongDetails(${comment.song_id})">
+                                    Join <i class="fas fa-chevron-right ms-1" style="font-size: 0.6rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.error("Community feed error:", err);
+        feed.innerHTML = '<div class="col-12 text-center text-danger py-5">Failed to load platform activity. Please check your connection.</div>';
     }
 }
 
@@ -2267,8 +2467,14 @@ async function toggleFollowArtist(artistId, btn) {
 
                 showNotification(`Now following ${artist?.name}!`, 'success');
 
-                // Create notification
+                // Notify current user (the fan)
                 await createNotification(`You're now following ${artist?.name}`);
+
+                // Also notify the artist!
+                if (artist.userId && artist.userId !== currentUser?.id) {
+                    const fanName = currentUser?.name || 'A new fan';
+                    await createNotification(`${fanName} started following you`, artist.userId);
+                }
 
                 // Update artist followers count in local data
                 const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
@@ -2300,6 +2506,15 @@ async function toggleFollowArtist(artistId, btn) {
                 btn.textContent = 'Follow';
 
                 showNotification(`Unfollowed ${artist?.name}`, 'info');
+
+                // Notify current user (the fan)
+                await createNotification(`Unfollowed ${artist?.name}`);
+
+                // Also notify the artist!
+                if (artist.userId && artist.userId !== currentUser?.id) {
+                    const fanName = currentUser?.name || 'A user';
+                    await createNotification(`${fanName} unfollowed you`, artist.userId);
+                }
 
                 // Update artist followers count in local data
                 const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
@@ -3192,19 +3407,31 @@ function handleNotificationClick(notificationId) {
     // Handle notification action
     switch (notification.type) {
         case 'new_release':
-            if (notification.songId) {
-                playSong(notification.songId);
+        case 'song':
+            if (notification.target_id) {
+                viewSongDetails(notification.target_id);
             }
             break;
         case 'artist_joined':
-            if (notification.artistId) {
+        case 'artist':
+            if (notification.target_id) {
+                viewArtist(notification.target_id);
+            } else {
                 switchDashboardView('browse');
             }
             break;
         case 'playlist_update':
-            if (notification.playlistId) {
-                playPlaylist(notification.playlistId);
+            if (notification.target_id) {
+                playPlaylist(notification.target_id);
             }
+            break;
+        case 'community':
+        case 'comment':
+            switchDashboardView('community');
+            break;
+        default:
+            // Generic view
+            switchDashboardView('discover');
             break;
     }
 
@@ -3259,9 +3486,10 @@ async function markAllNotificationsRead() {
     }
 }
 
-async function createNotification(message) {
-    if (!currentUser || !currentUser.id) {
-        return; // Skip if not logged in
+async function createNotification(message, targetUserId = null) {
+    const userIdToNotify = targetUserId || (currentUser ? currentUser.id : null);
+    if (!userIdToNotify) {
+        return; // Skip if no user to notify
     }
 
     try {
@@ -3269,14 +3497,15 @@ async function createNotification(message) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                user_id: currentUser.id,
+                user_id: userIdToNotify,
                 message: message
             })
         });
 
         const data = await response.json();
 
-        if (data.success) {
+        // Only update local view if we notified ourselves
+        if (data.success && (!targetUserId || targetUserId === currentUser?.id)) {
             // Add to local notifications
             notifications.unshift({
                 id: data.data.id,

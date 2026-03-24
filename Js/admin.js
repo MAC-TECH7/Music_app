@@ -561,9 +561,7 @@ function populateUsersTable(users) {
                     <button class="btn-action view" data-entity="user" data-id="${user.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-entity="user" data-id="${user.id}" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
+
                 </div>
             </td>
         `;
@@ -603,9 +601,7 @@ function populateAllUsersTable(users) {
                     <button class="btn-action view" data-entity="user" data-id="${user.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-entity="user" data-id="${user.id}" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
+
                     <button class="btn-action suspend" data-entity="user" data-id="${user.id}" data-status="${user.status}" title="${user.status === 'blocked' ? 'Activate' : 'Suspend'}">
                         <i class="fas ${user.status === 'blocked' ? 'fa-user-check' : 'fa-user-slash'}"></i>
                     </button>
@@ -1486,7 +1482,7 @@ function populateSubscriptionPlansTable(subscriptions) {
             <td>${sub.id}</td>
             <td><strong>${sub.plan_name}</strong></td>
             <td>${sub.user_name}</td>
-            <td>$${sub.amount}</td>
+            <td>FCFA ${sub.amount}</td>
             <td><span class="badge bg-${sub.status === 'active' ? 'success' : sub.status === 'expired' ? 'warning' : 'secondary'}">${sub.status}</span></td>
             <td>${sub.start_date}</td>
             <td>${sub.end_date}</td>
@@ -1513,7 +1509,7 @@ function populateRecentSubscriptionsTable(subscriptions) {
         row.innerHTML = `
             <td><strong>${sub.plan_name}</strong></td>
             <td>${sub.user_name}</td>
-            <td>$${sub.amount}</td>
+            <td>FCFA ${sub.amount}</td>
             <td>${sub.start_date}</td>
             <td><span class="badge bg-${sub.status === 'active' ? 'success' : 'warning'}">${sub.status}</span></td>
         `;
@@ -2513,15 +2509,15 @@ async function viewUserDetails(id) {
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="small">NAME</label>
-                        <input type="text" class="form-control" id="viewEditUserName" value="${user.name}">
+                        <input type="text" class="form-control" id="viewEditUserName" value="${user.name}" readonly>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="small">EMAIL</label>
-                        <input type="email" class="form-control" id="viewEditUserEmail" value="${user.email}">
+                        <input type="email" class="form-control" id="viewEditUserEmail" value="${user.email}" readonly>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="small">PHONE</label>
-                        <input type="text" class="form-control" id="viewEditUserPhone" value="${user.phone || ''}">
+                        <input type="text" class="form-control" id="viewEditUserPhone" value="${user.phone || ''}" readonly>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="small">TYPE</label>
@@ -2783,7 +2779,7 @@ async function viewSubscriptionDetails(id) {
                 <div class="text-center mb-4">
                     <div class="display-4 text-primary mb-2"><i class="fas fa-crown"></i></div>
                     <h4>${sub.plan_name}</h4>
-                    <div class="h3">$${sub.amount}</div>
+                    <div class="h3">FCFA ${sub.amount}</div>
                     <span class="badge bg-${sub.status === 'active' ? 'success' : 'secondary'}">${sub.status}</span>
                 </div>
                 <div class="row">
@@ -2858,9 +2854,6 @@ async function saveUserEdit() {
         const userId = document.getElementById('editUserId').value;
         const userData = {
             id: userId,
-            name: document.getElementById('editUserName').value,
-            email: document.getElementById('editUserEmail').value,
-            phone: document.getElementById('editUserPhone').value,
             type: document.getElementById('editUserType').value,
             status: document.getElementById('editUserStatus').value
         };
@@ -3077,7 +3070,29 @@ async function saveFromViewModal(entityType) {
             }
         } else if (entityType === 'user') {
             // User save logic (to be implemented)
-            showNotification('User save not yet implemented', 'warning');
+            // User save: only send administrative fields (type & status), never PII
+            const userId = document.getElementById('viewEditUserId').value;
+            const userData = {
+                id: userId,
+                type: document.getElementById('viewEditUserType').value,
+                status: document.getElementById('viewEditUserStatus').value
+            };
+
+            const response = await fetch('backend/api/users.php', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showNotification('User account updated successfully', 'success');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('viewUserModal'));
+                modal.hide();
+                await refreshDashboardData();
+            } else {
+                showNotification(data.message || 'Failed to update user', 'error');
+            }
         } else if (entityType === 'artist') {
             // Artist save logic (to be implemented)
             showNotification('Artist save not yet implemented', 'warning');

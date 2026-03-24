@@ -57,6 +57,8 @@ switch ($method) {
         $data = json_decode(file_get_contents('php://input'), true);
         $user_id = $data['user_id'] ?? null;
         $message = $data['message'] ?? '';
+        $type = $data['type'] ?? 'system';
+        $target_id = $data['target_id'] ?? null;
         
         if (!$user_id || empty($message)) {
             http_response_code(400);
@@ -65,8 +67,8 @@ switch ($method) {
         }
         
         try {
-            $stmt = $pdo->prepare("INSERT INTO notifications (user_id, message, is_read) VALUES (?, ?, ?)");
-            $stmt->execute([$user_id, $message, 0]);
+            $stmt = $pdo->prepare("INSERT INTO notifications (user_id, message, type, target_id, is_read) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$user_id, $message, $type, $target_id, 0]);
             $notification_id = $pdo->lastInsertId();
             
             echo json_encode([

@@ -17,7 +17,26 @@ switch ($method) {
         // GET /backend/api/comments.php?song_id=123
         try {
             $songId = $_GET['song_id'] ?? null;
-            if (!$songId) {
+            $type = $_GET['type'] ?? 'song';
+
+            if ($type === 'recent') {
+                // Fetch latest comments across the entire platform
+                $stmt = $pdo->prepare("
+                    SELECT c.*, u.name as user_name, u.avatar as user_avatar, u.type as user_type, s.title as song_title 
+                    FROM comments c 
+                    JOIN users u ON c.user_id = u.id 
+                    JOIN songs s ON c.song_id = s.id 
+                    WHERE c.parent_id IS NULL 
+                    ORDER BY c.created_at DESC 
+                    LIMIT 15
+                ");
+                $stmt->execute();
+                $comments = $stmt->fetchAll();
+                echo json_encode(['success' => true, 'data' => $comments]);
+                break;
+            }
+
+            if (!$songId && $type === 'song') {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Song ID is required']);
                 break;
@@ -25,11 +44,11 @@ switch ($method) {
 
             // Fetch comments with user details - Sort pinned comments to the top
             $stmt = $pdo->prepare("
-                SELECT c.*, u.name as user_name, u.avatar as user_avatar 
+                SELECT c.*, u.name as user_name, u.avatar as user_avatar, u.type as user_type 
                 FROM comments c 
                 JOIN users u ON c.user_id = u.id 
                 WHERE c.song_id = ? 
-                ORDER BY c.is_pinned DESC, c.created_at DESC
+                ORDER BY c.created_at ASC
             ");
             $stmt->execute([$songId]);
             $comments = $stmt->fetchAll();
@@ -68,7 +87,7 @@ switch ($method) {
             
             // Get the newly created comment back with user info
             $stmt = $pdo->prepare("
-                SELECT c.*, u.name as user_name, u.avatar as user_avatar 
+                SELECT c.*, u.name as user_name, u.avatar as user_avatar, u.type as user_type 
                 FROM comments c 
                 JOIN users u ON c.user_id = u.id 
                 WHERE c.id = ?

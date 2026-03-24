@@ -10,8 +10,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 switch ($method) {
     case 'GET':
         try {
-            $stmt = $pdo->query("SELECT s.*, u.name as user_name FROM subscriptions s LEFT JOIN users u ON s.user_id = u.id ORDER BY s.id DESC");
-            $subscriptions = $stmt->fetchAll();
+            $user_id = $_GET['user_id'] ?? null;
+            if ($user_id) {
+                $stmt = $pdo->prepare("SELECT s.*, u.name as user_name FROM subscriptions s LEFT JOIN users u ON s.user_id = u.id WHERE s.user_id = ? AND s.status = 'active' ORDER BY s.id DESC LIMIT 1");
+                $stmt->execute([$user_id]);
+                $subscriptions = $stmt->fetchAll();
+            } else {
+                $stmt = $pdo->query("SELECT s.*, u.name as user_name FROM subscriptions s LEFT JOIN users u ON s.user_id = u.id ORDER BY s.id DESC");
+                $subscriptions = $stmt->fetchAll();
+            }
             echo json_encode(['success' => true, 'data' => $subscriptions]);
         } catch(PDOException $e) {
             http_response_code(500);
