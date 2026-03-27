@@ -3,8 +3,9 @@
  * Implements animations and UI improvements for the admin dashboard
  */
 
-// Override or extend placeholders in admin.js
-function animateStats() {
+// UI-only animation helper. Keep this separate so we don't override
+// the real data-binding animateStats(stats) from admin.js.
+function animateEnhancedStats() {
     console.log('🚀 Animating stats cards...');
     const statsCards = document.querySelectorAll('.stats-card');
 
@@ -22,7 +23,7 @@ function animateStats() {
     // Animate numbers
     const statNumbers = document.querySelectorAll('.stat-number');
     statNumbers.forEach(stat => {
-        const target = parseFloat(stat.innerText.replace(/,/g, '').replace('$', ''));
+        const target = parseFloat(stat.innerText.replace(/,/g, '').replace('FCFA', '').trim());
         if (isNaN(target)) return;
 
         let current = 0;
@@ -32,10 +33,10 @@ function animateStats() {
         const updateCount = () => {
             current += increment;
             if (current < target) {
-                stat.innerText = Math.floor(current).toLocaleString() + (stat.innerText.includes('$') ? '$' : '');
+                stat.innerText = Math.floor(current).toLocaleString() + (stat.innerText.includes('FCFA') ? ' FCFA' : '');
                 requestAnimationFrame(updateCount);
             } else {
-                stat.innerText = target.toLocaleString() + (stat.innerText.includes('$') ? '$' : '');
+                stat.innerText = target.toLocaleString() + (stat.innerText.includes('FCFA') ? ' FCFA' : '');
             }
         };
 
@@ -43,7 +44,7 @@ function animateStats() {
     });
 }
 
-function addRefreshButton() {
+function addRefreshButtonLegacy() {
     console.log('🔄 Adding refresh button...');
     const topBar = document.querySelector('.top-bar .d-flex');
     if (!topBar) return;
@@ -68,7 +69,7 @@ function addRefreshButton() {
         try {
             await loadSampleData(); // Function from admin.js
             showToast('Dashboard data refreshed successfully!');
-            animateStats();
+            animateEnhancedStats();
         } catch (error) {
             showToast('Failed to refresh data', 'danger');
         } finally {
@@ -138,8 +139,7 @@ function saveAdminProfile() {
 document.addEventListener('DOMContentLoaded', () => {
     // Wait a bit for admin.js to finish its basic setup
     setTimeout(() => {
-        animateStats();
-        addRefreshButton();
+        animateEnhancedStats();
     }, 500);
 
     // Mobile Sidebar Toggle Logic

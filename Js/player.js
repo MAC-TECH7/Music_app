@@ -171,7 +171,7 @@
     // Init: fetch current session user and tracks
     (async function init() {
         try {
-            const me = await fetch('backend/api/me.php');
+            const me = await fetch('backend/api/session.php', { credentials: 'same-origin' });
             const mj = await me.json();
             if (mj.success && mj.data && mj.data.user) {
                 serverUserId = mj.data.user.id;

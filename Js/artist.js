@@ -315,7 +315,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             likes: Number(song.likes || 0).toLocaleString(),
             downloads: '0',
             status: song.status,
-            audioFile: song.file_path || null
+            audioFile: song.file_path || null,
+            coverArt: song.cover_art || null
         }));
 
         mockData.songs = uploadedSongs;
@@ -1945,7 +1946,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 <td>
                     <div class="d-flex align-items-center">
                         <div class="song-cover me-3">
-                            <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="${song.title}" class="rounded">
+                            <img src="${song.coverArt || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'}" alt="${song.title}" class="rounded">
                         </div>
                         <div>
                             <div class="fw-bold">${song.title}</div>

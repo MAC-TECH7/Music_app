@@ -39,7 +39,7 @@ function demo_env(string $key, string $default = ''): string
 }
 
 try {
-    $adminEmail = demo_env('ADMIN_EMAIL', 'admin@afrorhythm.local');
+    $adminEmail = demo_env('ADMIN_EMAIL', 'camsound@gmail.com');
     $demo_emails = [
         'john.mbarga@email.com',
         'marie.ndongo@email.com',

@@ -67,30 +67,39 @@ try {
     $uploadType = $_POST['upload_type'] ?? '';
     $title = trim($_POST['title'] ?? '');
     $genre = trim($_POST['genre'] ?? '');
-    $artistId = $_POST['artist_id'] ?? null;
+    $requestedArtistId = isset($_POST['artist_id']) ? (int) $_POST['artist_id'] : 0;
+    $artistId = null;
 
     // Validate required fields
     if (empty($uploadType)) {
         throw new Exception('Upload type is required');
     }
 
-    // Get artist ID from session user if not provided
-    if (empty($artistId) && isset($_SESSION['user']['id'])) {
+    // Resolve the current user's artist profile from the session rather than trusting the client.
+    if (isset($_SESSION['user']['id'])) {
         $stmt = $pdo->prepare("SELECT id FROM artists WHERE user_id = ?");
         $stmt->execute([$_SESSION['user']['id']]);
         $artist = $stmt->fetch();
         if ($artist) {
-            $artistId = $artist['id'];
+            $artistId = (int) $artist['id'];
         }
     }
 
     if ($uploadType === 'song') {
+        if (($_SESSION['user']['type'] ?? '') !== 'artist') {
+            throw new Exception('Only artist accounts can upload songs');
+        }
+
         if (empty($title) || empty($genre)) {
             throw new Exception('Title and genre are required for song uploads');
         }
 
         if (empty($artistId)) {
             throw new Exception('Artist profile not found for current user');
+        }
+
+        if ($requestedArtistId > 0 && $requestedArtistId !== $artistId) {
+            throw new Exception('You can only upload songs to your own artist profile');
         }
 
         // Handle song file upload

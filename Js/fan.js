@@ -255,9 +255,18 @@ async function checkAuth() {
 
         if (response.ok) {
             const data = await response.json();
-            if (data.success) {
+            if (data.success && data.data?.user?.type === 'fan') {
                 currentUser = data.data.user;
                 return true;
+            }
+
+            if (data.success && data.data?.user) {
+                if (window.afro && window.afro.redirectTo) {
+                    window.afro.redirectTo('/auth/login.html');
+                } else {
+                    window.location.href = 'auth/login.html';
+                }
+                return false;
             }
         }
 
@@ -2450,7 +2459,6 @@ async function toggleFollowArtist(artistId, btn) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_id: currentUser.id,
                     artist_id: artistId
                 })
             });
@@ -2470,12 +2478,6 @@ async function toggleFollowArtist(artistId, btn) {
                 // Notify current user (the fan)
                 await createNotification(`You're now following ${artist?.name}`);
 
-                // Also notify the artist!
-                if (artist.userId && artist.userId !== currentUser?.id) {
-                    const fanName = currentUser?.name || 'A new fan';
-                    await createNotification(`${fanName} started following you`, artist.userId);
-                }
-
                 // Update artist followers count in local data
                 const artistIndex = sampleArtists.findIndex(a => a.id === artistId);
                 if (artistIndex !== -1) {
@@ -2490,7 +2492,6 @@ async function toggleFollowArtist(artistId, btn) {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_id: currentUser.id,
                     artist_id: artistId
                 })
             });
@@ -2509,12 +2510,6 @@ async function toggleFollowArtist(artistId, btn) {
 
                 // Notify current user (the fan)
                 await createNotification(`Unfollowed ${artist?.name}`);
-
-                // Also notify the artist!
-                if (artist.userId && artist.userId !== currentUser?.id) {
-                    const fanName = currentUser?.name || 'A user';
-                    await createNotification(`${fanName} unfollowed you`, artist.userId);
-                }
 
                 // Update artist followers count in local data
                 const artistIndex = sampleArtists.findIndex(a => a.id === artistId);

@@ -42,8 +42,8 @@ try{
     }
 
     if ($action === 'history'){
-        // Prefer server session user if available
-        $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : (isset($data['user_id']) ? intval($data['user_id']) : null);
+        // History writes must be tied to the authenticated session user only.
+        $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
         if ($user_id){
             $stmt = $pdo->prepare("INSERT INTO listening_history (user_id, song_id) VALUES (?, ?)");
             $stmt->execute([$user_id, $id]);

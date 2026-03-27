@@ -64,8 +64,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupNavigation();
     animateStats();
 
-    // Add refresh button functionality
-    addRefreshButton();
 });
 
 function initializeDataTables() {
@@ -687,24 +685,6 @@ function populateArtistsTable(artists) {
                     <button class="btn-action edit" data-entity="artist" data-id="${artist.id}" title="Edit Profile">
                         <i class="fas fa-edit"></i>
                     </button>
-                    ${artist.verification === 'approved' ? `
-                        <button class="btn-action unverify" data-entity="artist" data-id="${artist.id}" title="Unverify">
-                            <i class="fas fa-user-times"></i>
-                        </button>
-                    ` : `
-                        <button class="btn-action verify" data-entity="artist" data-id="${artist.id}" title="Verify">
-                            <i class="fas fa-user-check"></i>
-                        </button>
-                    `}
-                    ${artist.status === 'blocked' ? `
-                        <button class="btn-action ban" data-entity="artist" data-id="${artist.id}" data-status="${artist.status}" title="Unban">
-                            <i class="fas fa-user-check"></i>
-                        </button>
-                    ` : `
-                        <button class="btn-action ban" data-entity="artist" data-id="${artist.id}" data-status="${artist.status}" title="Ban">
-                            <i class="fas fa-ban"></i>
-                        </button>
-                    `}
                     <button class="btn-action delete" data-entity="artist" data-id="${artist.id}" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -737,20 +717,6 @@ function populateSongsTable(songs) {
                     <button class="btn-action view" data-entity="song" data-id="${song.id}" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-action edit" data-entity="song" data-id="${song.id}" title="Edit Metadata">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    ${song.status === 'pending' ? `
-                        <button class="btn-action approve" data-entity="song" data-id="${song.id}" title="Approve">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn-action reject" data-entity="song" data-id="${song.id}" title="Reject">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    ` : ''}
-                    <button class="btn-action delete" data-entity="song" data-id="${song.id}" title="Remove">
-                        <i class="fas fa-trash"></i>
-                    </button>
                 </div>
             </td>
         `;
@@ -776,9 +742,6 @@ function populateRecentSongsTable(songs) {
                 <div class="action-buttons">
                     <button class="btn-action view" data-entity="song" data-id="${song.id}" title="View">
                         <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-action edit" data-entity="song" data-id="${song.id}" title="Edit">
-                        <i class="fas fa-edit"></i>
                     </button>
                 </div>
             </td>
@@ -897,13 +860,6 @@ function setupEventListeners() {
         modal.show();
     });
 
-    // Add song button
-    document.getElementById('addSongBtn')?.addEventListener('click', function () {
-        populateArtistDropdown('songArtist');
-        const modal = new bootstrap.Modal(document.getElementById('addSongModal'));
-        modal.show();
-    });
-
     // Add subscription button
     document.getElementById('addSubscriptionBtn')?.addEventListener('click', function () {
         populateUserDropdown('planUser');
@@ -976,14 +932,18 @@ function setupEventListeners() {
         document.getElementById('addArtistForm').reset();
     });
 
-    // Reset add song form when modal is hidden
-    document.getElementById('addSongModal')?.addEventListener('hidden.bs.modal', function () {
-        document.getElementById('addSongForm').reset();
-    });
-
     // Reset add subscription form when modal is hidden
     document.getElementById('addSubscriptionModal')?.addEventListener('hidden.bs.modal', function () {
         document.getElementById('addSubscriptionForm').reset();
+        const subscriptionId = document.getElementById('subscriptionId');
+        if (subscriptionId) subscriptionId.value = '';
+        const title = document.getElementById('addSubscriptionModalLabel');
+        if (title) title.innerHTML = '<i class="fas fa-crown me-2"></i>Add Subscription';
+        const submitBtn = document.querySelector('#addSubscriptionModal .btn-primary');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Create Subscription';
+            submitBtn.setAttribute('onclick', 'addNewSubscription()');
+        }
     });
 
     // Action buttons delegation
@@ -992,16 +952,17 @@ function setupEventListeners() {
         if (e.target.closest('.btn-action.view')) {
             const button = e.target.closest('.btn-action.view');
             const id = button.dataset.id;
+            const entity = (button.dataset.entity || '').toLowerCase();
             const tbodyId = button.closest('tbody')?.id || '';
 
-            if (tbodyId.includes('User')) {
+            if (entity === 'subscription' || tbodyId.includes('Subscription')) {
+                viewSubscriptionDetails(id);
+            } else if (tbodyId.includes('User')) {
                 viewUserDetails(id);
             } else if (tbodyId.includes('Song')) {
                 viewSongDetails(id);
             } else if (tbodyId.includes('Artist')) {
                 viewArtistDetails(id);
-            } else if (tbodyId.includes('Subscription')) {
-                viewSubscriptionDetails(id);
             } else {
                 // Fallback authentication check logic if unsure
                 const type = button.closest('tr').querySelector('td:nth-child(2)')?.textContent.includes('@') ? 'user' : 'song';
@@ -1023,6 +984,7 @@ function setupEventListeners() {
                 if (scope.includes('user')) return 'user';
                 if (scope.includes('artist')) return 'artist';
                 if (scope.includes('song')) return 'song';
+                if (scope.includes('subscription')) return 'subscription';
                 return '';
             })();
             const id = button.dataset.id
@@ -1037,7 +999,9 @@ function setupEventListeners() {
             } else if (resolvedEntity === 'artist') {
                 openEditArtistModal(id);
             } else if (resolvedEntity === 'song') {
-                openEditSongModal(id);
+                showNotification('Admin song editing is disabled. Artists manage their own catalog.', 'warning');
+            } else if (resolvedEntity === 'subscription') {
+                openEditSubscriptionModal(id);
             } else {
                 showNotification('Edit action not available for this item', 'warning');
             }
@@ -1058,43 +1022,15 @@ function setupEventListeners() {
             openResetPasswordModal(id);
         }
 
-        // Verify / Unverify artist
-        if (e.target.closest('.btn-action.verify')) {
-            const button = e.target.closest('.btn-action.verify');
-            const id = button.dataset.id;
-            verifyArtist(id);
-        }
-        if (e.target.closest('.btn-action.unverify')) {
-            const button = e.target.closest('.btn-action.unverify');
-            const id = button.dataset.id;
-            unverifyArtist(id);
-        }
-
-        // Ban / Unban artist
-        if (e.target.closest('.btn-action.ban')) {
-            const button = e.target.closest('.btn-action.ban');
-            const id = button.dataset.id;
-            const currentStatus = button.dataset.status || 'active';
-            toggleArtistBan(id, currentStatus);
-        }
-
-        // Approve / Reject song
-        if (e.target.closest('.btn-action.approve')) {
-            const button = e.target.closest('.btn-action.approve');
-            const id = button.dataset.id;
-            approveSong(id);
-        }
-        if (e.target.closest('.btn-action.reject')) {
-            const button = e.target.closest('.btn-action.reject');
-            const id = button.dataset.id;
-            rejectSong(id);
-        }
-
         // Delete buttons
         if (e.target.closest('.btn-action.delete')) {
             const button = e.target.closest('.btn-action.delete');
             const id = button.dataset.id;
             const entity = button.dataset.entity || '';
+            if (entity === 'song') {
+                showNotification('Admin song deletion is disabled. Artists retain ownership of their songs.', 'warning');
+                return;
+            }
             const row = button.closest('tr');
             const itemName = row.querySelector('td:nth-child(2) strong')?.textContent ||
                 row.querySelector('td:nth-child(2)')?.textContent;
@@ -1234,7 +1170,7 @@ function animateStats(fetchedStats = null) {
                     element.textContent = formatNumber(currentValue);
                 }
             } else if (stat.id === 'totalRevenue') {
-                element.textContent = '$' + formatNumber(currentValue);
+                element.textContent = formatNumber(currentValue) + ' FCFA';
             } else {
                 element.textContent = formatNumber(currentValue);
             }
@@ -1487,10 +1423,10 @@ function populateSubscriptionPlansTable(subscriptions) {
             <td>${sub.start_date}</td>
             <td>${sub.end_date}</td>
             <td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary btn-action view" data-id="${sub.id}">View</button>
-                    <button class="btn btn-outline-secondary btn-action edit" data-id="${sub.id}">Edit</button>
-                    <button class="btn btn-outline-danger btn-action delete" data-id="${sub.id}">Delete</button>
+                <div class="subscription-action-group">
+                    <button class="btn-action subscription-action-btn view" data-entity="subscription" data-id="${sub.id}">View</button>
+                    <button class="btn-action subscription-action-btn edit" data-entity="subscription" data-id="${sub.id}">Edit</button>
+                    <button class="btn-action subscription-action-btn delete" data-entity="subscription" data-id="${sub.id}">Delete</button>
                 </div>
             </td>
         `;
@@ -1633,71 +1569,6 @@ async function rejectArtist(artistId) {
     } catch (error) {
         console.error('Error rejecting artist:', error);
         alert('Error rejecting artist');
-    }
-}
-
-async function verifyArtist(artistId) {
-    try {
-        const response = await fetch('backend/api/admin.php?action=verify_artist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ artist_id: artistId })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showNotification('Artist verified successfully', 'success');
-            loadSampleData();
-        } else {
-            showNotification(data.message || 'Error verifying artist', 'error');
-        }
-    } catch (error) {
-        console.error('Error verifying artist:', error);
-        showNotification('Error verifying artist', 'error');
-    }
-}
-
-async function unverifyArtist(artistId) {
-    try {
-        const response = await fetch('backend/api/admin.php?action=unverify_artist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ artist_id: artistId })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showNotification('Artist unverified', 'success');
-            loadSampleData();
-        } else {
-            showNotification(data.message || 'Error unverifying artist', 'error');
-        }
-    } catch (error) {
-        console.error('Error unverifying artist:', error);
-        showNotification('Error unverifying artist', 'error');
-    }
-}
-
-async function toggleArtistBan(artistId, currentStatus) {
-    const action = currentStatus === 'blocked' ? 'unban_artist' : 'ban_artist';
-    const label = currentStatus === 'blocked' ? 'unbanned' : 'banned';
-    if (!confirm(`Are you sure you want to ${label === 'banned' ? 'ban' : 'unban'} this artist?`)) {
-        return;
-    }
-    try {
-        const response = await fetch(`backend/api/admin.php?action=${action}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ artist_id: artistId })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showNotification(`Artist ${label} successfully`, 'success');
-            loadSampleData();
-        } else {
-            showNotification(data.message || 'Error updating artist status', 'error');
-        }
-    } catch (error) {
-        console.error('Error updating artist status:', error);
-        showNotification('Error updating artist status', 'error');
     }
 }
 
@@ -1863,9 +1734,6 @@ async function saveFromViewModal(entity) {
                 genre: document.getElementById('viewEditArtistGenre').value,
                 status: document.getElementById('viewEditArtistStatus').value,
                 verification: document.getElementById('viewEditArtistVerification').value,
-                // Keep existing values
-                followers: window.sampleData?.artists?.find(a => a.id == id)?.followers || 0,
-                songs_count: window.sampleData?.artists?.find(a => a.id == id)?.songs || 0,
                 bio: window.sampleData?.artists?.find(a => a.id == id)?.bio || '',
                 instagram_url: window.sampleData?.artists?.find(a => a.id == id)?.instagram_url || null,
                 twitter_url: window.sampleData?.artists?.find(a => a.id == id)?.twitter_url || null,
@@ -1905,7 +1773,7 @@ async function deleteEntity(entity, id, itemName, row) {
     let endpoint = '';
     if (entity === 'user') endpoint = `backend/api/users.php?id=${id}`;
     if (entity === 'artist') endpoint = `backend/api/artists.php?id=${id}`;
-    if (entity === 'song') endpoint = `backend/api/songs.php?id=${id}`;
+    if (entity === 'subscription') endpoint = `backend/api/subscriptions.php?id=${id}`;
 
     if (!endpoint) {
         row?.remove();
@@ -2393,7 +2261,7 @@ function addNewSubscription() {
     const startDate = document.getElementById('planStartDate').value;
     const endDate = document.getElementById('planEndDate').value;
     // Validation
-    if (!planName || !amount || !userId || !startDate || !endDate) {
+    if (!planName || Number.isNaN(amount) || !userId || !startDate || !endDate) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
@@ -2480,6 +2348,113 @@ function addNewSubscription() {
         });
 }
 
+async function openEditSubscriptionModal(subscriptionId) {
+    try {
+        let subscription = null;
+        if (window.sampleData && window.sampleData.subscriptions) {
+            subscription = window.sampleData.subscriptions.find(s => s.id == subscriptionId);
+        }
+
+        if (!subscription) {
+            const response = await fetch(`backend/api/subscriptions.php?id=${subscriptionId}`);
+            const data = await response.json();
+            if (data.success) {
+                subscription = Array.isArray(data.data) ? data.data[0] : data.data;
+            }
+        }
+
+        if (!subscription) {
+            showNotification('Subscription not found', 'error');
+            return;
+        }
+
+        populateUserDropdown('planUser');
+        document.getElementById('subscriptionId').value = subscription.id;
+        document.getElementById('planUser').value = subscription.user_id;
+        document.getElementById('planName').value = subscription.plan_name || 'Free';
+        document.getElementById('planAmount').value = subscription.amount || 0;
+        document.getElementById('planStartDate').value = subscription.start_date || '';
+        document.getElementById('planEndDate').value = subscription.end_date || '';
+
+        const title = document.getElementById('addSubscriptionModalLabel');
+        if (title) title.innerHTML = '<i class="fas fa-pen me-2"></i>Edit Subscription';
+
+        const submitBtn = document.querySelector('#addSubscriptionModal .btn-primary');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save Changes';
+            submitBtn.setAttribute('onclick', 'saveSubscriptionEdit()');
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('addSubscriptionModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error opening subscription edit modal:', error);
+        showNotification('Error loading subscription details', 'error');
+    }
+}
+
+function saveSubscriptionEdit() {
+    const subscriptionId = document.getElementById('subscriptionId').value;
+    const planName = document.getElementById('planName').value.trim();
+    const amount = parseFloat(document.getElementById('planAmount').value);
+    const userId = document.getElementById('planUser').value;
+    const startDate = document.getElementById('planStartDate').value;
+    const endDate = document.getElementById('planEndDate').value;
+
+    if (!subscriptionId || !planName || Number.isNaN(amount) || !userId || !startDate || !endDate) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+
+    if (new Date(endDate) <= new Date(startDate)) {
+        showNotification('End date must be after start date', 'error');
+        return;
+    }
+
+    const payload = {
+        id: subscriptionId,
+        user_id: userId,
+        plan_name: planName,
+        amount,
+        status: 'active',
+        start_date: startDate,
+        end_date: endDate
+    };
+
+    const submitBtn = document.querySelector('#addSubscriptionModal .btn-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+    submitBtn.disabled = true;
+
+    fetch('backend/api/subscriptions.php', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                showNotification(data.message || 'Error updating subscription', 'error');
+                return;
+            }
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addSubscriptionModal'));
+            modal.hide();
+            showNotification(`Subscription "${planName}" updated successfully!`, 'success');
+            refreshDashboardData();
+        })
+        .catch(error => {
+            console.error('Subscription update error:', error);
+            showNotification('Error updating subscription', 'error');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+}
+
 // View User Details
 async function viewUserDetails(id) {
     try {
@@ -2561,7 +2536,7 @@ async function viewUserDetails(id) {
     }
 }
 
-// View Song Details with Inline Editing
+// View Song Details
 async function viewSongDetails(id) {
     try {
         let song = null;
@@ -2592,7 +2567,7 @@ async function viewSongDetails(id) {
                     <div class="col-md-8">
                         <div class="mb-4">
                             <label class="small">SONG TITLE</label>
-                            <input type="text" class="form-control form-control-lg" id="viewEditSongTitle" value="${song.title}" style="background-color: #1a1a2e; border: 1px solid #444;">
+                            <input type="text" class="form-control form-control-lg" id="viewEditSongTitle" value="${song.title}" readonly style="background-color: #0a0a1e; border: 1px solid #333; cursor: not-allowed;">
                         </div>
                         
                         <div class="row">
@@ -2603,7 +2578,7 @@ async function viewSongDetails(id) {
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="small">GENRE</label>
-                                <select class="form-control" id="viewEditSongGenre" style="background-color: #1a1a2e; border: 1px solid #444;">
+                                <select class="form-control" id="viewEditSongGenre" disabled style="background-color: #0a0a1e; border: 1px solid #333; cursor: not-allowed;">
                                     <option value="Makossa" ${song.genre === 'Makossa' ? 'selected' : ''}>Makossa</option>
                                     <option value="Bikutsi" ${song.genre === 'Bikutsi' ? 'selected' : ''}>Bikutsi</option>
                                     <option value="Afrobeat" ${song.genre === 'Afrobeat' ? 'selected' : ''}>Afrobeat</option>
@@ -2620,11 +2595,11 @@ async function viewSongDetails(id) {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="small">DURATION</label>
-                                <input type="text" class="form-control" id="viewEditSongDuration" value="${song.duration || ''}" placeholder="4:32" style="background-color: #1a1a2e; border: 1px solid #444;">
+                                <input type="text" class="form-control" id="viewEditSongDuration" value="${song.duration || ''}" placeholder="4:32" readonly style="background-color: #0a0a1e; border: 1px solid #333; cursor: not-allowed;">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="small">STATUS</label>
-                                <select class="form-control" id="viewEditSongStatus" style="background-color: #1a1a2e; border: 1px solid #444;">
+                                <select class="form-control" id="viewEditSongStatus" disabled style="background-color: #0a0a1e; border: 1px solid #333; cursor: not-allowed;">
                                     <option value="active" ${song.status === 'active' ? 'selected' : ''}>Active/Published</option>
                                     <option value="pending" ${song.status === 'pending' ? 'selected' : ''}>Pending Review</option>
                                     <option value="blocked" ${song.status === 'blocked' ? 'selected' : ''}>Blocked</option>
@@ -2655,14 +2630,11 @@ async function viewSongDetails(id) {
                 </div>
             `;
 
-            // Update modal footer to include Save button
+            // Admin can review song details but cannot edit artist-owned metadata.
             const modal = document.getElementById('viewSongModal');
             const modalFooter = modal.querySelector('.modal-footer');
             modalFooter.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveFromViewModal('song')">
-                    <i class="fas fa-save me-1"></i>Save Changes
-                </button>
             `;
 
             const bootstrapModal = new bootstrap.Modal(modal);
@@ -2715,16 +2687,16 @@ async function viewArtistDetails(id) {
                         <label class="small">VERIFICATION</label>
                         <select class="form-control" id="viewEditArtistVerification">
                             <option value="pending" ${artist.verification === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="verified" ${artist.verification === 'verified' ? 'selected' : ''}>Verified</option>
-                            <option value="unverified" ${artist.verification === 'unverified' ? 'selected' : ''}>Unverified</option>
+                            <option value="approved" ${artist.verification === 'approved' ? 'selected' : ''}>Approved</option>
+                            <option value="rejected" ${artist.verification === 'rejected' ? 'selected' : ''}>Rejected</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="small">STATUS</label>
                         <select class="form-control" id="viewEditArtistStatus">
-                            <option value="active" ${artist.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="verified" ${artist.status === 'verified' ? 'selected' : ''}>Verified</option>
                             <option value="pending" ${artist.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="suspended" ${artist.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                            <option value="rejected" ${artist.status === 'rejected' ? 'selected' : ''}>Rejected</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -2932,10 +2904,7 @@ async function saveArtistEdit() {
             instagram_url: document.getElementById('editArtistInstagram').value,
             twitter_url: document.getElementById('editArtistTwitter').value,
             facebook_url: document.getElementById('editArtistFacebook').value,
-            youtube_url: document.getElementById('editArtistYoutube').value,
-            // Keep existing values for these fields to avoid nullifying them
-            followers: window.sampleData.artists.find(a => a.id == artistId)?.followers || 0,
-            songs_count: window.sampleData.artists.find(a => a.id == artistId)?.songs_count || 0
+            youtube_url: document.getElementById('editArtistYoutube').value
         };
 
         const response = await fetch('backend/api/artists.php', {

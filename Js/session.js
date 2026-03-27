@@ -1,4 +1,4 @@
-// Session helper: initializes user from server `me.php` and provides helpers
+// Session helper: initializes user from the session endpoint and provides helpers
 (function () {
     window.afro = window.afro || {};
     window.afro.user = null;
@@ -6,7 +6,7 @@
 
     window.afro.init = function () {
         try {
-            this.userPromise = fetch('backend/api/me.php', { credentials: 'same-origin' })
+            this.userPromise = fetch('backend/api/session.php', { credentials: 'same-origin' })
                 .then(r => r.json())
                 .then(j => { if (j && j.success && j.data && j.data.user) { this.user = j.data.user; } return this.user; })
                 .catch(() => null);

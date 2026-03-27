@@ -539,6 +539,67 @@
             color: white;
         }
 
+        .subscription-action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .subscription-action-btn {
+            min-width: 72px;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.2;
+            text-align: center;
+            border-width: 1px;
+            border-style: solid;
+            background: var(--bg-tertiary);
+            transition: all 0.2s ease;
+        }
+
+        .subscription-action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .subscription-action-btn.view {
+            color: #9ec5fe;
+            background-color: rgba(37, 99, 235, 0.12);
+            border-color: rgba(37, 99, 235, 0.45);
+        }
+
+        .subscription-action-btn.view:hover {
+            color: #ffffff;
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .subscription-action-btn.edit {
+            color: #ffd28a;
+            background-color: rgba(202, 138, 4, 0.14);
+            border-color: rgba(202, 138, 4, 0.45);
+        }
+
+        .subscription-action-btn.edit:hover {
+            color: #1a1a1a;
+            background-color: #f59e0b;
+            border-color: #f59e0b;
+        }
+
+        .subscription-action-btn.delete {
+            color: #ffb4b4;
+            background-color: rgba(220, 38, 38, 0.12);
+            border-color: rgba(220, 38, 38, 0.4);
+        }
+
+        .subscription-action-btn.delete:hover {
+            color: #ffffff;
+            background-color: #dc2626;
+            border-color: #dc2626;
+        }
+
         .btn-action.view:hover {
             border-color: #16a34a;
             color: #16a34a;
@@ -1089,9 +1150,9 @@
                             <button class="btn-secondary" id="exportSongsBtn">
                                 <i class="fas fa-download"></i> Export
                             </button>
-                            <button class="btn-primary" id="addSongBtn">
-                                <i class="fas fa-plus"></i> Add New Song
-                            </button>
+                            <span class="btn-secondary" style="display: inline-flex; align-items: center; opacity: 0.85; cursor: default;">
+                                <i class="fas fa-lock"></i> Artist-owned catalog
+                            </span>
                         </div>
                     </div>
 
@@ -1802,75 +1863,6 @@
         </div>
     </div>
 
-    <!-- Add Song Modal -->
-    <div class="modal fade" id="addSongModal" tabindex="-1" aria-labelledby="addSongModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content"
-                style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
-                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
-                    <h5 class="modal-title" id="addSongModalLabel"><i class="fas fa-music me-2"></i>Add New Song</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addSongForm">
-                        <div class="mb-3">
-                            <label for="songTitle" class="form-label">Song Title *</label>
-                            <input type="text" class="form-control" id="songTitle" required
-                                style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="songArtist" class="form-label">Artist *</label>
-                                <select class="form-control" id="songArtist" required
-                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                    <option value="">Select Artist</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="songGenre" class="form-label">Genre *</label>
-                                <select class="form-control" id="songGenre" required
-                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                    <option value="">Select Genre</option>
-                                    <option value="Makossa">Makossa</option>
-                                    <option value="Bikutsi">Bikutsi</option>
-                                    <option value="Afrobeat">Afrobeat</option>
-                                    <option value="Assiko">Assiko</option>
-                                    <option value="Traditional">Traditional</option>
-                                    <option value="Gospel">Gospel</option>
-                                    <option value="Bend Skin">Bend Skin</option>
-                                    <option value="Hip Hop">Hip Hop</option>
-                                    <option value="R&B">R&B</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="songDuration" class="form-label">Duration (MM:SS) *</label>
-                                <input type="text" class="form-control" id="songDuration" placeholder="03:45" required
-                                    pattern="^\d{1,2}:\d{2}$"
-                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="songStatus" class="form-label">Status</label>
-                                <select class="form-control" id="songStatus"
-                                    style="background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary);">
-                                    <option value="active">Active</option>
-                                    <option value="pending">Pending</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="addNewSong()"><i
-                            class="fas fa-save me-1"></i>Create Song</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Add Subscription Modal -->
     <div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel"
         aria-hidden="true">
@@ -1885,6 +1877,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="addSubscriptionForm">
+                        <input type="hidden" id="subscriptionId">
                         <div class="mb-3">
                             <label for="planUser" class="form-label">Subscriber *</label>
                             <select class="form-control" id="planUser" required
@@ -2291,7 +2284,7 @@
                                 <select class="form-control" id="editArtistStatus" required>
                                     <option value="verified">Verified</option>
                                     <option value="pending">Pending</option>
-                                    <option value="blocked">Blocked</option>
+                                    <option value="rejected">Rejected</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -2341,69 +2334,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Edit Song Modal -->
-    <div class="modal fade" id="editSongModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content"
-                style="background-color: #2a2a3e; color: #fff; border: 1px solid var(--border-color);">
-                <div class="modal-header" style="border-top: 1px solid var(--border-color);">
-                    <h5 class="modal-title"><i class="fas fa-music me-2"></i>Edit Song</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editSongForm">
-                        <input type="hidden" id="editSongId">
-                        <input type="hidden" id="editSongArtistId">
-                        <div class="mb-3">
-                            <label for="editSongTitle" class="form-label">Song Title *</label>
-                            <input type="text" class="form-control" id="editSongTitle" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editSongArtist" class="form-label">Artist (Read-only)</label>
-                            <input type="text" class="form-control" id="editSongArtist" readonly
-                                style="background-color: #1a1a2e; cursor: not-allowed;">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editSongGenre" class="form-label">Genre *</label>
-                            <select class="form-control" id="editSongGenre" required>
-                                <option value="Makossa">Makossa</option>
-                                <option value="Bikutsi">Bikutsi</option>
-                                <option value="Afrobeat">Afrobeat</option>
-                                <option value="Assiko">Assiko</option>
-                                <option value="Traditional">Traditional</option>
-                                <option value="Gospel">Gospel</option>
-                                <option value="Bend Skin">Bend Skin</option>
-                                <option value="Hip Hop">Hip Hop</option>
-                                <option value="R&B">R&B</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editSongDuration" class="form-label">Duration (MM:SS)</label>
-                            <input type="text" class="form-control" id="editSongDuration" placeholder="4:32"
-                                pattern="[0-9]{1,2}:[0-9]{2}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editSongStatus" class="form-label">Status *</label>
-                            <select class="form-control" id="editSongStatus" required>
-                                <option value="active">Active/Published</option>
-                                <option value="pending">Pending</option>
-                                <option value="blocked">Blocked</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveSongEdit()"><i
-                            class="fas fa-save me-1"></i>Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
 
     <!-- Bootstrap JS -->
     <script src="assets/lib/bootstrap/bootstrap.bundle.min.js"></script>

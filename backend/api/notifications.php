@@ -4,142 +4,208 @@ require_once '../cors.php';
 
 require_once '../db.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+function currentUser(): ?array
+{
+    $user = $_SESSION['user'] ?? null;
+    if (!$user || empty($user['isLoggedIn'])) {
+        return null;
+    }
+
+    return $user;
+}
+
+function isAdmin(?array $user): bool
+{
+    return $user && ($user['type'] ?? '') === 'admin';
+}
+
+function requireAuthenticatedUser(?array $user): void
+{
+    if ($user) {
+        return;
+    }
+
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Authentication required']);
+    exit;
+}
+
+function getNotificationById(PDO $pdo, int $notificationId): ?array
+{
+    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ? LIMIT 1");
+    $stmt->execute([$notificationId]);
+    $notification = $stmt->fetch();
+    return $notification ?: null;
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
+$sessionUser = currentUser();
 
 switch ($method) {
     case 'GET':
+        requireAuthenticatedUser($sessionUser);
+
         try {
-            $user_id = $_GET['user_id'] ?? null;
-            $unread_only = isset($_GET['unread_only']) && $_GET['unread_only'] === 'true';
-            
-            if (!$user_id) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'user_id is required']);
-                exit;
+            $requestedUserId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : 0;
+            $unreadOnly = isset($_GET['unread_only']) && $_GET['unread_only'] === 'true';
+            $effectiveUserId = (int) ($sessionUser['id'] ?? 0);
+
+            if ($requestedUserId > 0 && !isAdmin($sessionUser) && $requestedUserId !== $effectiveUserId) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Forbidden']);
+                break;
             }
-            
-            if ($unread_only) {
+
+            if (isAdmin($sessionUser) && $requestedUserId > 0) {
+                $effectiveUserId = $requestedUserId;
+            }
+
+            if ($unreadOnly) {
                 $stmt = $pdo->prepare("
-                    SELECT * FROM notifications 
-                    WHERE user_id = ? AND is_read = 0 
+                    SELECT * FROM notifications
+                    WHERE user_id = ? AND is_read = 0
                     ORDER BY created_at DESC
                 ");
-                $stmt->execute([$user_id]);
+                $stmt->execute([$effectiveUserId]);
             } else {
                 $stmt = $pdo->prepare("
-                    SELECT * FROM notifications 
-                    WHERE user_id = ? 
+                    SELECT * FROM notifications
+                    WHERE user_id = ?
                     ORDER BY created_at DESC
                     LIMIT 100
                 ");
-                $stmt->execute([$user_id]);
+                $stmt->execute([$effectiveUserId]);
             }
-            
+
             $notifications = $stmt->fetchAll();
-            
-            // Count unread
+
             $stmt = $pdo->prepare("SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = ? AND is_read = 0");
-            $stmt->execute([$user_id]);
+            $stmt->execute([$effectiveUserId]);
             $unread = $stmt->fetch();
-            
+
             echo json_encode([
-                'success' => true, 
+                'success' => true,
                 'data' => $notifications,
-                'unread_count' => (int)$unread['unread_count']
+                'unread_count' => (int) $unread['unread_count']
             ]);
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Server error']);
         }
         break;
 
     case 'POST':
-        $data = json_decode(file_get_contents('php://input'), true);
-        $user_id = $data['user_id'] ?? null;
-        $message = $data['message'] ?? '';
-        $type = $data['type'] ?? 'system';
-        $target_id = $data['target_id'] ?? null;
-        
-        if (!$user_id || empty($message)) {
+        requireAuthenticatedUser($sessionUser);
+        $data = json_decode(file_get_contents('php://input'), true) ?: [];
+        $message = trim((string) ($data['message'] ?? ''));
+        $type = trim((string) ($data['type'] ?? 'system'));
+        $targetId = isset($data['target_id']) ? (int) $data['target_id'] : null;
+        $targetUserId = isset($data['user_id']) ? (int) $data['user_id'] : (int) ($sessionUser['id'] ?? 0);
+
+        if ($message === '') {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'user_id and message are required']);
+            echo json_encode(['success' => false, 'message' => 'message is required']);
             exit;
         }
-        
+
+        if (!isAdmin($sessionUser)) {
+            $targetUserId = (int) ($sessionUser['id'] ?? 0);
+        }
+
         try {
             $stmt = $pdo->prepare("INSERT INTO notifications (user_id, message, type, target_id, is_read) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$user_id, $message, $type, $target_id, 0]);
-            $notification_id = $pdo->lastInsertId();
-            
+            $stmt->execute([$targetUserId, $message, $type, $targetId, 0]);
+            $notificationId = $pdo->lastInsertId();
+
             echo json_encode([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Notification created successfully',
-                'data' => ['id' => $notification_id]
+                'data' => ['id' => (int) $notificationId]
             ]);
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Server error']);
         }
         break;
 
     case 'PUT':
-        $data = json_decode(file_get_contents('php://input'), true);
-        $notification_id = $data['id'] ?? null;
+        requireAuthenticatedUser($sessionUser);
+        $data = json_decode(file_get_contents('php://input'), true) ?: [];
+        $notificationId = (int) ($data['id'] ?? 0);
         $action = $data['action'] ?? null;
-        
-        if (!$notification_id) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Notification ID is required']);
-            exit;
-        }
-        
+
         try {
-            if ($action === 'mark_read') {
-                // Mark single notification as read
-                $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ?");
-                $stmt->execute([$notification_id]);
-                echo json_encode(['success' => true, 'message' => 'Notification marked as read']);
-            } elseif ($action === 'mark_all_read') {
-                // Mark all user notifications as read
-                $user_id = $data['user_id'] ?? null;
-                if (!$user_id) {
-                    http_response_code(400);
-                    echo json_encode(['success' => false, 'message' => 'user_id is required for mark_all_read']);
-                    exit;
+            if ($action === 'mark_all_read') {
+                $requestedUserId = isset($data['user_id']) ? (int) $data['user_id'] : (int) ($sessionUser['id'] ?? 0);
+                if (!isAdmin($sessionUser) && $requestedUserId !== (int) ($sessionUser['id'] ?? 0)) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'Forbidden']);
+                    break;
                 }
+
                 $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?");
-                $stmt->execute([$user_id]);
+                $stmt->execute([$requestedUserId]);
                 echo json_encode(['success' => true, 'message' => 'All notifications marked as read']);
-            } else {
-                // Update notification message or other fields
-                $updates = [];
-                $params = [];
-                
-                if (isset($data['message'])) {
-                    $updates[] = "message = ?";
-                    $params[] = $data['message'];
-                }
-                if (isset($data['is_read'])) {
-                    $updates[] = "is_read = ?";
-                    $params[] = $data['is_read'] ? 1 : 0;
-                }
-                
-                if (empty($updates)) {
-                    http_response_code(400);
-                    echo json_encode(['success' => false, 'message' => 'No fields to update']);
-                    exit;
-                }
-                
-                $params[] = $notification_id;
-                $sql = "UPDATE notifications SET " . implode(', ', $updates) . " WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($params);
-                
-                echo json_encode(['success' => true, 'message' => 'Notification updated successfully']);
+                break;
             }
-        } catch(PDOException $e) {
+
+            if ($notificationId <= 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Notification ID is required']);
+                break;
+            }
+
+            $notification = getNotificationById($pdo, $notificationId);
+            if (!$notification) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Notification not found']);
+                break;
+            }
+
+            $ownsNotification = (int) $notification['user_id'] === (int) ($sessionUser['id'] ?? 0);
+            if (!isAdmin($sessionUser) && !$ownsNotification) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Forbidden']);
+                break;
+            }
+
+            if ($action === 'mark_read') {
+                $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ?");
+                $stmt->execute([$notificationId]);
+                echo json_encode(['success' => true, 'message' => 'Notification marked as read']);
+                break;
+            }
+
+            $updates = [];
+            $params = [];
+
+            if (isset($data['message']) && isAdmin($sessionUser)) {
+                $updates[] = "message = ?";
+                $params[] = trim((string) $data['message']);
+            }
+            if (isset($data['is_read'])) {
+                $updates[] = "is_read = ?";
+                $params[] = $data['is_read'] ? 1 : 0;
+            }
+
+            if (empty($updates)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'No fields to update']);
+                break;
+            }
+
+            $params[] = $notificationId;
+            $stmt = $pdo->prepare("UPDATE notifications SET " . implode(', ', $updates) . " WHERE id = ?");
+            $stmt->execute($params);
+
+            echo json_encode(['success' => true, 'message' => 'Notification updated successfully']);
+        } catch (PDOException $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Server error']);
         }
         break;
 
@@ -149,4 +215,3 @@ switch ($method) {
         break;
 }
 ?>
-

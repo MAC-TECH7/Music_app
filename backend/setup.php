@@ -60,8 +60,8 @@ $success = false;
 if (isset($_POST['run_setup'])) {
     try {
         $adminName = setup_env('ADMIN_NAME', 'System Admin');
-        $adminEmail = setup_env('ADMIN_EMAIL', 'admin@afrorhythm.local');
-        $adminPassword = setup_env('ADMIN_PASSWORD', 'AfroRhythm@2026!');
+        $adminEmail = setup_env('ADMIN_EMAIL', 'camsound@gmail.com');
+        $adminPassword = setup_env('ADMIN_PASSWORD', 'CMR@music237');
 
         // 1. Connect to MySQL (without database)
         $pdo = new PDO("mysql:host=$host", $username, $password, [
@@ -126,8 +126,8 @@ if (isset($_POST['run_setup'])) {
         $defaultPasswordHash = password_hash('password123', PASSWORD_BCRYPT);
         $adminPasswordHash = password_hash($adminPassword, PASSWORD_BCRYPT);
         $demo_users = [
-            ['name' => 'John Mbarga', 'email' => 'john.mbarga@email.com', 'type' => 'fan', 'password_hash' => $defaultPasswordHash],
-            ['name' => 'Marie Ndongo', 'email' => 'marie.ndongo@email.com', 'type' => 'artist', 'password_hash' => $defaultPasswordHash],
+            ['name' => 'John Mbarga', 'email' => 'murielle@gmail.com', 'type' => 'fan', 'password_hash' => password_hash('CMRmurielle237', PASSWORD_BCRYPT)],
+            ['name' => 'Marie Ndongo', 'email' => 'kimbalo@gmail.com', 'type' => 'artist', 'password_hash' => password_hash('CMRBalo237', PASSWORD_BCRYPT)],
             ['name' => $adminName, 'email' => $adminEmail, 'type' => 'admin', 'password_hash' => $adminPasswordHash]
         ];
 
@@ -138,7 +138,7 @@ if (isset($_POST['run_setup'])) {
 
         // Add Marie as artist
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->execute(['marie.ndongo@email.com']);
+        $stmt->execute(['kimbalo@gmail.com']);
         $marie_id = $stmt->fetchColumn();
         if ($marie_id) {
             $stmt = $pdo->prepare("INSERT INTO artists (user_id, name, genre, status, verification) VALUES (?, ?, ?, 'verified', 'approved') ON DUPLICATE KEY UPDATE name=name");
